@@ -68,6 +68,10 @@ func _exit_tree() -> void:
 
 # 公共方法
 
+func can_accept(obj: Control) -> bool:
+	return true
+
+
 func add_obj(obj: Control, index: int = -1, animate: bool = true) -> bool:
 	if obj in _objs:
 		return false
