@@ -575,22 +575,23 @@ func _on_obj_drag_ended(obj: Control) -> void:
 	if not obj or obj != _dragging_obj or not obj in _objs:
 		return
 
-	_dragging_obj = null
-
 	var global_pos = target_container.get_global_mouse_position()
 	if _is_position_in_container(global_pos):
 		if allow_reordering and layout_strategy:
 			var new_index = layout_strategy.get_drop_index_at_position(_visible_objs, self, global_pos)
 			var current_index = _objs.find(obj)
+			_dragging_obj = null
 			if new_index != -1 and new_index != current_index:
 				move_obj(obj, new_index, true)
 			else:
 				update_layout(true)
-		
+
+		_dragging_obj = null
 		_reorder_preview_index = -1
 				
 		obj_dropped.emit(obj, self)
 	else:
+		_dragging_obj = null
 		_reorder_preview_index = -1
 		
 		var target_zone = _get_zone_at_position(global_pos)
