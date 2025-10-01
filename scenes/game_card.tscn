@@ -1,15 +1,17 @@
-[gd_scene load_steps=4 format=3 uid="uid://d2h0htyohqmu2"]
+[gd_scene load_steps=5 format=3 uid="uid://d2h0htyohqmu2"]
 
 [ext_resource type="Script" uid="uid://dme7l5sgrqkvn" path="res://scenes/game_card.gd" id="1_1vx8h"]
 [ext_resource type="Texture2D" uid="uid://cxsg16gubud5i" path="res://assets/card/card_front.png" id="2_6n33h"]
 [ext_resource type="Texture2D" uid="uid://cw1v5i7f3ulqn" path="res://assets/card/card_back.png" id="3_tbiix"]
+[ext_resource type="Script" uid="uid://cqcwkcjd8p518" path="res://addons/nascentsoul/core/component/interaction_component.gd" id="4_6n33h"]
 
-[node name="GameCard" type="Control"]
+[node name="GameCard" type="Control" node_paths=PackedStringArray("interaction_component")]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 100.0
 offset_bottom = 150.0
 script = ExtResource("1_1vx8h")
+interaction_component = NodePath("InteractionComponent")
 metadata/_custom_type_script = "uid://dme7l5sgrqkvn"
 
 [node name="CardFront" type="Control" parent="."]
@@ -47,3 +49,8 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("3_tbiix")
 expand_mode = 1
+
+[node name="InteractionComponent" type="Node" parent="." node_paths=PackedStringArray("target_control")]
+script = ExtResource("4_6n33h")
+target_control = NodePath("..")
+metadata/_custom_type_script = "uid://cqcwkcjd8p518"

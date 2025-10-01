@@ -1,0 +1,56 @@
+[gd_scene load_steps=6 format=3 uid="uid://pry17j6h20v8"]
+
+[ext_resource type="Script" uid="uid://ca580xk74lmbx" path="res://scenes/game_deck.gd" id="1_a88jf"]
+[ext_resource type="Script" uid="uid://db0ify0387h0s" path="res://addons/nascentsoul/core/zone/visibility_controlled_zone.gd" id="1_h0yb0"]
+[ext_resource type="Script" uid="uid://cdtv3217xwl73" path="res://addons/nascentsoul/core/visibility/max_visible_zone_visibility_strategy.gd" id="2_hcgpx"]
+[ext_resource type="Script" uid="uid://dt54nmcdljefy" path="res://addons/nascentsoul/core/sort/zone_sort_strategy.gd" id="3_a88jf"]
+[ext_resource type="Script" uid="uid://bogktcosaudke" path="res://addons/nascentsoul/core/layout/deck_zone_layout_strategy.gd" id="4_hcgpx"]
+
+[node name="GameDeck" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 100.0
+offset_bottom = 150.0
+script = ExtResource("1_a88jf")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.5592148, 0.45533067, 0.735357, 0.647)
+
+[node name="Container" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Zone" type="Node" parent="." node_paths=PackedStringArray("target_container", "layout_strategy", "sort_strategy", "visibility_strategy")]
+script = ExtResource("1_h0yb0")
+default_face_up = false
+target_container = NodePath("../Container")
+max_objs = 10
+layout_strategy = NodePath("ZoneLayoutStrategy")
+sort_strategy = NodePath("ZoneSortStrategy")
+visibility_strategy = NodePath("MaxVisibleZoneVisibilityStrategy")
+hover_enabled = false
+drag_enabled = false
+allow_reordering = false
+metadata/_custom_type_script = "uid://db0ify0387h0s"
+
+[node name="MaxVisibleZoneVisibilityStrategy" type="Node" parent="Zone"]
+script = ExtResource("2_hcgpx")
+max_visible = 3
+metadata/_custom_type_script = "uid://cdtv3217xwl73"
+
+[node name="ZoneSortStrategy" type="Node" parent="Zone"]
+script = ExtResource("3_a88jf")
+metadata/_custom_type_script = "uid://dt54nmcdljefy"
+
+[node name="ZoneLayoutStrategy" type="Node" parent="Zone"]
+script = ExtResource("4_hcgpx")

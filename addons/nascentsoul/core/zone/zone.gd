@@ -53,6 +53,8 @@ func _ready() -> void:
 		push_error("Zone: layout_strategy is not set.")
 	if not sort_strategy:
 		push_error("Zone: sort_strategy is not set.")
+	if not visibility_strategy:
+		push_error("Zone: visibility_strategy is not set.")
 
 	add_to_group(zone_group_name)
 
@@ -69,7 +71,7 @@ func _exit_tree() -> void:
 # 公共方法
 
 func can_accept(obj: Control) -> bool:
-	return true
+	return not is_at_max_capacity()
 
 
 func add_obj(obj: Control, index: int = -1, animate: bool = true) -> bool:
@@ -156,6 +158,9 @@ func swap_objs(obj_a: Control, obj_b: Control, animate: bool = true) -> bool:
 
 func move_obj_to_other(obj: Control, target_zone: Zone, animate: bool = true) -> bool:
 	if obj not in _objs:
+		return false
+
+	if not target_zone.can_accept(obj):
 		return false
 
 	var obj_global_pos = obj.get_global_position()

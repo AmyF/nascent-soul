@@ -1,0 +1,79 @@
+[gd_scene load_steps=5 format=3 uid="uid://bbqgkd3cemtx1"]
+
+[ext_resource type="Script" uid="uid://cweo3pwh0jhda" path="res://scenes/test_game.gd" id="1_1tawp"]
+[ext_resource type="PackedScene" uid="uid://pry17j6h20v8" path="res://scenes/game_deck.tscn" id="1_nl0sk"]
+[ext_resource type="PackedScene" uid="uid://buu7h44lryie1" path="res://scenes/game_hand.tscn" id="2_gb8nm"]
+[ext_resource type="PackedScene" uid="uid://d2h0htyohqmu2" path="res://scenes/game_card.tscn" id="2_nsx7x"]
+
+[node name="TestGame" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1tawp")
+card_packed_scene = ExtResource("2_nsx7x")
+
+[node name="GameDeck" parent="." instance=ExtResource("1_nl0sk")]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_right = 0.0
+grow_horizontal = 0
+
+[node name="GameDiscardPile" parent="." instance=ExtResource("1_nl0sk")]
+layout_mode = 0
+offset_top = -1.0
+offset_bottom = 149.0
+
+[node name="GameHand" parent="." instance=ExtResource("2_gb8nm")]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 0.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="DeckLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 1053.0
+offset_top = 156.0
+offset_right = 1154.0
+offset_bottom = 179.0
+text = "Deck"
+
+[node name="DiscardPileLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 157.0
+offset_right = 105.0
+offset_bottom = 180.0
+text = "Discard Pile"
+
+[node name="DrawCardButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 447.0
+offset_top = 416.0
+offset_right = 537.0
+offset_bottom = 447.0
+text = "Draw Card"
+
+[node name="DiscardCardButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 630.0
+offset_top = 416.0
+offset_right = 737.0
+offset_bottom = 447.0
+text = "Discard Card"
+
+[connection signal="pressed" from="DrawCardButton" to="." method="_on_draw_card_button_pressed"]
+[connection signal="pressed" from="DiscardCardButton" to="." method="_on_discard_card_button_pressed"]
