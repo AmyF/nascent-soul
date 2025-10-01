@@ -27,12 +27,12 @@ var _tweens_map: Dictionary = {}
 @export var target_container: Control
 
 @export_group("Display")
-@export var max_visible_objs: int = -1
 @export var max_objs: int = -1
 
 @export_group("Strategies")
 @export var layout_strategy: ZoneLayoutStrategy
 @export var sort_strategy: ZoneSortStrategy
+@export var visibility_strategy: ZoneVisibilityStrategy
 @export var auto_arrange: bool = true
 
 @export_group("Behavior")
@@ -229,6 +229,12 @@ func clear_selection(animate: bool = true) -> void:
 		update_layout(animate)
 
 
+func refresh_filter(animate: bool = true) -> void:
+	_update_visible_objs()
+	if auto_arrange:
+		update_layout(animate)
+
+
 func get_obj_at_position(position: Vector2) -> Control:
 	for obj in _visible_objs:
 		if obj.get_global_rect().has_point(position):
@@ -320,12 +326,13 @@ func update_layout(animate: bool = true) -> void:
 func _update_visible_objs() -> void:
 	_visible_objs.clear()
 
-	if max_visible_objs < 0:
-		_visible_objs = _objs.duplicate()
-	else:
-		for i in range(min(max_visible_objs, _objs.size())):
-			_visible_objs.append(_objs[i])
-	
+	var filtered_objs = _objs.duplicate()
+
+	if visibility_strategy:
+		filtered_objs = visibility_strategy.get_visible_objs(filtered_objs, self)
+
+	_visible_objs = filtered_objs
+
 	for obj in _objs:
 		obj.visible = obj in _visible_objs
 
@@ -356,17 +363,13 @@ func _show_reorder_preview(index: int, animate: bool) -> void:
 		preview_objs.erase(_dragging_obj)
 		preview_objs.insert(clamp(index, 0, preview_objs.size()), _dragging_obj)
 
-		var temp_visible_objs: Array[Control] = []
-		if max_visible_objs < 0:
-			temp_visible_objs = preview_objs.duplicate()
-		else:
-			for i in range(min(max_visible_objs, preview_objs.size())):
-				temp_visible_objs.append(preview_objs[i])
+		if visibility_strategy:
+			preview_objs = visibility_strategy.get_visible_objs(preview_objs, self)
 
-		if layout_strategy and not temp_visible_objs.is_empty():
-			var transforms = layout_strategy.calculate_transforms(temp_visible_objs, self)
-			for i in range(temp_visible_objs.size()):
-				var obj = temp_visible_objs[i]
+		if layout_strategy and not preview_objs.is_empty():
+			var transforms = layout_strategy.calculate_transforms(preview_objs, self)
+			for i in range(preview_objs.size()):
+				var obj = preview_objs[i]
 				if obj != _dragging_obj:
 					_apply_obj_transform(obj, transforms[i], animate)
 
