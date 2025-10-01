@@ -50,6 +50,7 @@ metadata/_custom_type_script = "uid://cdtv3217xwl73"
 
 [node name="ZoneSortStrategy" type="Node" parent="Zone"]
 script = ExtResource("3_a88jf")
+sort_mode = 1
 metadata/_custom_type_script = "uid://dt54nmcdljefy"
 
 [node name="ZoneLayoutStrategy" type="Node" parent="Zone"]

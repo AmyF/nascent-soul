@@ -15,6 +15,10 @@ run/main_scene="uid://bbqgkd3cemtx1"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="uid://b2a5egb26y47l"
 
+[display]
+
+window/stretch/mode="canvas_items"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/nascentsoul/plugin.cfg")
