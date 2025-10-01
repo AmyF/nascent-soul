@@ -3,7 +3,7 @@ class_name ZoneCompositeVisibilityStrategy
 
 enum LogicMode { AND, OR }
 
-@export var filters: Array[ZoneFilterStrategy] = []
+@export var filters: Array[ZoneVisibilityStrategy] = []
 @export var logic_mode: LogicMode = LogicMode.AND
 
 func filter(objs: Array[Control], zone: Zone) -> Array[Control]:
@@ -12,19 +12,20 @@ func filter(objs: Array[Control], zone: Zone) -> Array[Control]:
 
 	var result: Array[Control] = []
 	
-	for obj in objs:
+	for i in range(objs.size()):
+		var obj = objs[i]
 		var should_include = false
 
 		if logic_mode == LogicMode.AND:
 			should_include = true
 			for filter in filters:
-				if not filter.should_be_visible(obj, zone):
+				if not filter.should_be_visible(obj, i, zone):
 					should_include = false
 					break
 		elif logic_mode == LogicMode.OR:
 			should_include = false
 			for filter in filters:
-				if filter.should_be_visible(obj, zone):
+				if filter.should_be_visible(obj, i, zone):
 					should_include = true
 					break
 

@@ -1,5 +1,5 @@
 extends ZoneVisibilityStrategy
-class_name MaxVisibleZoneFilterStrategy
+class_name MaxVisibleZoneVisibilityStrategy
 
 @export var max_visible: int = 5
 
