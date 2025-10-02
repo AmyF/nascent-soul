@@ -27,15 +27,12 @@ const zone_group_name: String = "nascentsoul_zones"
 #==============================================================================
 
 @export var target_container: Control
-
-@export_group("Display")
 @export var max_objs: int = -1
 
 @export_group("Strategies")
 @export var layout_strategy: ZoneLayoutStrategy
 @export var sort_strategy: ZoneSortStrategy
 @export var visibility_strategy: ZoneVisibilityStrategy
-@export var auto_arrange: bool = true
 
 @export_group("Behavior")
 @export var click_enabled: bool = true
@@ -46,6 +43,7 @@ const zone_group_name: String = "nascentsoul_zones"
 @export var allow_reordering: bool = true
 
 @export_group("Animations")
+@export var auto_arrange: bool = true
 @export var layout_animation_time: float = 0.3
 @export var animation_speed: float = 1.0
 

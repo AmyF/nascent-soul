@@ -2,10 +2,9 @@ extends Zone
 class_name VisibilityControlledZone
 
 @export var default_face_up: bool = true
-@export var allow_manual_flip: bool = false
 @export var auto_set_visibility: bool = true
 
-func can_accept(obj: Control) -> bool:
+func can_accept_obj_from_other(obj: Control, source_zone: Zone) -> bool:
 	return obj is Card
 
 

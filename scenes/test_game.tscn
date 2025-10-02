@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://bbqgkd3cemtx1"]
+[gd_scene load_steps=6 format=3 uid="uid://bbqgkd3cemtx1"]
 
 [ext_resource type="Script" uid="uid://cweo3pwh0jhda" path="res://scenes/test_game.gd" id="1_1tawp"]
 [ext_resource type="PackedScene" uid="uid://pry17j6h20v8" path="res://scenes/game_deck.tscn" id="1_nl0sk"]
 [ext_resource type="PackedScene" uid="uid://buu7h44lryie1" path="res://scenes/game_hand.tscn" id="2_gb8nm"]
 [ext_resource type="PackedScene" uid="uid://d2h0htyohqmu2" path="res://scenes/game_card.tscn" id="2_nsx7x"]
+[ext_resource type="PackedScene" uid="uid://davyscrqnnchs" path="res://scenes/game_discard_pile.tscn" id="5_ydt7i"]
 
 [node name="TestGame" type="Control"]
 layout_mode = 3
@@ -24,10 +25,8 @@ offset_left = -100.0
 offset_right = 0.0
 grow_horizontal = 0
 
-[node name="GameDiscardPile" parent="." instance=ExtResource("1_nl0sk")]
+[node name="GameDiscardPile" parent="." instance=ExtResource("5_ydt7i")]
 layout_mode = 0
-offset_top = -1.0
-offset_bottom = 149.0
 
 [node name="GameHand" parent="." instance=ExtResource("2_gb8nm")]
 layout_mode = 1

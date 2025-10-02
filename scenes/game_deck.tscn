@@ -34,7 +34,6 @@ grow_vertical = 2
 script = ExtResource("2_a88jf")
 default_face_up = false
 target_container = NodePath("../Container")
-max_objs = 10
 layout_strategy = NodePath("ZoneLayoutStrategy")
 sort_strategy = NodePath("ZoneSortStrategy")
 visibility_strategy = NodePath("MaxVisibleZoneVisibilityStrategy")

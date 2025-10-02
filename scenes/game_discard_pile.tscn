@@ -32,7 +32,6 @@ grow_vertical = 2
 
 [node name="Zone" type="Node" parent="." node_paths=PackedStringArray("target_container", "layout_strategy", "sort_strategy", "visibility_strategy")]
 script = ExtResource("2_qtbk0")
-default_face_up = false
 target_container = NodePath("../Container")
 layout_strategy = NodePath("ZoneLayoutStrategy")
 sort_strategy = NodePath("ZoneSortStrategy")
