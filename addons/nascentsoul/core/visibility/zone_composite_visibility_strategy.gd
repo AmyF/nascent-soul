@@ -6,7 +6,7 @@ enum LogicMode { AND, OR }
 @export var filters: Array[ZoneVisibilityStrategy] = []
 @export var logic_mode: LogicMode = LogicMode.AND
 
-func filter(objs: Array[Control], zone: Zone) -> Array[Control]:
+func get_visible_objs(objs: Array[Control], zone: Zone) -> Array[Control]:
 	if filters.is_empty():
 		return objs
 
