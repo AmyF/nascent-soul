@@ -36,7 +36,8 @@ var _tweens_map: Dictionary = {}
 @export var auto_arrange: bool = true
 
 @export_group("Behavior")
-@export var interaction_enabled: bool = true
+@export var click_enabled: bool = true
+@export var double_click_enabled: bool = true
 @export var multi_select_enabled: bool = false
 @export var hover_enabled: bool = true
 @export var drag_enabled: bool = true
@@ -194,7 +195,7 @@ func sort_objs(animate: bool = true) -> void:
 
 
 func select_obj(obj: Control, add_to_selection: bool = false, animate: bool = true) -> void:
-	if obj not in _objs or not interaction_enabled:
+	if obj not in _objs:
 		return
 
 	if not multi_select_enabled or not add_to_selection:
@@ -380,9 +381,6 @@ func _show_reorder_preview(index: int, animate: bool) -> void:
 
 
 func _setup_obj_interaction(obj: Control) -> void:
-	if not interaction_enabled:
-		return
-	
 	if not obj.has_node("InteractionComponent"):
 		return
 
@@ -391,7 +389,8 @@ func _setup_obj_interaction(obj: Control) -> void:
 		return
 
 	interaction_component.enable_drag = drag_enabled
-	interaction_component.enable_click = true
+	interaction_component.enable_click = click_enabled
+	interaction_component.enable_double_click = double_click_enabled
 
 	interaction_component.target_control.mouse_entered.connect(_on_obj_mouse_entered.bind(obj))
 	interaction_component.target_control.mouse_exited.connect(_on_obj_mouse_exited.bind(obj))
@@ -515,6 +514,8 @@ func _clear_obj_tween(obj: Control) -> void:
 # 信号处理
 
 func _on_child_entered_tree(child: Node) -> void:
+	if not target_container.is_node_ready():
+		return
 	if child is Control and child not in _objs:
 		add_obj(child as Control)
 

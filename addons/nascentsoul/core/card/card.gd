@@ -8,16 +8,13 @@ signal flipped(is_face_up: bool)
 
 @onready var card_front: Control = $CardFront
 @onready var card_back: Control = $CardBack
-
-@export var interaction_component: InteractionComponent
+@onready var interaction_component: InteractionComponent = $InteractionComponent
 
 func _ready() -> void:
-	if not interaction_component:
-		_create_default_interaction()
-
 	card_front.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card_back.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
+
+	_setup_default_interaction()
 	_update_card_display()
 
 
@@ -65,17 +62,12 @@ func _animate_flip() -> void:
 	tween.tween_property(self, "scale:x", 1.0, flip_duration / 2)
 
 
-func _create_default_interaction() -> void:
-	var component = InteractionComponent.new()
-	component.target_control = self
-	add_child(component)
-	
-	component.clicked.connect(_on_card_clicked)
-	component.double_clicked.connect(_on_card_double_clicked)
-	component.drag_started.connect(_on_card_drag_started)
-	component.drag_ended.connect(_on_card_drag_ended)
-	component.dragging.connect(_on_card_dragging)
-	interaction_component = component
+func _setup_default_interaction() -> void:
+	interaction_component.clicked.connect(_on_card_clicked)
+	interaction_component.double_clicked.connect(_on_card_double_clicked)
+	interaction_component.drag_started.connect(_on_card_drag_started)
+	interaction_component.drag_ended.connect(_on_card_drag_ended)
+	interaction_component.dragging.connect(_on_card_dragging)
 
 
 # 信号回调
