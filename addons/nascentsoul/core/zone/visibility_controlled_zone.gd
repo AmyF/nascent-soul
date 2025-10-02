@@ -5,6 +5,10 @@ class_name VisibilityControlledZone
 @export var allow_manual_flip: bool = false
 @export var auto_set_visibility: bool = true
 
+func can_accept(obj: Control) -> bool:
+	return obj is Card
+
+
 func add_obj(obj: Control, index: int = -1, animate: bool = true) -> bool:
 	var result = super.add_obj(obj, index, animate)
 

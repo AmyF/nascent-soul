@@ -1,17 +1,17 @@
-[gd_scene load_steps=6 format=3 uid="uid://pry17j6h20v8"]
+[gd_scene load_steps=6 format=3 uid="uid://davyscrqnnchs"]
 
-[ext_resource type="Script" uid="uid://ca580xk74lmbx" path="res://scenes/game_deck.gd" id="1_a88jf"]
-[ext_resource type="Script" uid="uid://sbnrebnebtf5" path="res://scenes/game_deck_zone.gd" id="2_a88jf"]
-[ext_resource type="Script" uid="uid://cdtv3217xwl73" path="res://addons/nascentsoul/core/visibility/max_visible_zone_visibility_strategy.gd" id="2_hcgpx"]
-[ext_resource type="Script" uid="uid://dt54nmcdljefy" path="res://addons/nascentsoul/core/sort/zone_sort_strategy.gd" id="3_a88jf"]
-[ext_resource type="Script" uid="uid://bogktcosaudke" path="res://addons/nascentsoul/core/layout/deck_zone_layout_strategy.gd" id="4_hcgpx"]
+[ext_resource type="Script" uid="uid://cu36c0w13e4pu" path="res://scenes/game_discard_pile.gd" id="1_qtbk0"]
+[ext_resource type="Script" uid="uid://deb18eq3pyddn" path="res://scenes/game_discard_pile_zone.gd" id="2_qtbk0"]
+[ext_resource type="Script" uid="uid://cdtv3217xwl73" path="res://addons/nascentsoul/core/visibility/max_visible_zone_visibility_strategy.gd" id="3_vedoo"]
+[ext_resource type="Script" uid="uid://dt54nmcdljefy" path="res://addons/nascentsoul/core/sort/zone_sort_strategy.gd" id="4_tf2nh"]
+[ext_resource type="Script" uid="uid://bogktcosaudke" path="res://addons/nascentsoul/core/layout/deck_zone_layout_strategy.gd" id="5_w80hj"]
 
-[node name="GameDeck" type="Control"]
+[node name="GameDiscardPile" type="Control"]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 100.0
 offset_bottom = 150.0
-script = ExtResource("1_a88jf")
+script = ExtResource("1_qtbk0")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 layout_mode = 1
@@ -31,10 +31,9 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Zone" type="Node" parent="." node_paths=PackedStringArray("target_container", "layout_strategy", "sort_strategy", "visibility_strategy")]
-script = ExtResource("2_a88jf")
+script = ExtResource("2_qtbk0")
 default_face_up = false
 target_container = NodePath("../Container")
-max_objs = 10
 layout_strategy = NodePath("ZoneLayoutStrategy")
 sort_strategy = NodePath("ZoneSortStrategy")
 visibility_strategy = NodePath("MaxVisibleZoneVisibilityStrategy")
@@ -43,17 +42,17 @@ double_click_enabled = false
 hover_enabled = false
 drag_enabled = false
 allow_reordering = false
-metadata/_custom_type_script = "uid://sbnrebnebtf5"
+metadata/_custom_type_script = "uid://deb18eq3pyddn"
 
 [node name="MaxVisibleZoneVisibilityStrategy" type="Node" parent="Zone"]
-script = ExtResource("2_hcgpx")
+script = ExtResource("3_vedoo")
 max_visible = 3
 metadata/_custom_type_script = "uid://cdtv3217xwl73"
 
 [node name="ZoneSortStrategy" type="Node" parent="Zone"]
-script = ExtResource("3_a88jf")
+script = ExtResource("4_tf2nh")
 sort_mode = 1
 metadata/_custom_type_script = "uid://dt54nmcdljefy"
 
 [node name="ZoneLayoutStrategy" type="Node" parent="Zone"]
-script = ExtResource("4_hcgpx")
+script = ExtResource("5_w80hj")
