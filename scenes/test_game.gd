@@ -10,7 +10,7 @@ extends Control
 func _ready() -> void:
 	for i in range(init_card_number):
 		var card_instance = card_packed_scene.instantiate() as GameCard
-		deck.zone.target_container.add_child(card_instance)
+		deck.zone.add_obj(card_instance, -1, false)
 
 	if discard_pile.zone is VisibilityControlledZone:
 		var discard_zone = discard_pile.zone as VisibilityControlledZone
