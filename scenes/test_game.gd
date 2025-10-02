@@ -22,13 +22,11 @@ func _ready() -> void:
 func _on_draw_card_button_pressed() -> void:
 	if deck.zone.get_objs().is_empty():
 		return
-	var card = deck.zone.get_objs().pop_back()
-	deck.zone.move_obj_to_other(card, hand.zone)
+	deck.zone.move_top_objs_to_other(1, hand.zone)
 
 
 func _on_discard_card_button_pressed() -> void:
 	if hand.zone.get_objs().is_empty():
 		return
 	
-	var card = hand.zone.get_objs().pop_back()
-	hand.zone.move_obj_to_other(card, discard_pile.zone)
+	hand.zone.move_top_objs_to_other(1, discard_pile.zone)
