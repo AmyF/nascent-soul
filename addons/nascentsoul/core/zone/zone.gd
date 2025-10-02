@@ -262,15 +262,13 @@ func remove_obj(index: int, animate: bool = true) -> bool:
 func move_obj(old_index: int, new_index: int, animate: bool = true) -> bool:
 	if old_index < 0 or old_index >= _objs.size():
 		return false
-	if new_index < 0 or new_index >= _objs.size():
-		return false
 
 	if old_index == new_index:
 		return true
 
 	var obj = _objs[old_index]
 	_objs.erase(obj)
-	_objs.insert(new_index, obj)
+	_objs.insert(clamp(new_index, 0, _objs.size()), obj)
 
 	_update_visible_objs()
 	if auto_arrange:
@@ -593,17 +591,16 @@ func _show_reorder_preview(index: int, animate: bool) -> void:
 	if not _dragging_obj or not allow_reordering:
 		return
 
-	var preview_objs = _objs.duplicate()
+	var preview_objs = _visible_objs.duplicate()
+	if visibility_strategy:
+		preview_objs = visibility_strategy.get_visible_objs(preview_objs, self)
 	var current_index = preview_objs.find(_dragging_obj)
 
 	if current_index != -1 and index != current_index:
 		preview_objs.erase(_dragging_obj)
 		preview_objs.insert(clamp(index, 0, preview_objs.size()), _dragging_obj)
 
-		if visibility_strategy:
-			preview_objs = visibility_strategy.get_visible_objs(preview_objs, self)
-
-		if layout_strategy and not preview_objs.is_empty():
+		if not preview_objs.is_empty():
 			var transforms = layout_strategy.calculate_transforms(preview_objs, self)
 			for i in range(preview_objs.size()):
 				var obj = preview_objs[i]

@@ -35,6 +35,5 @@ func calculate_transforms(cards: Array[Control], zone: Zone) -> Array[Dictionary
 			"scale": scale,
 			"z_index": i,
 		})
-
 	
 	return transforms
