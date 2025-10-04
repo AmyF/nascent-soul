@@ -45,9 +45,6 @@ graph TD
 ```mermaid
 classDiagram
     %% --- Notes explaining the diagram conventions ---
-    note "蓝色代表场景树中的节点 (Nodes in Scene Tree)"
-    note "绿色代表逻辑模块 (Logic Resources)"
-    note "黄色代表用户自定义的继承实现 (User's custom implementation)"
 
     %% --- Classes in the Scene Tree ---
     class ParentControl {
@@ -137,7 +134,7 @@ classDiagram
     }
 
     %% --- Relationships ---
-    note for ParentControl "场景树中, ParentControl\n同时包含 Zone 和 ManagedObject"
+    note for ParentControl "场景树中, ParentControl<br/>同时包含 Zone 和 ManagedObject"
 
     Zone o-- "1" ParentControl : Operates Within
     Zone o-- "1" ZonePermission
