@@ -96,8 +96,6 @@ classDiagram
     class ZoneLayout {
         <<Resource>>
         <<Properties>>
-        +Vector2 padding
-        +float item_rotation_degrees
         <<Methods>>
         +calculate_transforms(items, rect) Dictionary
         +get_drop_index_at_position(pos, items, rect) int
