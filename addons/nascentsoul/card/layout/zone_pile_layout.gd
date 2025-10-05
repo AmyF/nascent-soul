@@ -78,10 +78,14 @@ func calculate_transforms(items: Array[Control], zone_rect: Rect2, ghost_index: 
 			
 		var item_pos = base_pos + offset_per_item * offset_index
 		
+		var item_scale = Vector2.ONE
+		if item.size.x > 0 and item.size.y > 0:
+			item_scale = item_size / item.size
+
 		transforms[item] = {
 			"position": item_pos,
 			"rotation_degrees": 0.0,
-			"scale": Vector2.ONE,
+			"scale": item_scale,
 			"z_index": i # 确保后来的牌在上面
 		}
 		

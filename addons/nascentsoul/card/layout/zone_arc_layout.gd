@@ -113,15 +113,19 @@ func calculate_transforms(items: Array[Control], zone_rect: Rect2, ghost_index: 
 		else: # 直线布局
 			item_pivot_pos = Vector2(chord_center_pos.x + x_from_center, chord_center_pos.y)
 			current_angle_rad = 0.0
-		
+
 		var item_rotation = rad_to_deg(current_angle_rad) if item_rotate else 0.0
 		var distance_from_center = abs(i - center_index)
 		var z_index = i
 
+		var item_scale = Vector2.ONE
+		if p_item.size.x > 0 and p_item.size.y > 0:
+			item_scale = item_size / p_item.size
+
 		transforms[p_item] = {
 			"position": item_pivot_pos,
 			"rotation_degrees": item_rotation,
-			"scale": Vector2.ONE,
+			"scale": item_scale,
 			"z_index": z_index,
 			"pivot_offset": pivot_offset
 		}

@@ -49,7 +49,7 @@ func calculate_transforms(items: Array[Control], zone_rect: Rect2, ghost_index: 
 		phantom_list = items.duplicate()
 		if dragged_item in phantom_list: phantom_list.erase(dragged_item)
 		ghost_placeholder = Control.new(); ghost_placeholder.size = item_size
-		
+
 		var safe_ghost_index = clamp(ghost_index, 0, phantom_list.size())
 		phantom_list.insert(safe_ghost_index, ghost_placeholder)
 	else:
@@ -95,10 +95,14 @@ func calculate_transforms(items: Array[Control], zone_rect: Rect2, ghost_index: 
 			VAlignment.BOTTOM:
 				item_y = zone_rect.size.y - item_size.y
 		
+		var item_scale = Vector2.ONE
+		if p_item.size.x > 0 and p_item.size.y > 0:
+			item_scale = item_size / p_item.size
+
 		transforms[p_item] = {
 			"position": Vector2(current_x, item_y),
 			"rotation_degrees": 0.0,
-			"scale": Vector2.ONE,
+			"scale": item_scale,
 			"z_index": i
 		}
 		
