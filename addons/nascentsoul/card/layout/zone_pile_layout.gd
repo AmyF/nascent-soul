@@ -40,7 +40,7 @@ enum PileAlignment {
 #=============================================================================
 
 ## 计算所有对象的目标变换。
-func calculate_transforms(items: Array[Control], zone_rect: Rect2) -> Dictionary:
+func calculate_transforms(items: Array[Control], zone_rect: Rect2, ghost_index: int = -1, dragged_item: Control = null) -> Dictionary:
 	var transforms := {}
 	if items.is_empty():
 		return transforms

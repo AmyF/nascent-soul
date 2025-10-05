@@ -7,7 +7,7 @@
 [ext_resource type="Resource" uid="uid://csjopkwtt1nnm" path="res://resources/Deck_PileLayout.tres" id="4_blhf0"]
 [ext_resource type="Resource" uid="uid://d0pvu7i0e28nk" path="res://resources/Permission_AllowAny.tres" id="6_64dih"]
 [ext_resource type="Resource" uid="uid://bxt2yet6087br" path="res://resources/Display_CardsFaceUp.tres" id="7_oflti"]
-[ext_resource type="Resource" uid="uid://xsxggs487qfr" path="res://resources/Hand_ArcLayout.tres" id="8_6054u"]
+[ext_resource type="Resource" uid="uid://xsxggs487qfr" path="res://resources/Hand_ArcLayout.tres" id="9_6054u"]
 [ext_resource type="Script" uid="uid://blmirpr7b2dtc" path="res://addons/nascentsoul/core/interaction/zone_interaction.gd" id="10_5q064"]
 
 [sub_resource type="Resource" id="Resource_6054u"]
@@ -83,7 +83,7 @@ script = ExtResource("1_03k34")
 container = NodePath("..")
 permission_logic = ExtResource("6_64dih")
 display_logic = ExtResource("7_oflti")
-layout_logic = ExtResource("8_6054u")
+layout_logic = ExtResource("9_6054u")
 interaction_logic = SubResource("Resource_5q064")
 metadata/_custom_type_script = "uid://cgse05rxq3mu3"
 

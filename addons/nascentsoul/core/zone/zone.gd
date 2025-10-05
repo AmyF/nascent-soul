@@ -16,6 +16,7 @@ signal item_mouse_entered(item: Control, zone: Zone)
 signal item_mouse_exited(item: Control, zone: Zone)
 signal item_drag_started(item: Control, zone: Zone)
 signal item_dropped(item: Control, zone: Zone)
+signal item_dragging(item: Control, global_pos: Vector2, zone: Zone)
 signal selection_changed(new_selection: Array[Control], zone: Zone)
 
 
@@ -51,6 +52,7 @@ var selected_items: Array[Control] = []
 var _is_dirty: bool = true # “脏标记”，用于性能优化
 var _item_being_dragged: Control = null
 var _hovered_item: Control = null
+var _ghost_index: int = -1
 var _tween: Tween
 
 
@@ -82,6 +84,7 @@ func _ready():
 	item_mouse_exited.connect(_on_item_mouse_exited)
 	item_drag_started.connect(_on_item_drag_started)
 	item_dropped.connect(_on_item_dropped)
+	item_dragging.connect(_on_item_dragging)
 	
 	_request_update()
 
@@ -217,11 +220,37 @@ func _on_item_drag_started(item: Control, zone: Zone):
 func _on_item_dropped(item: Control, zone: Zone):
 	if _item_being_dragged == item:
 		_item_being_dragged = null
+	
+	_ghost_index = -1
+	
 	_request_update()
+
+
+func _on_item_dragging(item: Control, global_pos: Vector2, zone: Zone):
+	if layout_logic and not layout_logic.enable_ghost_slot_feedback:
+		return
+
+	if container.get_global_rect().has_point(global_pos):
+		_update_ghost_slot(global_pos)
+	else:
+		_clear_ghost_slot()
 
 #=============================================================================
 # 8. 私有核心逻辑 (Private Core Logic)
 #=============================================================================
+func _update_ghost_slot(global_pos: Vector2):
+	var new_ghost_index = get_drop_index_at_global_pos(global_pos)
+	if new_ghost_index != _ghost_index:
+		_ghost_index = new_ghost_index
+		_request_update()
+
+
+func _clear_ghost_slot():
+	if _ghost_index != -1:
+		_ghost_index = -1
+		_request_update()
+
+
 func _request_update():
 	_is_dirty = true
 
@@ -243,7 +272,12 @@ func _update_layout_and_display():
 	# --- 步骤 3: 布局计算 (Layout) ---
 	var transforms: Dictionary = {}
 	if layout_logic:
-		transforms = layout_logic.calculate_transforms(visible_items, Rect2(Vector2.ZERO, container.size))
+		transforms = layout_logic.calculate_transforms(
+			visible_items, 
+			Rect2(Vector2.ZERO, container.size), 
+			_ghost_index,
+			_item_being_dragged
+		)
 
 	# --- 步骤 4: 应用变换和显示状态 ---
 	for item in managed_items:

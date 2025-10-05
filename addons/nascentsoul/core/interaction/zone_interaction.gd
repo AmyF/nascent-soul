@@ -150,6 +150,8 @@ func _on_gui_input(event: InputEvent, item: Control):
 		if is_instance_valid(_dragged_item):
 			_dragged_item.global_position = event.global_position + _drag_offset
 
+		_zone_reference.item_dragging.emit(_dragged_item, event.global_position, _zone_reference)
+
 
 ## 当单击计时器超时，意味着没有发生双击，这是一个单击
 func _on_click_timer_timeout():

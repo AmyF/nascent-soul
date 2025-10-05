@@ -1,9 +1,12 @@
-# HorizontalLayout.gd
+# ZoneHorizontalLayout.gd
 class_name ZoneHorizontalLayout
 extends ZoneLayout
 
-## HorizontalLayout 是一个具体的布局实现。
-## 它将一组对象在一个水平线上进行排列，并提供了丰富的对齐和分布选项。
+## HorizontalLayout (弹性版): 一个响应式的、支持动态压缩的横向布局模块。
+##
+## 核心行为：
+## 1. 当内容较少时，以固定间距展开，并根据分布模式对齐。
+## 2. 当内容总宽度试图超过容器宽度时，自动减小间距以将所有内容约束在容器内。
 
 
 #=============================================================================
@@ -13,101 +16,133 @@ extends ZoneLayout
 ## 垂直方向上的对齐方式
 enum VAlignment { TOP, CENTER, BOTTOM }
 ## 水平方向上的分布方式
-enum Distribution { PACK_START, PACK_CENTER, PACK_END, JUSTIFY }
+enum Distribution { PACK_START, PACK_CENTER, PACK_END }
 
 
 #=============================================================================
 # 2. 导出属性 (Inspector配置)
 #=============================================================================
 
+@export_group("Layout")
 ## 对象之间的间距（像素）。
 @export var spacing: float = 10.0
 ## 垂直方向上的对齐方式。
 @export var vertical_alignment: VAlignment = VAlignment.CENTER
 ## 水平方向上的分布方式。
 @export var distribution: Distribution = Distribution.PACK_CENTER
-## 牌的标准大小（用于计算对齐）。实际对象可以有不同大小。
-@export var item_size: Vector2 = Vector2(100, 150)
+
+@export_group("Item Sizing")
+## 用于布局计算的统一对象尺寸。此布局将忽略对象自身的size。
+@export var item_size: Vector2 = Vector2(120, 180)
 
 #=============================================================================
 # 3. 核心方法 (重写基类方法)
 #=============================================================================
 
 ## 计算所有对象的目标变换。
-func calculate_transforms(items: Array[Control], zone_rect: Rect2) -> Dictionary:
+func calculate_transforms(items: Array[Control], zone_rect: Rect2, ghost_index: int = -1, dragged_item: Control = null) -> Dictionary:
 	var transforms := {}
-	if items.is_empty():
+	var phantom_list: Array = []
+	var ghost_placeholder: Control = null
+
+	if enable_ghost_slot_feedback and ghost_index > -1:
+		phantom_list = items.duplicate()
+		if dragged_item in phantom_list: phantom_list.erase(dragged_item)
+		ghost_placeholder = Control.new(); ghost_placeholder.size = item_size
+		
+		var safe_ghost_index = clamp(ghost_index, 0, phantom_list.size())
+		phantom_list.insert(safe_ghost_index, ghost_placeholder)
+	else:
+		phantom_list = items
+
+	if phantom_list.is_empty():
 		return transforms
 
-	# --- 步骤 1: 计算总宽度和有效间距 ---
-	var total_items_width: float = items.size() * item_size.x
+	var item_count = phantom_list.size()
+	var container_width = zone_rect.size.x
+	
+	var natural_width = item_size.x * item_count + spacing * (item_count - 1)
+	var effective_width = min(natural_width, container_width)
+	
+	var effective_spacing: float
+	if natural_width > container_width and item_count > 1:
+		effective_spacing = (container_width - (item_size.x * item_count)) / (item_count - 1)
+	else:
+		effective_spacing = spacing
 
-	var total_width: float = total_items_width + spacing * (items.size() - 1)
-	var current_spacing: float = spacing
-
-	# --- 步骤 2: 根据分布方式，计算起始X坐标和实际间距 ---
 	var current_x: float
 	match distribution:
 		Distribution.PACK_START:
-			current_x = zone_rect.position.x
+			current_x = 0
 		Distribution.PACK_CENTER:
-			current_x = zone_rect.position.x + (zone_rect.size.x - total_width) / 2.0
+			current_x = (container_width - effective_width) / 2.0
 		Distribution.PACK_END:
-			current_x = zone_rect.position.x + zone_rect.size.x - total_width
-		Distribution.JUSTIFY:
-			current_x = zone_rect.position.x
-			if items.size() > 1:
-				current_spacing = (zone_rect.size.x - total_items_width) / (items.size() - 1)
-			else: # 如果只有一个对象，Justify表现为居中
-				current_x = zone_rect.position.x + (zone_rect.size.x - total_items_width) / 2.0
+			current_x = container_width - effective_width
 
-	# --- 步骤 3: 遍历并计算每个对象的最终变换 ---
-	for i in range(items.size()):
-		var item = items[i]
-		var item_scaled_size = item.size * item.scale
+	for i in range(item_count):
+		var p_item = phantom_list[i]
+		
+		if p_item == ghost_placeholder:
+			current_x += item_size.x + effective_spacing
+			continue
 
 		var item_y: float
 		match vertical_alignment:
 			VAlignment.TOP:
-				item_y = zone_rect.position.y
+				item_y = 0
 			VAlignment.CENTER:
-				item_y = zone_rect.position.y + (zone_rect.size.y - item_scaled_size.y) / 2.0
+				item_y = (zone_rect.size.y - item_size.y) / 2.0
 			VAlignment.BOTTOM:
-				item_y = zone_rect.position.y + zone_rect.size.y - item_scaled_size.y
+				item_y = zone_rect.size.y - item_size.y
 		
-		transforms[item] = {
+		transforms[p_item] = {
 			"position": Vector2(current_x, item_y),
 			"rotation_degrees": 0.0,
-			"scale": Vector2.ONE, # 可以之后扩展为统一缩放
+			"scale": Vector2.ONE,
 			"z_index": i
 		}
 		
-		# 更新下一个对象的起始x坐标
-		current_x += item_scaled_size.x + current_spacing
+		current_x += item_size.x + effective_spacing
+		
+	if is_instance_valid(ghost_placeholder):
+		ghost_placeholder.queue_free()
 		
 	return transforms
 
 
-## 根据给定的全局坐标，计算出一个最合适插入新对象的索引位置。
 func get_drop_index_at_position(position: Vector2, items: Array[Control], zone_rect: Rect2) -> int:
 	if items.is_empty():
 		return 0
 
-	# 调用 calculate_transforms 来获取所有对象在理想布局下的位置
-	var transforms = calculate_transforms(items, zone_rect)
+	var item_count = items.size()
+	var container_width = zone_rect.size.x
+	
+	var natural_width = item_size.x * item_count + spacing * (item_count - 1)
+	var effective_width = min(natural_width, container_width)
 
-	# 遍历所有对象，找到第一个中心点在鼠标右侧的对象
-	for i in range(items.size()):
-		var item = items[i]
-		var item_transform = transforms[item]
-		var item_pos = item_transform["position"]
-		var item_scaled_size = item.size * item_transform["scale"]
-		
-		# 计算对象在布局中的中心X坐标
-		var item_center_x = item_pos.x + item_scaled_size.x / 2.0
-		
-		if position.x < item_center_x:
-			return i
+	var effective_spacing: float
+	if natural_width > container_width and item_count > 1:
+		effective_spacing = (container_width - (item_size.x * item_count)) / (item_count - 1)
+	else:
+		effective_spacing = spacing
 
-	# 如果鼠标位置在所有对象的右侧，则返回最后一个索引
-	return items.size()
+	var start_x: float
+	match distribution:
+		Distribution.PACK_START: start_x = 0
+		Distribution.PACK_CENTER: start_x = (container_width - effective_width) / 2.0
+		Distribution.PACK_END: start_x = container_width - effective_width
+
+	var slot_width = item_size.x + effective_spacing
+	var local_mouse_x = position.x
+
+	if local_mouse_x < start_x + slot_width / 2.0:
+		return 0
+	
+	# FIX: 使用 effective_width 替换不存在的 total_width，并简化逻辑
+	if local_mouse_x > start_x + effective_width - slot_width / 2.0:
+		return item_count
+	
+	var relative_x = local_mouse_x - start_x
+	var index = int(relative_x / slot_width + 0.5)
+	
+	return clamp(index, 0, item_count)
