@@ -1,5 +1,27 @@
 
-# 施工中/Under Active Development
+# 介绍
+
+NascentSoul提供了一个模块化的框架，可以快速构建卡牌游戏中的常见功能，如牌库、手牌、弃牌堆等区域管理。
+
+> 作者正在使用该库构建自己的卡牌游戏，会持续更新此库。欢迎提需求相关Issue。
+
+这个插件的核心是 `Zone` 系统，它是一个区域管理器，通过组合不同的逻辑模块来实现各种游戏机制：
+
+- **权限控制** (`ZonePermission`)：控制哪些对象可以进入特定区域
+- **布局管理** (`ZoneLayout`)：处理对象在区域内的排列方式，包括弧形布局、堆叠布局、水平布局等
+- **显示逻辑** (`ZoneDisplay`)：管理对象的视觉状态，如悬停效果、选中状态等
+- **交互处理** (`ZoneInteraction`)：处理点击、拖拽、多选等用户交互
+- **排序逻辑** (`ZoneSort`)：定义区域内对象的排序规则
+
+插件还提供了一个基础的卡牌实现 (`ZoneCard`)，支持翻面动画和高亮效果。
+
+## 示例
+
+项目提供了基本的Demo，包含：
+
+- 牌库（Deck）：使用堆叠布局，禁止拖入
+- 手牌（Hand）：使用弧形布局，支持拖拽排序
+- 弃牌堆（Discard）：使用堆叠布局，接受拖入的牌
 
 ## 结构
 
@@ -54,6 +76,7 @@ classDiagram
         <<Node>>
         <<Properties>>
         +Control container
+        +Array[Control] managed_items
         +Array[Control] selected_items
         +ZonePermission permission_logic
         +ZoneSort sort_logic
@@ -69,9 +92,14 @@ classDiagram
         +deselect_item(item)
         +clear_selection()
         <<Signals>>
-        +item_clicked(item)
-        +item_drag_started(item)
-        +selection_changed(new_selection)
+        +item_clicked(item, zone)
+        +item_double_clicked(item, zone)
+        +item_mouse_entered(item, zone)
+        +item_mouse_exited(item, zone)
+        +item_drag_started(item, zone)
+        +item_dropped(item, zone)
+        +item_dragging(item, global_pos, zone)
+        +selection_changed(new_selection, zone)
     }
     class ManagedObject {
         <<Control>>
@@ -84,6 +112,7 @@ classDiagram
         <<Properties>>
         +int max_items
         +Array[StringName] allowed_groups
+        +Array[StringName] denied_groups
         <<Methods>>
         +can_add(item, zone) bool
         +can_transfer_in(item, from, to) bool
@@ -96,8 +125,9 @@ classDiagram
     class ZoneLayout {
         <<Resource>>
         <<Properties>>
+        +bool enable_ghost_slot_feedback
         <<Methods>>
-        +calculate_transforms(items, rect) Dictionary
+        +calculate_transforms(items, rect, ghost_index, dragged_item) Dictionary
         +get_drop_index_at_position(pos, items, rect) int
     }
     class ZoneDisplay {
@@ -106,6 +136,8 @@ classDiagram
         +int max_visible_items
         +bool enable_enlarge_on_hover
         +Vector2 hover_scale_multiplier
+        +Vector2 hover_offset
+        +int hover_z_index_increment
         <<Methods>>
         +filter_visible_items(items) Array
         +apply_display_state(item, state)
@@ -114,7 +146,9 @@ classDiagram
         <<Resource>>
         <<Properties>>
         +bool enable_click
+        +bool enable_double_click
         +bool enable_drag
+        +bool enable_hover_events
         +bool enable_multi_select
         +Key multi_select_modifier
         <<Methods>>
@@ -127,8 +161,27 @@ classDiagram
         <<Resource>>
         <<Properties>>
         +bool show_as_backside
+        +bool highlight_on_hover
+        +bool highlight_on_select
+        +bool face_up_on_hover
         <<Methods>>
         +apply_display_state(item, state)
+    }
+    class ZoneCard {
+        <<Control>>
+        + '内置卡牌基类'
+        <<Properties>>
+        +NodePath front_node_path
+        +NodePath back_node_path
+        +NodePath highlight_node_path
+        +bool starts_face_up
+        +FlipAnimation flip_animation_type
+        +float flip_duration
+        <<Methods>>
+        +is_face_up()
+        +set_highlight(is_highlighted)
+        +set_face_up(is_up, animate)
+
     }
 
     %% --- Relationships ---
@@ -145,5 +198,11 @@ classDiagram
 
     ZoneInteraction ..> ManagedObject : Interacts With
 
+    ZoneCardDisplay ..> ZoneCard : Control
+
     ZoneDisplay <|-- ZoneCardDisplay
 ```
+
+## 项目状态
+
+⚠️ 此项目仍在早期开发阶段，API 可能会有变化。
