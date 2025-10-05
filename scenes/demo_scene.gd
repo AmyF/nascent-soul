@@ -38,7 +38,7 @@ func _on_discard_button_pressed() -> void:
 		print("没有选中的手牌！")
 		return
 	
-	for card_to_discard in hand_zone.selected_items:
+	for card_to_discard in hand_zone.selected_items.duplicate():
 		hand_zone.transfer_item_to(card_to_discard, discard_zone)
 
 
