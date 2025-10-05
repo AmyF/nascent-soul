@@ -20,6 +20,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 color = Color(0.1638613, 0.16386127, 0.16386127, 1)
 
 [node name="Front" type="ColorRect" parent="."]
@@ -29,7 +30,25 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 color = Color(0.46618056, 0.46618092, 0.46618068, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="Front"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Background" type="ColorRect" parent="Front/MarginContainer"]
+layout_mode = 2
+mouse_filter = 1
+color = Color(0.5782339, 0.2751064, 0.04634711, 1)
 
 [node name="Highlight" type="ColorRect" parent="."]
 layout_mode = 1
@@ -38,4 +57,5 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 color = Color(0.98937523, 0.8389701, 0.8334029, 0.32500002)

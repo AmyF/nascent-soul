@@ -138,13 +138,14 @@ func transfer_item_to(item: Control, target_zone: Zone, index: int = -1) -> bool
 
 func reorder_item(item: Control, new_index: int) -> bool:
 	var old_index = managed_items.find(item)
+	if old_index == new_index:
+		return true # 没有变化
 	if old_index == -1 or new_index < 0 or new_index > managed_items.size():
 		return false
 	
 	managed_items.remove_at(old_index)
 
-	if old_index < new_index:
-		new_index -= 1 # 因为移除后，索引会向前移动
+	new_index = clamp(new_index, 0, managed_items.size())
 
 	managed_items.insert(new_index, item)
 	_request_update()

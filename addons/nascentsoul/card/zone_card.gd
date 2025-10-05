@@ -63,14 +63,6 @@ func _ready():
 	if not _front_node or not _back_node:
 		push_error("ZoneCard is missing a valid reference to its Front or Back node.")
 		return
-
-	# 确保所有视觉子节点都忽略鼠标事件，让根节点来处理
-	if is_instance_valid(_front_node):
-		_front_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if is_instance_valid(_back_node):
-		_back_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if is_instance_valid(_highlight_node):
-		_highlight_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		
 	# 根据初始设置，无动画地设置正反面
 	set_face_up(starts_face_up, false)

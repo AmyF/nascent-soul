@@ -51,7 +51,7 @@ func calculate_transforms(items: Array[Control], zone_rect: Rect2, ghost_index: 
 			phantom_list.erase(dragged_item)
 		ghost_placeholder = Control.new()
 		ghost_placeholder.size = item_size
-        
+		
 		var safe_ghost_index = clamp(ghost_index, 0, phantom_list.size())
 		phantom_list.insert(safe_ghost_index, ghost_placeholder)
 	else:
@@ -116,7 +116,7 @@ func calculate_transforms(items: Array[Control], zone_rect: Rect2, ghost_index: 
 		
 		var item_rotation = rad_to_deg(current_angle_rad) if item_rotate else 0.0
 		var distance_from_center = abs(i - center_index)
-		var z_index = item_count - int(distance_from_center * 2)
+		var z_index = i
 
 		transforms[p_item] = {
 			"position": item_pivot_pos,
