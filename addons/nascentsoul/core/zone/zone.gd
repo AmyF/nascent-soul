@@ -217,6 +217,8 @@ func _on_item_mouse_entered(item: Control, zone: Zone):
 
 
 func _on_item_mouse_exited(item: Control, zone: Zone):
+	if _item_being_dragged != null:
+		return
 	if _hovered_item == item:
 		_hovered_item = null
 		_request_update()
@@ -224,6 +226,9 @@ func _on_item_mouse_exited(item: Control, zone: Zone):
 
 func _on_item_drag_started(item: Control, zone: Zone):
 	_item_being_dragged = item
+	_hovered_item = null
+	
+	_request_update()
 
 
 func _on_item_dropped(item: Control, zone: Zone):
