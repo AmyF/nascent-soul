@@ -12,7 +12,7 @@ NascentSoul提供了一个模块化的框架，可以快速构建卡牌游戏中
 - **显示逻辑** (`ZoneDisplay`)：管理对象的视觉状态，如悬停效果、选中状态等
 - **交互处理** (`ZoneInteraction`)：处理点击、拖拽、多选等用户交互
 - **排序逻辑** (`ZoneSort`)：定义区域内对象的排序规则
-- **动画处理** [待实现/To be realized] (`ZoneAniamtion`)：控制对象动画路径、效果
+- **动画处理** (`ZoneAniamtor`)：控制对象动画路径、效果
 
 插件还提供了一个基础的卡牌实现 (`ZoneCard`)，支持翻面动画和高亮效果。
 
@@ -41,6 +41,7 @@ graph TD
             LD[ZoneDisplay<br/>显示]
             LL[ZoneLayout<br/>布局]
             LI[ZoneInteraction<br/>交互]
+            LA[ZoneAnimator<br/>动画]
         end
 
         subgraph "具体实现 (Game-Specific Implementation)"
@@ -54,6 +55,7 @@ graph TD
         Zone -. "引用" .-> LD
         Zone -. "引用" .-> LL
         Zone -. "引用" .-> LI
+        Zone -. "引用" .-> LA
 
         %% 交互关系
         LI -. "连接信号到" .-> ManagedObject
@@ -156,6 +158,16 @@ classDiagram
         +setup_item_signals(item, zone)
         +cleanup_item_signals(item)
     }
+    class ZoneAnimator {
+        <<Resource>>
+        <<Properties>>
+        +float duration
+        +float stagger_delay
+        +TransitionType transition_type
+        +EaseType ease_type
+        <<Methods>>
+        +animate(tween, final_transforms)
+    }
 
     %% --- User's Custom Implementation Example ---
     class ZoneCardDisplay {
@@ -194,6 +206,7 @@ classDiagram
     Zone o-- "1" ZoneLayout
     Zone o-- "1" ZoneDisplay
     Zone o-- "1" ZoneInteraction
+    Zone o-- "1" ZoneAnimator
 
     Zone ..> "0..*" ManagedObject : Manages List Of
 

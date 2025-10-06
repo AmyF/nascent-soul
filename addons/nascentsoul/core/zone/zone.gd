@@ -36,7 +36,8 @@ signal selection_changed(new_selection: Array[Control], zone: Zone)
 @export var layout_logic: ZoneLayout
 ## [可选] 交互逻辑。
 @export var interaction_logic: ZoneInteraction
-
+## [可选] 动画逻辑。
+@export var animator_logic: ZoneAnimator
 
 #=============================================================================
 # 3. 公共属性 (Public Properties)
@@ -53,8 +54,8 @@ var _is_dirty: bool = true # “脏标记”，用于性能优化
 var _item_being_dragged: Control = null
 var _hovered_item: Control = null
 var _ghost_index: int = -1
-var _tween: Tween
-
+var _last_transforms: Dictionary = {}
+var _tween: Tween = null
 
 #=============================================================================
 # 5. Godot生命周期方法 (Lifecycle Methods)
@@ -74,8 +75,13 @@ func _ready():
 		layout_logic = layout_logic.duplicate()
 	if interaction_logic:
 		interaction_logic = interaction_logic.duplicate()
+	if animator_logic:
+		animator_logic = animator_logic.duplicate()
 
-	var logic_resources = [permission_logic, sort_logic, display_logic, layout_logic, interaction_logic]
+	var logic_resources = [
+		permission_logic, sort_logic, display_logic,
+		layout_logic, interaction_logic, animator_logic
+	]
 	for resource in logic_resources:
 		if resource and resource.has_method("_setup"):
 			resource._setup(self)
@@ -271,11 +277,11 @@ func _update_layout_and_display():
 		visible_items = display_logic.filter_visible_items(sorted_items)
 	
 	# --- 步骤 3: 布局计算 (Layout) ---
-	var transforms: Dictionary = {}
+	var base_transforms: Dictionary = {}
 	if layout_logic:
-		transforms = layout_logic.calculate_transforms(
-			visible_items, 
-			Rect2(Vector2.ZERO, container.size), 
+		base_transforms = layout_logic.calculate_transforms(
+			visible_items,
+			Rect2(Vector2.ZERO, container.size),
 			_ghost_index,
 			_item_being_dragged
 		)
@@ -284,37 +290,53 @@ func _update_layout_and_display():
 	for item in managed_items:
 		if not item in visible_items:
 			item.visible = false
-	
+
 	if visible_items.is_empty():
 		return
-	
+
 	if _tween and _tween.is_running():
 		_tween.kill()
-	_tween = create_tween().set_parallel().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	
-	for item in visible_items:
-		if item == _item_being_dragged:
-			# 拖拽中的对象由交互逻辑控制位置，不在此处更新
-			continue
+	_tween = create_tween()
 
+	var final_transforms: Dictionary = {}
+	for item in visible_items:
 		item.visible = true
-		var state_info = {
+
+		if item == _item_being_dragged:
+			continue # 拖动中的对象由交互逻辑控制位置
+
+		var state_info = { 
 			"is_hovered": item == _hovered_item,
-			"is_selected": item in selected_items
+			"is_selected": item in selected_items,
 		}
-		
-		var base_transform = transforms.get(item, {})
+
+		var base_transform = base_transforms.get(item, {})
 		var hover_adjustment = display_logic.get_hover_transform_adjustment(item, state_info.is_hovered) if display_logic else {}
-		
-		var final_pos = container.position + base_transform.get("position", item.position) + hover_adjustment.get("offset", Vector2.ZERO)
+
+		var final_pos = container.position + base_transform.get("position", item.position) + hover_adjustment.get("position", Vector2.ZERO)
 		var final_rot = base_transform.get("rotation_degrees", item.rotation_degrees)
 		var final_scale = base_transform.get("scale", item.scale) * hover_adjustment.get("scale", Vector2.ONE)
-		var final_z = base_transform.get("z_index", item.z_index) + hover_adjustment.get("z_index", 0)
 
-		_tween.tween_property(item, "position", final_pos, 0.2)
-		_tween.tween_property(item, "rotation_degrees", final_rot, 0.2)
-		_tween.tween_property(item, "scale", final_scale, 0.2)
+		final_transforms[item] = {
+			"position": final_pos,
+			"rotation_degrees": final_rot,
+			"scale": final_scale,
+		}
+
+		var final_z = base_transform.get("z_index", item.z_index) + hover_adjustment.get("z_index", 0)
+		var final_pivot = base_transform.get("pivot_offset", Vector2.ZERO) 
 		item.z_index = final_z
-		
+		item.pivot_offset = final_pivot
+
 		if display_logic:
 			display_logic.apply_display_state(item, state_info)
+
+	if is_instance_valid(animator_logic):
+		animator_logic.animate(_tween, final_transforms)
+	else:
+		_tween.set_parallel() # 确保所有tween同时开始
+		for item in final_transforms.keys():
+			var to_transform = final_transforms[item]
+			_tween.tween_property(item, "position", to_transform.position, 0.2)
+			_tween.tween_property(item, "rotation_degrees", to_transform.rotation_degrees, 0.2)
+			_tween.tween_property(item, "scale", to_transform.scale, 0.2)
