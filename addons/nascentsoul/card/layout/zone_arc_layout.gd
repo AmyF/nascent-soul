@@ -151,12 +151,15 @@ func get_drop_index_at_position(position: Vector2, items: Array[Control], zone_r
 	
 	var local_mouse_x = position.x
 	
+	# 检查是否在第一个卡牌之前
 	if local_mouse_x < start_x + x_step / 2.0:
 		return 0
 	
-	if local_mouse_x > start_x + (item_count - 1) * x_step + item_size.x - x_step / 2.0:
+	# 检查是否在最后一个卡牌之后
+	if local_mouse_x > start_x + (item_count - 1) * x_step + x_step / 2.0:
 		return item_count
 	
-	var index = int((local_mouse_x - start_x + x_step / 2.0) / (item_size.x - item_overlap))
+	# 计算最接近的插入位置
+	var index = roundi((local_mouse_x - start_x) / x_step)
 	
 	return clamp(index, 0, item_count)

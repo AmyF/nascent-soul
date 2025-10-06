@@ -210,6 +210,8 @@ func clear_items():
 # 7. 内部回调方法 (Internal Callbacks)
 #=============================================================================
 func _on_item_mouse_entered(item: Control, zone: Zone):
+	if _item_being_dragged != null:
+		return
 	_hovered_item = item
 	_request_update()
 
