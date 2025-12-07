@@ -12,17 +12,12 @@ NascentSoul提供了一个模块化的框架，可以快速构建卡牌游戏中
 - **显示逻辑** (`ZoneDisplay`)：管理对象的视觉状态，如悬停效果、选中状态等
 - **交互处理** (`ZoneInteraction`)：处理点击、拖拽、多选等用户交互
 - **排序逻辑** (`ZoneSort`)：定义区域内对象的排序规则
-- **动画处理** (`ZoneAniamtor`)：控制对象动画路径、效果
 
 插件还提供了一个基础的卡牌实现 (`ZoneCard`)，支持翻面动画和高亮效果。
 
 ## 示例
 
-项目提供了基本的Demo，包含：
-
-- 牌库（Deck）：使用堆叠布局，禁止拖入
-- 手牌（Hand）：使用弧形布局，支持拖拽排序
-- 弃牌堆（Discard）：使用堆叠布局，接受拖入的牌
+一个简单的拖拽示例。
 
 ## 结构
 
@@ -41,7 +36,6 @@ graph TD
             LD[ZoneDisplay<br/>显示]
             LL[ZoneLayout<br/>布局]
             LI[ZoneInteraction<br/>交互]
-            LA[ZoneAnimator<br/>动画]
         end
 
         subgraph "具体实现 (Game-Specific Implementation)"
@@ -55,7 +49,6 @@ graph TD
         Zone -. "引用" .-> LD
         Zone -. "引用" .-> LL
         Zone -. "引用" .-> LI
-        Zone -. "引用" .-> LA
 
         %% 交互关系
         LI -. "连接信号到" .-> ManagedObject
@@ -63,158 +56,6 @@ graph TD
         %% 继承关系
         LD -- "可被继承为" --> CardDisplay
     end
-```
-
-## 类图
-
-```mermaid
-classDiagram
-    %% --- Notes explaining the diagram conventions ---
-
-    %% --- Classes in the Scene Tree ---
-    class ParentControl {
-        <<Control>>
-    }
-    class Zone {
-        <<Node>>
-        <<Properties>>
-        +Control container
-        +Array[Control] managed_items
-        +Array[Control] selected_items
-        +ZonePermission permission_logic
-        +ZoneSort sort_logic
-        +ZoneDisplay display_logic
-        +ZoneLayout layout_logic
-        +ZoneInteraction interaction_logic
-        <<Methods>>
-        +add_item(item) bool
-        +remove_item(item) bool
-        +transfer_item_to(item, target_zone) bool
-        +force_update_layout()
-        +select_item(item, additive)
-        +deselect_item(item)
-        +clear_selection()
-        <<Signals>>
-        +item_clicked(item, zone)
-        +item_double_clicked(item, zone)
-        +item_mouse_entered(item, zone)
-        +item_mouse_exited(item, zone)
-        +item_drag_started(item, zone)
-        +item_dropped(item, zone)
-        +item_dragging(item, global_pos, zone)
-        +selection_changed(new_selection, zone)
-    }
-    class ManagedObject {
-        <<Control>>
-        + '用户的卡牌、棋子等'
-    }
-
-    %% --- Logic Module Base Classes (Resources) ---
-    class ZonePermission {
-        <<Resource>>
-        <<Properties>>
-        +int max_items
-        +Array[StringName] allowed_groups
-        +Array[StringName] denied_groups
-        <<Methods>>
-        +can_add(item, zone) bool
-        +can_transfer_in(item, from, to) bool
-    }
-    class ZoneSort {
-        <<Resource>>
-        <<Methods>>
-        +sort(items) Array
-    }
-    class ZoneLayout {
-        <<Resource>>
-        <<Properties>>
-        +bool enable_ghost_slot_feedback
-        <<Methods>>
-        +calculate_transforms(items, rect, ghost_index, dragged_item) Dictionary
-        +get_drop_index_at_position(pos, items, rect) int
-    }
-    class ZoneDisplay {
-        <<Resource>>
-        <<Properties>>
-        +int max_visible_items
-        +bool enable_enlarge_on_hover
-        +Vector2 hover_scale_multiplier
-        +Vector2 hover_offset
-        +int hover_z_index_increment
-        <<Methods>>
-        +filter_visible_items(items) Array
-        +apply_display_state(item, state)
-    }
-    class ZoneInteraction {
-        <<Resource>>
-        <<Properties>>
-        +bool enable_click
-        +bool enable_double_click
-        +bool enable_drag
-        +bool enable_hover_events
-        +bool enable_multi_select
-        +Key multi_select_modifier
-        <<Methods>>
-        +setup_item_signals(item, zone)
-        +cleanup_item_signals(item)
-    }
-    class ZoneAnimator {
-        <<Resource>>
-        <<Properties>>
-        +float duration
-        +float stagger_delay
-        +TransitionType transition_type
-        +EaseType ease_type
-        <<Methods>>
-        +animate(tween, final_transforms)
-    }
-
-    %% --- User's Custom Implementation Example ---
-    class ZoneCardDisplay {
-        <<Resource>>
-        <<Properties>>
-        +bool show_as_backside
-        +bool highlight_on_hover
-        +bool highlight_on_select
-        +bool face_up_on_hover
-        <<Methods>>
-        +apply_display_state(item, state)
-    }
-    class ZoneCard {
-        <<Control>>
-        + '内置卡牌基类'
-        <<Properties>>
-        +NodePath front_node_path
-        +NodePath back_node_path
-        +NodePath highlight_node_path
-        +bool starts_face_up
-        +FlipAnimation flip_animation_type
-        +float flip_duration
-        <<Methods>>
-        +is_face_up()
-        +set_highlight(is_highlighted)
-        +set_face_up(is_up, animate)
-
-    }
-
-    %% --- Relationships ---
-    note for ParentControl "场景树中, ParentControl<br/>同时包含 Zone 和 ManagedObject"
-
-    Zone o-- "1" ParentControl : Operates Within
-    Zone o-- "1" ZonePermission
-    Zone o-- "1" ZoneSort
-    Zone o-- "1" ZoneLayout
-    Zone o-- "1" ZoneDisplay
-    Zone o-- "1" ZoneInteraction
-    Zone o-- "1" ZoneAnimator
-
-    Zone ..> "0..*" ManagedObject : Manages List Of
-
-    ZoneInteraction ..> ManagedObject : Interacts With
-
-    ZoneCardDisplay ..> ZoneCard : Control
-
-    ZoneDisplay <|-- ZoneCardDisplay
 ```
 
 ## 项目状态
