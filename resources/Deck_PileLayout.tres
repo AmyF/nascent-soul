@@ -1,7 +1,0 @@
-[gd_resource type="Resource" script_class="ZonePileLayout" load_steps=2 format=3 uid="uid://csjopkwtt1nnm"]
-
-[ext_resource type="Script" uid="uid://c7u6st4p7nd56" path="res://addons/nascentsoul/card/layout/zone_pile_layout.gd" id="1_i0m7j"]
-
-[resource]
-script = ExtResource("1_i0m7j")
-metadata/_custom_type_script = "uid://c7u6st4p7nd56"

@@ -1,8 +1,0 @@
-[gd_resource type="Resource" script_class="ZoneCardDisplay" load_steps=2 format=3 uid="uid://bwe8hfhx3fb0f"]
-
-[ext_resource type="Script" uid="uid://c86lkyth31gn7" path="res://addons/nascentsoul/card/display/zone_card_display.gd" id="1_ou1oa"]
-
-[resource]
-script = ExtResource("1_ou1oa")
-show_as_backside = true
-metadata/_custom_type_script = "uid://c86lkyth31gn7"

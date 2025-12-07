@@ -1,6 +1,0 @@
-[gd_resource type="Resource" script_class="ZoneArcLayout" load_steps=2 format=3 uid="uid://xsxggs487qfr"]
-
-[ext_resource type="Script" uid="uid://bade4md2kwyoq" path="res://addons/nascentsoul/card/layout/zone_arc_layout.gd" id="1_vf77g"]
-
-[resource]
-script = ExtResource("1_vf77g")

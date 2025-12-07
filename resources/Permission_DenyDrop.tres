@@ -1,7 +1,0 @@
-[gd_resource type="Resource" script_class="Permission_NoTransfersIn" load_steps=2 format=3 uid="uid://dp6oji2xjys0"]
-
-[ext_resource type="Script" uid="uid://bfcknmif3fvs3" path="res://scenes/permission_no_transfers_in.gd" id="1_mw37t"]
-
-[resource]
-script = ExtResource("1_mw37t")
-metadata/_custom_type_script = "uid://bfcknmif3fvs3"

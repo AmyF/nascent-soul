@@ -1,7 +1,0 @@
-[gd_resource type="Resource" script_class="ZonePermission" load_steps=2 format=3 uid="uid://d0pvu7i0e28nk"]
-
-[ext_resource type="Script" uid="uid://cxwh75or83qsh" path="res://addons/nascentsoul/core/permission/zone_permission.gd" id="1_w3j3l"]
-
-[resource]
-script = ExtResource("1_w3j3l")
-metadata/_custom_type_script = "uid://cxwh75or83qsh"

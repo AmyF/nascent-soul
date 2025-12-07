@@ -11,7 +11,6 @@ config_version=5
 [application]
 
 config/name="NascentSoul"
-run/main_scene="uid://bhrayw7apipmt"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="uid://b2a5egb26y47l"
 

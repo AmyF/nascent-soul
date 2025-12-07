@@ -1,7 +1,0 @@
-[gd_resource type="Resource" script_class="ZoneInteraction" load_steps=2 format=3 uid="uid://b3wflmfeq7r3c"]
-
-[ext_resource type="Script" uid="uid://blmirpr7b2dtc" path="res://addons/nascentsoul/core/interaction/zone_interaction.gd" id="1_7qem8"]
-
-[resource]
-script = ExtResource("1_7qem8")
-metadata/_custom_type_script = "uid://blmirpr7b2dtc"
