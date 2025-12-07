@@ -1,6 +1,17 @@
 @tool
 class_name Zone extends Node
 
+# --- 信号定义 ---
+# 当物品成功进入本 Zone 时触发 (包括从其他 Zone 拖入或本 Zone 内部重排)
+signal item_dropped(item: Control, source_zone: Zone)
+
+# 当物品离开本 Zone 时触发
+signal item_removed(item: Control, target_zone: Zone)
+
+# 当布局发生任何变化 (添加、移除、重排) 时触发
+signal layout_changed()
+
+# --- 配置 ---
 @export var container: Control
 @export_group("Modules")
 @export var layout: ZoneLayout
@@ -9,6 +20,7 @@ class_name Zone extends Node
 @export var sort: ZoneSort
 @export var permission: ZonePermission
 
+# --- 内部状态 ---
 var _items: Array[Control] = []
 var _ghost_instance: Control = null
 
@@ -39,7 +51,6 @@ func _process(_delta):
 func refresh():
 	if not container or not layout or not display: return
 	
-	# 1. 收集参与布局的节点
 	var layout_items: Array[Control] = []
 	var raw_children = container.get_children()
 	
@@ -49,24 +60,19 @@ func refresh():
 		if not (child is Control):
 			continue
 		
-		# 排除正在拖拽的本体 (由 Ghost 代替)
 		if ZoneDragContext.is_dragging and child in ZoneDragContext.dragging_items:
 			continue
 			
-		# 包含可见节点和 Ghost
 		if child.visible or child == _ghost_instance:
 			layout_items.append(child)
 	
-	# 2. 排序 (非拖拽状态下生效)
 	if sort and not ZoneDragContext.is_dragging:
 		_items = sort.process_sort(layout_items)
 	else:
 		_items = layout_items
 
-	# 3. 布局计算
 	var transforms = layout.calculate(_items, container.size, -1, Vector2.ZERO, _ghost_instance)
 	
-	# 4. 应用显示
 	display.apply(_items, transforms, _ghost_instance)
 
 # --- 拖拽逻辑 ---
@@ -78,7 +84,6 @@ func start_drag(items: Array[Control]):
 	ZoneDragContext.source_zone = self
 	ZoneDragContext.drag_offset = items[0].get_global_mouse_position() - items[0].global_position
 	
-	# 创建 Proxy
 	var proxy = items[0].duplicate(0)
 	proxy.modulate.a = 0.8
 	proxy.top_level = true
@@ -87,7 +92,6 @@ func start_drag(items: Array[Control]):
 	get_tree().root.add_child(proxy)
 	ZoneDragContext.cursor_proxy = proxy
 	
-	# 隐藏本体
 	for item in items:
 		item.visible = false
 	
@@ -96,11 +100,9 @@ func start_drag(items: Array[Control]):
 func _process_drag_state():
 	var global_mouse = get_viewport().get_mouse_position()
 	
-	# 1. 更新 Proxy
 	if is_instance_valid(ZoneDragContext.cursor_proxy):
 		ZoneDragContext.cursor_proxy.global_position = global_mouse - ZoneDragContext.drag_offset
 	
-	# 2. 检测悬停
 	var is_hovering_me = container.get_global_rect().has_point(global_mouse)
 	
 	if is_hovering_me:
@@ -108,9 +110,8 @@ func _process_drag_state():
 		
 		if not is_instance_valid(_ghost_instance):
 			_create_ghost()
-			refresh() # 立即刷新以显示 Ghost
+			refresh()
 		
-		# --- 关键修复：排除 Ghost 进行索引计算 ---
 		var items_for_calc: Array[Control] = []
 		for item in _items:
 			if item != _ghost_instance:
@@ -118,11 +119,8 @@ func _process_drag_state():
 		
 		var local_mouse = container.get_local_mouse_position()
 		var logical_index = layout.get_insertion_index(items_for_calc, container.size, local_mouse)
-		
-		# --- 关键修复：将逻辑索引映射回绝对索引 ---
 		var target_abs_index = _get_absolute_index_from_logical(logical_index)
 		
-		# 仅当位置真正改变时才移动
 		if is_instance_valid(_ghost_instance):
 			var current_index = _ghost_instance.get_index()
 			if current_index != target_abs_index:
@@ -137,7 +135,6 @@ func _process_drag_state():
 			_clear_ghost()
 			refresh()
 
-	# 3. 检测 Drop
 	if ZoneDragContext.source_zone == self:
 		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 			var target = ZoneDragContext.hover_zone
@@ -146,7 +143,6 @@ func _process_drag_state():
 			else:
 				_cancel_drag()
 
-# 辅助：将不包含 Ghost/Hidden 的逻辑索引映射为包含所有的绝对索引
 func _get_absolute_index_from_logical(logical_index: int) -> int:
 	var visible_counter = 0
 	var abs_index = 0
@@ -155,14 +151,13 @@ func _get_absolute_index_from_logical(logical_index: int) -> int:
 	for child in children:
 		if child is not Control:
 			continue
-		# 跳过 Ghost 和 隐藏的拖拽项
 		if child == _ghost_instance: 
 			abs_index += 1
 			continue
 		if ZoneDragContext.is_dragging and child in ZoneDragContext.dragging_items:
 			abs_index += 1
 			continue
-		if not child.visible: # 跳过其他不可见项
+		if not child.visible:
 			abs_index += 1
 			continue
 			
@@ -172,7 +167,6 @@ func _get_absolute_index_from_logical(logical_index: int) -> int:
 		visible_counter += 1
 		abs_index += 1
 	
-	# 如果超出了，说明是插在最后
 	return -1
 
 func _perform_drop():
@@ -184,12 +178,10 @@ func _perform_drop():
 			source._cancel_drag()
 		return
 	
-	# 确定目标位置 (Ghost 的位置即真理)
 	var target_index = container.get_child_count()
 	if is_instance_valid(_ghost_instance):
 		target_index = _ghost_instance.get_index()
 	
-	# 视觉位置用于动画衔接
 	var drop_visual_pos = Vector2.ZERO
 	if is_instance_valid(ZoneDragContext.cursor_proxy):
 		drop_visual_pos = ZoneDragContext.cursor_proxy.global_position
@@ -208,14 +200,26 @@ func _perform_drop():
 		else:
 			container.move_child(item, target_index)
 			target_index += 1
+		
+		# --- 信号发射 ---
+		# 1. 通知本 Zone：有东西进来了
+		item_dropped.emit(item, source)
+		
+		# 2. 通知源 Zone：有东西走了 (如果源不是自己)
+		# 注意：如果是内部重排，source == self，此时 item_dropped 和 item_removed 都会触发
+		# 这符合逻辑：它既被“放下”到了新位置，也被“移出”了旧状态
+		if is_instance_valid(source):
+			source.item_removed.emit(item, self)
 			
 	_clear_ghost()
 	ZoneDragContext.clear()
 	
 	refresh()
+	layout_changed.emit()
 	
 	if is_instance_valid(source) and source != self:
 		source.refresh()
+		source.layout_changed.emit()
 
 func _cancel_drag():
 	for item in ZoneDragContext.dragging_items:
@@ -259,11 +263,13 @@ func _on_child_entered(node: Node):
 		_register_item(node)
 		if not ZoneDragContext.is_dragging:
 			refresh()
+			layout_changed.emit()
 
 func _on_child_exited(node: Node):
 	if node is Control:
 		if not ZoneDragContext.is_dragging:
 			refresh()
+			layout_changed.emit()
 
 func _on_item_gui_input(event: InputEvent, item: Control):
 	if interaction:
