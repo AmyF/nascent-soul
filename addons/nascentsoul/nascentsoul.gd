@@ -4,7 +4,6 @@ extends EditorPlugin
 const EXAMPLE_HUB_PATH := "res://scenes/demo.tscn"
 const RECIPE_SCENE_PATH := "res://scenes/examples/zone_recipes.tscn"
 const README_PATH := "res://README.md"
-const MIGRATION_GUIDE_PATH := "res://docs/zone_migration.md"
 const DEFAULT_ZONE_PRESET_PATH := "res://addons/nascentsoul/presets/hand_zone_preset.tres"
 const ZONE_SCRIPT := preload("res://addons/nascentsoul/core/zone.gd")
 const ZONE_CARD_SCRIPT := preload("res://addons/nascentsoul/cards/zone_card.gd")
@@ -15,7 +14,6 @@ const CREATE_ZONE_PRESET_MENU := "Create Zone From Preset"
 const MENU_OPEN_EXAMPLES := "Open NascentSoul Example Hub"
 const MENU_OPEN_RECIPES := "Open NascentSoul Zone Recipes"
 const MENU_OPEN_README := "Open NascentSoul README"
-const MENU_OPEN_MIGRATION_GUIDE := "Open Zone Migration Guide"
 
 var _zone_icon: Texture2D
 var _card_icon: Texture2D
@@ -36,7 +34,6 @@ func _enter_tree() -> void:
 	add_tool_menu_item(MENU_OPEN_EXAMPLES, _open_example_hub)
 	add_tool_menu_item(MENU_OPEN_RECIPES, _open_recipe_scene)
 	add_tool_menu_item(MENU_OPEN_README, _open_readme)
-	add_tool_menu_item(MENU_OPEN_MIGRATION_GUIDE, _open_migration_guide)
 
 
 func _exit_tree() -> void:
@@ -44,7 +41,6 @@ func _exit_tree() -> void:
 	remove_tool_menu_item(MENU_OPEN_EXAMPLES)
 	remove_tool_menu_item(MENU_OPEN_RECIPES)
 	remove_tool_menu_item(MENU_OPEN_README)
-	remove_tool_menu_item(MENU_OPEN_MIGRATION_GUIDE)
 	_unregister_custom_types()
 
 func _register_custom_types() -> void:
@@ -92,7 +88,3 @@ func _open_recipe_scene() -> void:
 func _open_readme() -> void:
 	if ResourceLoader.exists(README_PATH):
 		OS.shell_open(ProjectSettings.globalize_path(README_PATH))
-
-func _open_migration_guide() -> void:
-	if ResourceLoader.exists(MIGRATION_GUIDE_PATH):
-		OS.shell_open(ProjectSettings.globalize_path(MIGRATION_GUIDE_PATH))
