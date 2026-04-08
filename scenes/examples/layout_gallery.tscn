@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_property_sort.gd" id="8_property_sort"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_group_sort.gd" id="9_group_sort"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="10_theme"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="11_card_spec"]
 
 [sub_resource type="Resource" id="RowLayout"]
 script = ExtResource("5_hbox_layout")
@@ -37,6 +38,36 @@ script = ExtResource("9_group_sort")
 group_metadata_key = "example_primary_tag"
 group_order = PackedStringArray("attack", "skill", "power")
 item_metadata_key = "example_cost"
+
+[sub_resource type="Resource" id="GalleryCardPulse"]
+script = ExtResource("11_card_spec")
+title = "Pulse"
+cost = 2
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="GalleryCardWard"]
+script = ExtResource("11_card_spec")
+title = "Ward"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="GalleryCardAnchor"]
+script = ExtResource("11_card_spec")
+title = "Anchor"
+cost = 3
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="GalleryCardBurst"]
+script = ExtResource("11_card_spec")
+title = "Burst"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="GalleryCardLoom"]
+script = ExtResource("11_card_spec")
+title = "Loom"
+cost = 2
+tags = PackedStringArray("skill")
 
 [sub_resource type="StyleBoxFlat" id="HandZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
@@ -95,6 +126,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("10_theme")
+gallery_cards = [SubResource("GalleryCardPulse"), SubResource("GalleryCardWard"), SubResource("GalleryCardAnchor"), SubResource("GalleryCardBurst"), SubResource("GalleryCardLoom")]
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -103,18 +135,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_type_variation = &"DemoSceneMargin"
 
 [node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_type_variation = &"DemoRootVBox"
 
 [node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_type_variation = &"DemoToolbarHBox"
 
 [node name="SortButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
@@ -137,13 +166,12 @@ text = "Row 费用升序 / Row cost ascending"
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
-theme_override_constants/h_separation = 14
-theme_override_constants/v_separation = 14
+theme_type_variation = &"DemoLayoutGrid"
 
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
 layout_mode = 2
@@ -167,7 +195,7 @@ preset = ExtResource("3_hand")
 [node name="RowColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="RowLabel" type="Label" parent="RootMargin/RootVBox/Grid/RowColumn"]
 layout_mode = 2
@@ -192,7 +220,7 @@ sort_policy = SubResource("RowSort")
 [node name="ListColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="ListLabel" type="Label" parent="RootMargin/RootVBox/Grid/ListColumn"]
 layout_mode = 2
@@ -218,7 +246,7 @@ sort_policy = SubResource("ListSort")
 [node name="PileColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="PileLabel" type="Label" parent="RootMargin/RootVBox/Grid/PileColumn"]
 layout_mode = 2

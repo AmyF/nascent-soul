@@ -24,17 +24,18 @@ static func make_zone(host: Control, zone_name: String, layout_policy: ZoneLayou
 	host.add_child(zone)
 	return zone
 
-static func make_card(title: String, cost: int, tags: Array, face_up: bool = true, highlighted: bool = false) -> ZoneCard:
+static func make_card(title: String, cost: int, tags, face_up: bool = true, highlighted: bool = false) -> ZoneCard:
+	var normalized_tags := _normalize_tags(tags)
 	var data := CardData.new()
 	data.id = title.to_lower().replace(" ", "_")
 	data.title = title
 	data.cost = cost
-	data.tags = PackedStringArray(tags)
+	data.tags = PackedStringArray(normalized_tags)
 	data.front_texture = _load_front_texture()
 	data.back_texture = _load_back_texture()
 	data.custom_data = {
 		"cost": cost,
-		"tags": tags
+		"tags": normalized_tags
 	}
 	var card := ZoneCard.new()
 	card.name = title
@@ -44,8 +45,8 @@ static func make_card(title: String, cost: int, tags: Array, face_up: bool = tru
 	card.face_up = face_up
 	card.highlighted = highlighted
 	card.set_meta("example_cost", cost)
-	card.set_meta("example_tags", tags)
-	card.set_meta("example_primary_tag", tags[0] if not tags.is_empty() else "card")
+	card.set_meta("example_tags", normalized_tags)
+	card.set_meta("example_primary_tag", normalized_tags[0] if not normalized_tags.is_empty() else "card")
 	return card
 
 static func bilingual(zh: String, en: String) -> String:
@@ -75,3 +76,13 @@ static func _load_back_texture() -> Texture2D:
 static func clear_card_texture_cache() -> void:
 	_front_texture = null
 	_back_texture = null
+
+static func _normalize_tags(tags) -> Array[String]:
+	var normalized: Array[String] = []
+	if tags is PackedStringArray:
+		normalized.assign(tags)
+		return normalized
+	if tags is Array:
+		for tag in tags:
+			normalized.append(str(tag))
+	return normalized

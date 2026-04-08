@@ -111,9 +111,11 @@ zone.add_item(card)
    目标：把 `Deck / Hand / Board / Discard` 当成 starter recipe，而不是纯演示。
    重点：每个区都写明推荐 preset、layout、permission 和最适合先改的部分，方便你复制到自己的项目里。
 
-共享 demo 构造与 UI helper 在：
+共享 demo 构造与主题资源在：
 
-- `[example_support.gd](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/shared/example_support.gd)`：共享卡牌/zone 构造、信息卡、badge、状态标签和示例样式辅助
+- `[example_support.gd](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/shared/example_support.gd)`：共享卡牌构造、贴图缓存和双语字符串 helper
+- `[example_card_spec.gd](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/shared/example_card_spec.gd)`：示例卡牌的轻量 `Resource`，让 demo 的样例列表也能直接在 Inspector 中编辑
+- `[demo_theme.tres](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/shared/demo_theme.tres)`：共享 demo 标题、说明、状态和按钮的 Theme variation，减少 scene Inspector 里的重复样式覆盖
 
 直接用 Godot 4.6 打开仓库即可运行。插件菜单里现在提供了：
 

@@ -24,14 +24,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+theme_type_variation = &"DemoHubMargin"
 
 [node name="RootVBox" type="VBoxContainer" parent="RootMargin" unique_id=550835841]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_type_variation = &"DemoRootVBox"
 
 [node name="TitleLabel" type="Label" parent="RootMargin/RootVBox" unique_id=1988887791]
 layout_mode = 2

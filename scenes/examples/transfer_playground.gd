@@ -5,6 +5,10 @@ const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd"
 const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 
+@export var deck_cards: Array[ExampleCardSpec] = []
+@export var hand_cards: Array[ExampleCardSpec] = []
+@export var board_cards: Array[ExampleCardSpec] = []
+
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var board_capacity_label: Label = $RootMargin/RootVBox/TopRow/BoardColumn/BoardCapacityLabel
 @onready var _deck_zone: Zone = $RootMargin/RootVBox/TopRow/DeckColumn/DeckZone
@@ -21,30 +25,9 @@ func _ready() -> void:
 	_schedule_headless_quit_if_root()
 
 func _populate_cards() -> void:
-	for spec in [
-		{"title": "Spark", "cost": 1, "tags": ["attack"]},
-		{"title": "Shell", "cost": 1, "tags": ["skill"]},
-		{"title": "Focus", "cost": 2, "tags": ["power"]},
-		{"title": "Gale", "cost": 1, "tags": ["attack"]},
-		{"title": "Echo", "cost": 2, "tags": ["skill"]},
-		{"title": "Nova", "cost": 3, "tags": ["attack"]}
-	]:
-		_deck_zone.add_item(ExampleSupport.make_card(spec["title"], spec["cost"], spec["tags"], false))
-
-	for spec in [
-		{"title": "Tether", "cost": 1, "tags": ["skill"]},
-		{"title": "Bloom", "cost": 2, "tags": ["power"]},
-		{"title": "Strike", "cost": 1, "tags": ["attack"]},
-		{"title": "Ward", "cost": 1, "tags": ["skill"]},
-		{"title": "Orbit", "cost": 2, "tags": ["attack"]}
-	]:
-		_hand_zone.add_item(ExampleSupport.make_card(spec["title"], spec["cost"], spec["tags"]))
-
-	for spec in [
-		{"title": "Sentinel", "cost": 3, "tags": ["power"]},
-		{"title": "Pulse", "cost": 2, "tags": ["attack"]}
-	]:
-		_board_zone.add_item(ExampleSupport.make_card(spec["title"], spec["cost"], spec["tags"], true, true))
+	_add_cards_from_specs(_deck_zone, deck_cards, false)
+	_add_cards_from_specs(_hand_zone, hand_cards)
+	_add_cards_from_specs(_board_zone, board_cards, true, true)
 
 func _wire_demo_actions() -> void:
 	_deck_zone.item_double_clicked.connect(_on_deck_card_double_clicked)
@@ -120,3 +103,9 @@ func _schedule_headless_quit_if_root() -> void:
 	if get_tree().current_scene != self:
 		return
 	get_tree().create_timer(0.5).timeout.connect(get_tree().quit)
+
+func _add_cards_from_specs(zone: Zone, specs: Array[ExampleCardSpec], face_up: bool = true, highlighted: bool = false) -> void:
+	for spec in specs:
+		if spec == null:
+			continue
+		zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, face_up, highlighted))

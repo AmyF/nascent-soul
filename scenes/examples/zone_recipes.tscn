@@ -8,11 +8,84 @@
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="7_capacity"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="8_theme"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="9_card_spec"]
 
 [sub_resource type="Resource" id="BoardCapacityPermission"]
 script = ExtResource("7_capacity")
 max_items = 4
 reject_reason = "Board recipe 已满。提高 max_items 或先弃掉一张牌。\nBoard recipe is full. Raise max_items or discard a card first."
+
+[sub_resource type="Resource" id="DeckCardSpark"]
+script = ExtResource("9_card_spec")
+title = "Spark"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="DeckCardShell"]
+script = ExtResource("9_card_spec")
+title = "Shell"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="DeckCardFocus"]
+script = ExtResource("9_card_spec")
+title = "Focus"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="DeckCardGale"]
+script = ExtResource("9_card_spec")
+title = "Gale"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="DeckCardEcho"]
+script = ExtResource("9_card_spec")
+title = "Echo"
+cost = 2
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="DeckCardNova"]
+script = ExtResource("9_card_spec")
+title = "Nova"
+cost = 3
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="HandCardTether"]
+script = ExtResource("9_card_spec")
+title = "Tether"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="HandCardBloom"]
+script = ExtResource("9_card_spec")
+title = "Bloom"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="HandCardStrike"]
+script = ExtResource("9_card_spec")
+title = "Strike"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="HandCardWard"]
+script = ExtResource("9_card_spec")
+title = "Ward"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="BoardCardSentinel"]
+script = ExtResource("9_card_spec")
+title = "Sentinel"
+cost = 3
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="BoardCardPulse"]
+script = ExtResource("9_card_spec")
+title = "Pulse"
+cost = 2
+tags = PackedStringArray("attack")
 
 [sub_resource type="StyleBoxFlat" id="DeckZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
@@ -71,6 +144,9 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("8_theme")
+deck_cards = [SubResource("DeckCardSpark"), SubResource("DeckCardShell"), SubResource("DeckCardFocus"), SubResource("DeckCardGale"), SubResource("DeckCardEcho"), SubResource("DeckCardNova")]
+hand_cards = [SubResource("HandCardTether"), SubResource("HandCardBloom"), SubResource("HandCardStrike"), SubResource("HandCardWard")]
+board_cards = [SubResource("BoardCardSentinel"), SubResource("BoardCardPulse")]
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -79,18 +155,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_type_variation = &"DemoSceneMargin"
 
 [node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_type_variation = &"DemoRootVBox"
 
 [node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_type_variation = &"DemoToolbarHBox"
 
 [node name="ResetButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
@@ -101,13 +174,12 @@ text = "重置模板 / Reset recipe"
 layout_mode = 2
 size_flags_vertical = 3
 columns = 4
-theme_override_constants/h_separation = 14
-theme_override_constants/v_separation = 10
+theme_type_variation = &"DemoRecipeGrid"
 
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
 layout_mode = 2
@@ -132,7 +204,7 @@ preset = ExtResource("3_pile")
 layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(260, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
 layout_mode = 2
@@ -158,7 +230,7 @@ preset = ExtResource("4_hand")
 layout_mode = 2
 size_flags_horizontal = 3
 custom_minimum_size = Vector2(260, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
 layout_mode = 2
@@ -190,7 +262,7 @@ permission_policy = SubResource("BoardCapacityPermission")
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
 layout_mode = 2

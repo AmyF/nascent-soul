@@ -2,6 +2,8 @@ extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 
+@export var gallery_cards: Array[ExampleCardSpec] = []
+
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var sort_button: Button = $RootMargin/RootVBox/Toolbar/SortButton
 @onready var reset_button: Button = $RootMargin/RootVBox/Toolbar/ResetButton
@@ -21,11 +23,13 @@ func _ready() -> void:
 	_schedule_headless_quit_if_root()
 
 func _populate_cards() -> void:
-	for spec in _card_specs():
-		_hand_zone.add_item(ExampleSupport.make_card(spec["title"], spec["cost"], spec["tags"], true))
-		_row_zone.add_item(ExampleSupport.make_card(spec["title"], spec["cost"], spec["tags"], true))
-		_list_zone.add_item(ExampleSupport.make_card(spec["title"], spec["cost"], spec["tags"], true))
-		_pile_zone.add_item(ExampleSupport.make_card(spec["title"], spec["cost"], spec["tags"], false))
+	for spec in gallery_cards:
+		if spec == null:
+			continue
+		_hand_zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, true))
+		_row_zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, true))
+		_list_zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, true))
+		_pile_zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, false))
 
 func _toggle_row_sort() -> void:
 	_row_sort.descending = not _row_sort.descending
@@ -49,15 +53,6 @@ func _reset_gallery() -> void:
 		"布局画廊已重置，Row 回到费用升序",
 		"The gallery has been reset and Row is back to ascending cost"
 	))
-
-func _card_specs() -> Array[Dictionary]:
-	return [
-		{"title": "Pulse", "cost": 2, "tags": ["attack"]},
-		{"title": "Ward", "cost": 1, "tags": ["skill"]},
-		{"title": "Anchor", "cost": 3, "tags": ["power"]},
-		{"title": "Burst", "cost": 1, "tags": ["attack"]},
-		{"title": "Loom", "cost": 2, "tags": ["skill"]}
-	]
 
 func _refresh_guidance() -> void:
 	sort_mode_label.text = ExampleSupport.compact_bilingual(

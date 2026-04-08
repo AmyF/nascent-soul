@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_source_permission.gd" id="10_source"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd" id="11_composite"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="12_theme"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="13_card_spec"]
 
 [sub_resource type="Resource" id="DeckPileLayout"]
 script = ExtResource("7_pile_layout")
@@ -40,6 +41,48 @@ reject_reason = "Sanctum 在这个实验里也只允许 2 张牌。\nSanctum als
 [sub_resource type="Resource" id="SanctumCompositePermission"]
 script = ExtResource("11_composite")
 policies = [SubResource("SanctumSourcePermission"), SubResource("SanctumCapacityPermission")]
+
+[sub_resource type="Resource" id="DeckCardRune"]
+script = ExtResource("13_card_spec")
+title = "Rune"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="DeckCardShard"]
+script = ExtResource("13_card_spec")
+title = "Shard"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="DeckCardBeacon"]
+script = ExtResource("13_card_spec")
+title = "Beacon"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="DeckCardMirror"]
+script = ExtResource("13_card_spec")
+title = "Mirror"
+cost = 2
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="HandCardBloom"]
+script = ExtResource("13_card_spec")
+title = "Bloom"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="HandCardTrace"]
+script = ExtResource("13_card_spec")
+title = "Trace"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="HandCardArc"]
+script = ExtResource("13_card_spec")
+title = "Arc"
+cost = 1
+tags = PackedStringArray("attack")
 
 [sub_resource type="StyleBoxFlat" id="DeckZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
@@ -110,6 +153,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("12_theme")
+deck_cards = [SubResource("DeckCardRune"), SubResource("DeckCardShard"), SubResource("DeckCardBeacon"), SubResource("DeckCardMirror")]
+hand_cards = [SubResource("HandCardBloom"), SubResource("HandCardTrace"), SubResource("HandCardArc")]
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -118,25 +163,22 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_type_variation = &"DemoSceneMargin"
 
 [node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_type_variation = &"DemoRootVBox"
 
 [node name="Grid" type="GridContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
 columns = 5
-theme_override_constants/h_separation = 12
+theme_type_variation = &"DemoPermissionGrid"
 
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/Grid/DeckColumn"]
 layout_mode = 2
@@ -155,7 +197,7 @@ layout_policy = SubResource("DeckPileLayout")
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
 layout_mode = 2
@@ -173,7 +215,7 @@ preset = ExtResource("4_hand")
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
 layout_mode = 2
@@ -204,7 +246,7 @@ permission_policy = SubResource("BoardCapacityPermission")
 [node name="SanctumColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="SanctumLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
 layout_mode = 2
@@ -235,7 +277,7 @@ permission_policy = SubResource("SanctumCompositePermission")
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
 layout_mode = 2

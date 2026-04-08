@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="7_capacity"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_factory"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="9_theme"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="10_card_spec"]
 
 [sub_resource type="Resource" id="BoardCapacityPermission"]
 script = ExtResource("7_capacity")
@@ -23,6 +24,84 @@ ghost_border_color = Color(0.96, 0.8, 0.3, 0.72)
 proxy_mode = 0
 proxy_modulate = Color(1, 1, 1, 0.88)
 proxy_scale = Vector2(1.04, 1.04)
+
+[sub_resource type="Resource" id="DeckCardSpark"]
+script = ExtResource("10_card_spec")
+title = "Spark"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="DeckCardShell"]
+script = ExtResource("10_card_spec")
+title = "Shell"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="DeckCardFocus"]
+script = ExtResource("10_card_spec")
+title = "Focus"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="DeckCardGale"]
+script = ExtResource("10_card_spec")
+title = "Gale"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="DeckCardEcho"]
+script = ExtResource("10_card_spec")
+title = "Echo"
+cost = 2
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="DeckCardNova"]
+script = ExtResource("10_card_spec")
+title = "Nova"
+cost = 3
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="HandCardTether"]
+script = ExtResource("10_card_spec")
+title = "Tether"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="HandCardBloom"]
+script = ExtResource("10_card_spec")
+title = "Bloom"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="HandCardStrike"]
+script = ExtResource("10_card_spec")
+title = "Strike"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="HandCardWard"]
+script = ExtResource("10_card_spec")
+title = "Ward"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="HandCardOrbit"]
+script = ExtResource("10_card_spec")
+title = "Orbit"
+cost = 2
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="BoardCardSentinel"]
+script = ExtResource("10_card_spec")
+title = "Sentinel"
+cost = 3
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="BoardCardPulse"]
+script = ExtResource("10_card_spec")
+title = "Pulse"
+cost = 2
+tags = PackedStringArray("attack")
 
 [sub_resource type="StyleBoxFlat" id="DeckZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
@@ -81,6 +160,9 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("9_theme")
+deck_cards = [SubResource("DeckCardSpark"), SubResource("DeckCardShell"), SubResource("DeckCardFocus"), SubResource("DeckCardGale"), SubResource("DeckCardEcho"), SubResource("DeckCardNova")]
+hand_cards = [SubResource("HandCardTether"), SubResource("HandCardBloom"), SubResource("HandCardStrike"), SubResource("HandCardWard"), SubResource("HandCardOrbit")]
+board_cards = [SubResource("BoardCardSentinel"), SubResource("BoardCardPulse")]
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -89,24 +171,21 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_type_variation = &"DemoSceneMargin"
 
 [node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_type_variation = &"DemoRootVBox"
 
 [node name="TopRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 12
+theme_type_variation = &"DemoWideHBox"
 
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
 layout_mode = 2
@@ -125,7 +204,7 @@ drag_visual_factory = SubResource("TransferDragVisualFactory")
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
 layout_mode = 2
@@ -158,7 +237,7 @@ drag_visual_factory = SubResource("TransferDragVisualFactory")
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
-theme_override_constants/separation = 6
+theme_type_variation = &"DemoColumnVBox"
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
 layout_mode = 2
