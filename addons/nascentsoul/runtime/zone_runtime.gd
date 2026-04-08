@@ -7,6 +7,7 @@ var _items: Array[Control] = []
 var _ghost_instance: Control = null
 var _item_bindings: Dictionary = {}
 var _display_state: Dictionary = {}
+var _transfer_handoffs: Dictionary = {}
 var _pressed_item: Control = null
 var _pressed_position: Vector2 = Vector2.ZERO
 var _is_pressed: bool = false
@@ -31,6 +32,7 @@ func bind() -> void:
 		_bound_items_root = null
 		_clear_runtime_items(false)
 		_clear_preview_internal()
+		_clear_transfer_handoffs()
 		_reset_hover_feedback_tracking()
 		return
 	if _bound_items_root != null and _bound_items_root != items_root:
@@ -58,6 +60,7 @@ func unbind() -> void:
 	_clear_runtime_items(false)
 	clear_display_state()
 	_clear_preview_internal()
+	_clear_transfer_handoffs()
 	_reset_hover_feedback_tracking()
 	if is_instance_valid(_long_press_timer):
 		_long_press_timer.queue_free()
@@ -294,6 +297,7 @@ func clear_display_state() -> void:
 			if active_tweens[item] != null:
 				active_tweens[item].kill()
 	_display_state.clear()
+	_clear_transfer_handoffs()
 
 func get_display_state(style: Resource) -> Dictionary:
 	var key = style.get_instance_id()
@@ -303,6 +307,13 @@ func get_display_state(style: Resource) -> Dictionary:
 			"target_cache": {}
 		}
 	return _display_state[key]
+
+func consume_transfer_handoff(item: Control) -> Dictionary:
+	if not is_instance_valid(item) or not _transfer_handoffs.has(item):
+		return {}
+	var handoff: Dictionary = _transfer_handoffs[item]
+	_transfer_handoffs.erase(item)
+	return handoff.duplicate(true)
 
 func resolve_item_size(item: Control) -> Vector2:
 	var layout_policy = zone.get_layout_policy_resource()
@@ -776,7 +787,7 @@ func _insert_transferred_items(moving_items: Array[Control], target_index: int, 
 				item.reparent(items_root, true)
 			else:
 				items_root.add_child(item)
-		_apply_transfer_snapshot(item, transfer_snapshots.get(item, {}))
+		_set_transfer_handoff(item, transfer_snapshots.get(item, {}))
 		item.visible = true
 		_register_item(item)
 		_items.insert(target_index + offset, item)
@@ -858,6 +869,7 @@ func _clear_runtime_items(emit_selection_changed: bool) -> void:
 	for item in existing_items:
 		_remove_item_from_state(item, false, true)
 	_items.clear()
+	_clear_transfer_handoffs()
 	if emit_selection_changed and selection_changed:
 		zone.selection_changed.emit(selection_state.get_selected_items())
 
@@ -867,6 +879,7 @@ func _remove_item_from_state(item, remove_from_container: bool, clear_visuals: b
 	if item_is_valid and selection_state.hovered_item == item and selection_state.set_hovered(null):
 		zone.item_hover_exited.emit(item)
 	_erase_item_reference(item)
+	_clear_transfer_handoff(item)
 	if item in _item_bindings:
 		_unregister_item(item)
 	var items_root = zone.get_items_root()
@@ -919,15 +932,21 @@ func _snapshot_item_visual_state(item: Control) -> Dictionary:
 		"scale": item.scale
 	}
 
-func _apply_transfer_snapshot(item: Control, snapshot: Dictionary) -> void:
-	if not is_instance_valid(item) or snapshot.is_empty():
+func _set_transfer_handoff(item: Control, snapshot: Dictionary) -> void:
+	if not is_instance_valid(item):
 		return
-	if snapshot.has("global_position"):
-		item.global_position = snapshot["global_position"]
-	if snapshot.has("rotation"):
-		item.rotation = snapshot["rotation"]
-	if snapshot.has("scale"):
-		item.scale = snapshot["scale"]
+	if snapshot.is_empty():
+		_transfer_handoffs.erase(item)
+		return
+	_transfer_handoffs[item] = snapshot.duplicate(true)
+
+func _clear_transfer_handoff(item) -> void:
+	if item == null:
+		return
+	_transfer_handoffs.erase(item)
+
+func _clear_transfer_handoffs() -> void:
+	_transfer_handoffs.clear()
 
 func _clear_hover_for_items(items: Array[Control], emit_signal: bool) -> void:
 	var hovered_item = selection_state.hovered_item

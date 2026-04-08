@@ -36,14 +36,17 @@ func apply(zone: Node, runtime, placements: Array[ZonePlacement]) -> void:
 		if not is_instance_valid(placement.item):
 			continue
 		var item: Control = placement.item
+		var handoff = runtime.consume_transfer_handoff(item)
 		item.pivot_offset = runtime.resolve_item_size(item) / 2.0
 		item.z_index = placement.z_index
+		if not handoff.is_empty():
+			_apply_handoff_transform(item, handoff, placement.z_index)
 		if placement.instant or not should_animate:
 			_kill_tween(active_tweens, item)
 			_apply_transform(item, placement)
 			target_cache[item] = _cache_transform(placement)
 			continue
-		if _is_target_same(active_tweens, target_cache, item, placement):
+		if handoff.is_empty() and _is_target_same(active_tweens, target_cache, item, placement):
 			continue
 		_kill_tween(active_tweens, item)
 		var tween = item.create_tween()
@@ -77,6 +80,21 @@ func _kill_tween(active_tweens: Dictionary, item: Control) -> void:
 	if active_tweens.has(item):
 		active_tweens[item].kill()
 		active_tweens.erase(item)
+
+func _apply_handoff_transform(item: Control, handoff: Dictionary, z_index: int) -> void:
+	if handoff.has("global_position"):
+		item.position = _global_to_parent_local(item, handoff["global_position"])
+	if handoff.has("rotation"):
+		item.rotation = handoff["rotation"]
+	if handoff.has("scale"):
+		item.scale = handoff["scale"]
+	item.z_index = z_index
+
+func _global_to_parent_local(item: Control, global_position: Vector2) -> Vector2:
+	var parent = item.get_parent()
+	if parent is CanvasItem:
+		return (parent as CanvasItem).get_global_transform().affine_inverse() * global_position
+	return global_position
 
 func _is_target_same(active_tweens: Dictionary, target_cache: Dictionary, item: Control, placement: ZonePlacement) -> bool:
 	if not target_cache.has(item) or not active_tweens.has(item):

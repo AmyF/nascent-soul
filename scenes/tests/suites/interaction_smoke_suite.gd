@@ -16,11 +16,13 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_keyboard_navigation_actions()
 	await _reset_root()
+	await _test_animated_transfer_handoff_path()
+	await _reset_root()
 	await _test_drop_preview_clear_signal()
 
 func _test_hover_and_selection_visuals() -> void:
 	var panel = _make_panel("VisualPanel", Vector2(24, 24), Vector2(620, 300))
-	var zone = ExampleSupport.make_zone(panel, "VisualZone", ZoneHBoxLayout.new())
+	var zone = _make_test_zone(panel, "VisualZone")
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
 	zone.add_item(alpha)
@@ -49,7 +51,7 @@ func _test_long_press_signal() -> void:
 	var interaction = ZoneInteraction.new()
 	interaction.long_press_enabled = true
 	interaction.long_press_time = 0.05
-	var zone = ExampleSupport.make_zone(panel, "LongPressZone", ZoneHBoxLayout.new(), null, null, null, interaction)
+	var zone = _make_test_zone(panel, "LongPressZone", interaction)
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var long_pressed: Array[String] = []
 	zone.item_long_pressed.connect(func(item: Control) -> void:
@@ -69,7 +71,7 @@ func _test_freed_item_during_long_press() -> void:
 	var interaction = ZoneInteraction.new()
 	interaction.long_press_enabled = true
 	interaction.long_press_time = 0.05
-	var zone = ExampleSupport.make_zone(panel, "FreedLongPressZone", ZoneHBoxLayout.new(), null, null, null, interaction)
+	var zone = _make_test_zone(panel, "FreedLongPressZone", interaction)
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var long_press_count = 0
 	zone.item_long_pressed.connect(func(_item: Control) -> void:
@@ -86,7 +88,7 @@ func _test_freed_item_during_long_press() -> void:
 
 func _test_background_click_clears_hover_and_selection() -> void:
 	var panel = _make_panel("BackgroundPanel", Vector2(24, 24), Vector2(720, 320))
-	var zone = ExampleSupport.make_zone(panel, "BackgroundZone", ZoneHBoxLayout.new())
+	var zone = _make_test_zone(panel, "BackgroundZone")
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
 	zone.add_item(alpha)
@@ -103,7 +105,7 @@ func _test_background_click_clears_hover_and_selection() -> void:
 
 func _test_shift_range_selection() -> void:
 	var panel = _make_panel("ShiftPanel", Vector2(24, 24), Vector2(780, 280))
-	var zone = ExampleSupport.make_zone(panel, "ShiftZone", ZoneHBoxLayout.new())
+	var zone = _make_test_zone(panel, "ShiftZone")
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
 	var gamma = ExampleSupport.make_card("Gamma", 3, ["power"], true)
@@ -128,7 +130,7 @@ func _test_keyboard_navigation_actions() -> void:
 	interaction.previous_item_action = &"zone_test_prev"
 	interaction.activate_item_action = &"zone_test_activate"
 	interaction.clear_selection_action = &"zone_test_clear"
-	var zone = ExampleSupport.make_zone(panel, "KeyboardZone", ZoneHBoxLayout.new(), null, null, null, interaction)
+	var zone = _make_test_zone(panel, "KeyboardZone", interaction)
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
 	var gamma = ExampleSupport.make_card("Gamma", 3, ["power"], true)
@@ -157,11 +159,37 @@ func _test_keyboard_navigation_actions() -> void:
 	await _settle_frames(1)
 	_check(zone.get_selected_items().is_empty(), "keyboard clear should clear the current selection")
 
+func _test_animated_transfer_handoff_path() -> void:
+	if DisplayServer.get_name() == "headless":
+		_check(true, "animated transfer handoff path is GUI-only")
+		return
+	var target_panel = _make_panel("AnimatedTargetPanel", Vector2.ZERO, Vector2(620, 260))
+	var source_panel = _make_panel("AnimatedSourcePanel", Vector2(24, 320), Vector2(620, 260))
+	var source_display := ZoneTweenDisplay.new()
+	source_display.duration = 0.12
+	var target_display := ZoneTweenDisplay.new()
+	target_display.duration = 0.12
+	var source_zone = ExampleSupport.make_zone(source_panel, "AnimatedSourceZone", ZoneHBoxLayout.new(), source_display)
+	var target_zone = ExampleSupport.make_zone(target_panel, "AnimatedTargetZone", ZoneHBoxLayout.new(), target_display)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	source_zone.add_item(alpha)
+	await _settle_frames(2)
+	var source_origin = alpha.global_position
+	_check(source_zone.move_item_to(alpha, target_zone, 0), "animated transfer smoke should move the card into the target zone")
+	var target_state = target_zone.get_runtime().get_display_state(target_display)
+	_check(target_state["active_tweens"].has(alpha), "animated transfer should create a live tween in GUI mode")
+	_check(alpha.global_position.distance_to(source_origin) <= 0.5, "animated transfer should start from the source card position before tweening")
+	_check(not target_zone.get_runtime()._transfer_handoffs.has(alpha), "animated transfer should consume handoff data on first apply")
+	await get_tree().create_timer(target_display.duration + 0.08).timeout
+	await _settle_frames(1)
+	_check(not target_state["active_tweens"].has(alpha), "animated transfer should clear its tween after finishing")
+	_check(_rect_inside(target_zone.get_global_rect().grow(24.0), alpha.get_global_rect(), 24.0), "animated transfer should finish inside the target zone bounds")
+
 func _test_drop_preview_clear_signal() -> void:
 	var target_panel = _make_panel("PreviewTargetPanel", Vector2.ZERO, Vector2(620, 260))
 	var source_panel = _make_panel("PreviewSourcePanel", Vector2(24, 320), Vector2(620, 260))
-	var source_zone = ExampleSupport.make_zone(source_panel, "PreviewSourceZone", ZoneHBoxLayout.new())
-	var target_zone = ExampleSupport.make_zone(target_panel, "PreviewTargetZone", ZoneHBoxLayout.new())
+	var source_zone = _make_test_zone(source_panel, "PreviewSourceZone")
+	var target_zone = _make_test_zone(target_panel, "PreviewTargetZone")
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var preview_indices: Array[int] = []
 	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target_index: int) -> void:
@@ -183,3 +211,8 @@ func _test_drop_preview_clear_signal() -> void:
 	await _settle_frames(2)
 	var last_preview_index = preview_indices[preview_indices.size() - 1] if not preview_indices.is_empty() else 0
 	_check(preview_indices.size() >= 2 and last_preview_index == -1, "drag cleanup should emit a preview-cleared signal with index -1")
+
+func _make_test_zone(panel: Control, zone_name: String, interaction: ZoneInteraction = null) -> Zone:
+	var display := ZoneCardDisplay.new()
+	display.duration = 0.0
+	return ExampleSupport.make_zone(panel, zone_name, ZoneHBoxLayout.new(), display, null, null, interaction)
