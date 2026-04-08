@@ -1,5 +1,5 @@
 @tool
-class_name ZoneManualSort extends ZoneSort
+class_name ZoneManualSort extends ZoneSortPolicy
 
-func process_sort(items: Array[Control]) -> Array[Control]:
-	return items
+func sort_items(items: Array[Control]) -> Array[Control]:
+	return items.duplicate()

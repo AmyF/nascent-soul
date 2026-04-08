@@ -1,0 +1,274 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/examples/transfer_playground.gd" id="1_scene"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="9_theme"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="10_card_spec"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="3_pile"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="4_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_preset.tres" id="5_board"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="7_capacity"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_factory"]
+
+[sub_resource type="Resource" id="TransferBoardCapacityPermission"]
+script = ExtResource("7_capacity")
+max_items = 5
+reject_reason = "Board 已满。先把一张牌丢进 Discard 再试。\nBoard is full. Discard a card first, then try again."
+
+[sub_resource type="Resource" id="TransferDragVisualFactory"]
+script = ExtResource("8_factory")
+ghost_mode = 0
+ghost_fill_color = Color(0.96, 0.93, 0.84, 0.08)
+ghost_border_color = Color(0.96, 0.8, 0.3, 0.72)
+proxy_mode = 0
+proxy_modulate = Color(1, 1, 1, 0.88)
+proxy_scale = Vector2(1.04, 1.04)
+
+[sub_resource type="Resource" id="TransferDeckCardSpark"]
+script = ExtResource("10_card_spec")
+title = "Spark"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="TransferDeckCardShell"]
+script = ExtResource("10_card_spec")
+title = "Shell"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="TransferDeckCardFocus"]
+script = ExtResource("10_card_spec")
+title = "Focus"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="TransferDeckCardGale"]
+script = ExtResource("10_card_spec")
+title = "Gale"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="TransferDeckCardEcho"]
+script = ExtResource("10_card_spec")
+title = "Echo"
+cost = 2
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="TransferDeckCardNova"]
+script = ExtResource("10_card_spec")
+title = "Nova"
+cost = 3
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="TransferHandCardTether"]
+script = ExtResource("10_card_spec")
+title = "Tether"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="TransferHandCardBloom"]
+script = ExtResource("10_card_spec")
+title = "Bloom"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="TransferHandCardStrike"]
+script = ExtResource("10_card_spec")
+title = "Strike"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="TransferHandCardWard"]
+script = ExtResource("10_card_spec")
+title = "Ward"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="TransferHandCardOrbit"]
+script = ExtResource("10_card_spec")
+title = "Orbit"
+cost = 2
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="TransferBoardCardSentinel"]
+script = ExtResource("10_card_spec")
+title = "Sentinel"
+cost = 3
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="TransferBoardCardPulse"]
+script = ExtResource("10_card_spec")
+title = "Pulse"
+cost = 2
+tags = PackedStringArray("attack")
+
+[sub_resource type="StyleBoxFlat" id="TransferDeckZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.59, 0.53, 0.26, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="TransferBoardZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.27, 0.48, 0.7, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="TransferDiscardZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.53, 0.26, 0.31, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="TransferHandZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.33, 0.55, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[node name="TransferPlayground" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scene")
+theme = ExtResource("9_theme")
+deck_cards = [SubResource("TransferDeckCardSpark"), SubResource("TransferDeckCardShell"), SubResource("TransferDeckCardFocus"), SubResource("TransferDeckCardGale"), SubResource("TransferDeckCardEcho"), SubResource("TransferDeckCardNova")]
+hand_cards = [SubResource("TransferHandCardTether"), SubResource("TransferHandCardBloom"), SubResource("TransferHandCardStrike"), SubResource("TransferHandCardWard"), SubResource("TransferHandCardOrbit")]
+board_cards = [SubResource("TransferBoardCardSentinel"), SubResource("TransferBoardCardPulse")]
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"DemoSceneMargin"
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_type_variation = &"DemoRootVBox"
+
+[node name="TopRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"DemoWideHBox"
+
+[node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoGoldHeading"
+text = "牌库 / Deck"
+
+[node name="DeckZone" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
+custom_minimum_size = Vector2(200, 240)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("TransferDeckZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("3_pile")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
+[node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "战场 / Board"
+
+[node name="BoardRuleLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "满员时直接拒绝放置 / Full state rejects drops"
+
+[node name="BoardCapacityLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "容量 0 / 5 / Capacity 0 / 5"
+
+[node name="BoardZone" type="Control" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("TransferBoardZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("5_board")
+permission_policy = SubResource("TransferBoardCapacityPermission")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
+[node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoRoseHeading"
+text = "弃牌堆 / Discard"
+
+[node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
+custom_minimum_size = Vector2(200, 240)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("TransferDiscardZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("6_discard")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
+[node name="HandLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "手牌 / Hand"
+
+[node name="HandZone" type="Control" parent="RootMargin/RootVBox"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("TransferHandZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("4_hand")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoStatusLabel"
+text = "最近 / Latest: Loading transfer playground..."

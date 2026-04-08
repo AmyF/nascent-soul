@@ -1,281 +1,382 @@
 @tool
-class_name Zone extends Node
+class_name Zone extends Control
 
-# --- 信号定义 ---
-# 交互信号
-signal item_clicked(item: Control)       # 左键单击
-signal item_double_clicked(item: Control)# 左键双击
-signal item_right_clicked(item: Control) # 右键单击
-signal item_long_pressed(item: Control)  # 长按 (通常指左键)
+const ITEMS_ROOT_NAME := "ItemsRoot"
+const PREVIEW_ROOT_NAME := "PreviewRoot"
+
+# Drag lifecycle contract:
+# `drag_started` fires on the source zone.
+# `drop_preview_changed(..., index)` fires on the hovered target zone, and `index = -1` means the preview was cleared.
+# `drop_hover_state_changed(..., decision)` reports whether the current hovered zone would accept the drop.
+# A hover clear is represented by `decision.target_index = -1`; rejected hovers keep their computed index but do not show a preview slot.
+# Successful drops emit `item_reordered` for same-zone moves or `item_transferred` on the target first and then the source.
+# Rejected drops emit `drop_rejected` on the target and mirrored source zone.
+signal item_clicked(item: Control)
+signal item_double_clicked(item: Control)
+signal item_right_clicked(item: Control)
+signal item_long_pressed(item: Control)
 signal item_hover_entered(item: Control)
 signal item_hover_exited(item: Control)
-
-# 拖拽/布局信号
-signal item_dropped(item: Control, source_zone: Zone)
-signal item_removed(item: Control, target_zone: Zone)
+signal selection_changed(items: Array)
+signal drag_started(items: Array, source_zone: Zone)
+signal drop_preview_changed(items: Array, target_zone: Zone, target_index: int)
+signal drop_hover_state_changed(items: Array, target_zone: Zone, decision: ZoneDropDecision)
+signal item_added(item: Control, index: int)
+signal item_removed(item: Control, from_index: int)
+signal item_reordered(item: Control, from_index: int, to_index: int)
+signal item_transferred(item: Control, source_zone: Zone, target_zone: Zone, to_index: int)
+signal drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reason: String)
 signal layout_changed()
 
-# --- 配置 ---
-@export var container: Control
-@export_group("Modules")
-@export var layout: ZoneLayout
-@export var display: ZoneDisplay
-@export var interaction: ZoneInteraction
-@export var sort: ZoneSort
-@export var permission: ZonePermission
+var _preset: ZonePreset = null
+var _layout_policy: ZoneLayoutPolicy = null
+var _display_style: ZoneDisplayStyle = null
+var _interaction: ZoneInteraction = null
+var _sort_policy: ZoneSortPolicy = null
+var _permission_policy: ZonePermissionPolicy = null
+var _drag_visual_factory: ZoneDragVisualFactory = null
 
-# --- 内部状态 ---
-var _items: Array[Control] = []
-var _ghost_instance: Control = null
+var _runtime: ZoneRuntime
+var _items_root: Control = null
+var _preview_root: Control = null
 
-func _ready():
-	if not container:
-		return
-	
-	container.child_entered_tree.connect(_on_child_entered)
-	container.child_exiting_tree.connect(_on_child_exited)
-	
-	for child in container.get_children():
-		if child is Control:
-			_register_item(child)
-	
+var _default_layout_policy: ZoneLayoutPolicy = null
+var _default_display_style: ZoneDisplayStyle = null
+var _default_interaction: ZoneInteraction = null
+var _default_sort_policy: ZoneSortPolicy = null
+var _default_permission_policy: ZonePermissionPolicy = null
+var _default_drag_visual_factory: ZoneDragVisualFactory = null
+
+@export_group("Preset")
+@export var preset: ZonePreset:
+	get:
+		return _preset
+	set(value):
+		if _preset == value:
+			return
+		_preset = value
+		_handle_configuration_changed()
+
+@export_group("Advanced Overrides")
+@export var layout_policy: ZoneLayoutPolicy:
+	get:
+		return _layout_policy
+	set(value):
+		if _layout_policy == value:
+			return
+		_layout_policy = value
+		_handle_configuration_changed()
+
+@export var display_style: ZoneDisplayStyle:
+	get:
+		return _display_style
+	set(value):
+		if _display_style == value:
+			return
+		_display_style = value
+		_handle_configuration_changed()
+
+@export var interaction: ZoneInteraction:
+	get:
+		return _interaction
+	set(value):
+		if _interaction == value:
+			return
+		_interaction = value
+		_handle_configuration_changed()
+
+@export var sort_policy: ZoneSortPolicy:
+	get:
+		return _sort_policy
+	set(value):
+		if _sort_policy == value:
+			return
+		_sort_policy = value
+		_handle_configuration_changed()
+
+@export var permission_policy: ZonePermissionPolicy:
+	get:
+		return _permission_policy
+	set(value):
+		if _permission_policy == value:
+			return
+		_permission_policy = value
+		_handle_configuration_changed()
+
+@export var drag_visual_factory: ZoneDragVisualFactory:
+	get:
+		return _drag_visual_factory
+	set(value):
+		if _drag_visual_factory == value:
+			return
+		_drag_visual_factory = value
+		_handle_configuration_changed()
+
+func _ready() -> void:
+	focus_mode = Control.FOCUS_ALL
+	if mouse_filter == Control.MOUSE_FILTER_IGNORE:
+		mouse_filter = Control.MOUSE_FILTER_STOP
+	_ensure_internal_nodes()
+	update_configuration_warnings()
+	queue_redraw()
+	_ensure_runtime()
+	_runtime.bind()
+	var resized_callable = Callable(self, "_on_zone_resized")
+	if not resized.is_connected(resized_callable):
+		resized.connect(resized_callable)
 	call_deferred("refresh")
+	set_process(not Engine.is_editor_hint())
 
-func _process(_delta):
-	if Engine.is_editor_hint(): return
-	
-	if ZoneDragContext.is_dragging:
-		_process_drag_state()
-	else:
-		if is_instance_valid(_ghost_instance):
-			_clear_ghost()
-			refresh()
+func _exit_tree() -> void:
+	if _runtime != null:
+		_runtime.unbind()
 
-# --- 核心刷新 ---
-func refresh():
-	if not container or not layout or not display: return
-	
-	var layout_items: Array[Control] = []
-	var raw_children = container.get_children()
-	
-	for child in raw_children:
-		if not is_instance_valid(child) or child.is_queued_for_deletion():
-			continue
-		if not (child is Control):
-			continue
-		
-		if ZoneDragContext.is_dragging and child in ZoneDragContext.dragging_items:
-			continue
-			
-		if child.visible or child == _ghost_instance:
-			layout_items.append(child)
-	
-	if sort and not ZoneDragContext.is_dragging:
-		_items = sort.process_sort(layout_items)
-	else:
-		_items = layout_items
-
-	var transforms = layout.calculate(_items, container.size, -1, Vector2.ZERO, _ghost_instance)
-	
-	display.apply(_items, transforms, _ghost_instance)
-
-# --- 拖拽逻辑 ---
-func start_drag(items: Array[Control]):
-	if items.is_empty(): return
-	
-	ZoneDragContext.is_dragging = true
-	ZoneDragContext.dragging_items = items
-	ZoneDragContext.source_zone = self
-	ZoneDragContext.drag_offset = items[0].get_global_mouse_position() - items[0].global_position
-	
-	var proxy = items[0].duplicate(0)
-	proxy.modulate.a = 0.8
-	proxy.top_level = true
-	proxy.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	proxy.global_position = items[0].global_position
-	get_tree().root.add_child(proxy)
-	ZoneDragContext.cursor_proxy = proxy
-	
-	for item in items:
-		item.visible = false
-	
-	set_process(true)
-
-func _process_drag_state():
-	var global_mouse = get_viewport().get_mouse_position()
-	
-	if is_instance_valid(ZoneDragContext.cursor_proxy):
-		ZoneDragContext.cursor_proxy.global_position = global_mouse - ZoneDragContext.drag_offset
-	
-	var is_hovering_me = container.get_global_rect().has_point(global_mouse)
-	
-	if is_hovering_me:
-		ZoneDragContext.hover_zone = self
-		
-		if not is_instance_valid(_ghost_instance):
-			_create_ghost()
-			refresh()
-		
-		var items_for_calc: Array[Control] = []
-		for item in _items:
-			if item != _ghost_instance:
-				items_for_calc.append(item)
-		
-		var local_mouse = container.get_local_mouse_position()
-		var logical_index = layout.get_insertion_index(items_for_calc, container.size, local_mouse)
-		var target_abs_index = _get_absolute_index_from_logical(logical_index)
-		
-		if is_instance_valid(_ghost_instance):
-			var current_index = _ghost_instance.get_index()
-			if current_index != target_abs_index:
-				container.move_child(_ghost_instance, target_abs_index)
-				refresh()
-				
-	else:
-		if ZoneDragContext.hover_zone == self:
-			ZoneDragContext.hover_zone = null
-		
-		if is_instance_valid(_ghost_instance):
-			_clear_ghost()
-			refresh()
-
-	if ZoneDragContext.source_zone == self:
-		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			var target = ZoneDragContext.hover_zone
-			if is_instance_valid(target) and target is Zone:
-				target._perform_drop()
-			else:
-				_cancel_drag()
-
-func _get_absolute_index_from_logical(logical_index: int) -> int:
-	var visible_counter = 0
-	var abs_index = 0
-	var children = container.get_children()
-	
-	for child in children:
-		if child is not Control:
-			continue
-		if child == _ghost_instance: 
-			abs_index += 1
-			continue
-		if ZoneDragContext.is_dragging and child in ZoneDragContext.dragging_items:
-			abs_index += 1
-			continue
-		if not child.visible:
-			abs_index += 1
-			continue
-			
-		if visible_counter == logical_index:
-			return abs_index
-		
-		visible_counter += 1
-		abs_index += 1
-	
-	return -1
-
-func _perform_drop():
-	var items = ZoneDragContext.dragging_items
-	var source = ZoneDragContext.source_zone
-	
-	if permission and not permission.can_drop(self, items, source):
-		if source.has_method("_cancel_drag"):
-			source._cancel_drag()
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
 		return
-	
-	var target_index = container.get_child_count()
-	if is_instance_valid(_ghost_instance):
-		target_index = _ghost_instance.get_index()
-	
-	var drop_visual_pos = Vector2.ZERO
-	if is_instance_valid(ZoneDragContext.cursor_proxy):
-		drop_visual_pos = ZoneDragContext.cursor_proxy.global_position
-	
-	for item in items:
-		if not is_instance_valid(item): continue
-		
-		if item.get_parent() != container:
-			item.reparent(container, false)
-		
-		item.visible = true
-		item.global_position = drop_visual_pos
-		
-		if is_instance_valid(_ghost_instance):
-			container.move_child(item, _ghost_instance.get_index())
-		else:
-			container.move_child(item, target_index)
-			target_index += 1
-		
-		# --- 信号发射 ---
-		# 1. 通知本 Zone：有东西进来了
-		item_dropped.emit(item, source)
-		
-		# 2. 通知源 Zone：有东西走了 (如果源不是自己)
-		# 注意：如果是内部重排，source == self，此时 item_dropped 和 item_removed 都会触发
-		# 这符合逻辑：它既被“放下”到了新位置，也被“移出”了旧状态
-		if is_instance_valid(source):
-			source.item_removed.emit(item, self)
-			
-	_clear_ghost()
-	ZoneDragContext.clear()
-	
+	if _runtime != null:
+		_runtime.process(delta)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_THEME_CHANGED:
+		queue_redraw()
+
+func _draw() -> void:
+	var stylebox = get_theme_stylebox("panel", "Panel")
+	if stylebox != null:
+		draw_style_box(stylebox, Rect2(Vector2.ZERO, size))
+
+func _get_configuration_warnings() -> PackedStringArray:
+	_ensure_internal_nodes()
+	_ensure_default_resources()
+	var warnings := PackedStringArray()
+	var resolved_layout = get_layout_policy_resource()
+	var resolved_display = get_display_style_resource()
+	if clip_contents and (resolved_layout is ZoneHandLayout or resolved_layout is ZonePileLayout or resolved_display is ZoneCardDisplay):
+		warnings.append("Zone clips its children. Hover lift, drag previews, and pile overlap may be cut off.")
+	if size != Vector2.ZERO:
+		if resolved_layout is ZoneHandLayout and (resolved_layout as ZoneHandLayout).would_escape_container(size):
+			warnings.append("The current hand layout values push cards outside the zone. Reduce arch settings or use a taller zone.")
+		if resolved_layout is ZonePileLayout and (resolved_layout as ZonePileLayout).would_escape_container(size):
+			warnings.append("The current pile layout values push cards outside the zone. Reduce overlap or increase the zone size.")
+	for child in get_children():
+		if _is_expected_direct_child(child):
+			continue
+		if child is Control:
+			warnings.append("Direct child '%s' is not managed. Put card items under ItemsRoot instead of attaching them directly to Zone." % child.name)
+			break
+	return warnings
+
+func refresh() -> void:
+	_ensure_internal_nodes()
+	_ensure_runtime()
+	if _runtime != null:
+		_runtime.refresh()
+	queue_redraw()
+
+func get_items_root() -> Control:
+	_ensure_internal_nodes()
+	return _items_root
+
+func get_preview_root() -> Control:
+	_ensure_internal_nodes()
+	return _preview_root
+
+func get_items() -> Array[Control]:
+	_ensure_runtime()
+	return _runtime.get_items()
+
+func get_item_count() -> int:
+	_ensure_runtime()
+	return _runtime.get_item_count()
+
+func get_selected_items() -> Array[Control]:
+	_ensure_runtime()
+	return _runtime.selection_state.get_selected_items()
+
+func is_selected(item: Control) -> bool:
+	_ensure_runtime()
+	return _runtime.selection_state.is_selected(item)
+
+func has_item(item: Control) -> bool:
+	_ensure_runtime()
+	return _runtime != null and _runtime.has_item(item)
+
+func add_item(item: Control) -> bool:
+	_ensure_runtime()
+	return _runtime.add_item(item)
+
+func insert_item(item: Control, index: int) -> bool:
+	_ensure_runtime()
+	return _runtime.insert_item(item, index)
+
+func remove_item(item: Control) -> bool:
+	_ensure_runtime()
+	return _runtime.remove_item(item)
+
+func move_item_to(item: Control, target_zone: Zone, index: int = -1) -> bool:
+	_ensure_runtime()
+	return _runtime.move_item_to(item, target_zone, index)
+
+func transfer_items(items: Array[Control], target_zone: Zone, index: int = -1) -> bool:
+	_ensure_runtime()
+	return _runtime.transfer_items(items, target_zone, index)
+
+func reorder_item(item: Control, index: int) -> bool:
+	_ensure_runtime()
+	return _runtime.reorder_item(item, index)
+
+func clear_selection() -> void:
+	_ensure_runtime()
+	if _runtime != null:
+		_runtime.clear_selection()
+
+func select_item(item: Control, additive: bool = false) -> void:
+	_ensure_runtime()
+	if _runtime != null:
+		_runtime.select_item(item, additive)
+
+func start_drag(items: Array[Control]) -> void:
+	_ensure_runtime()
+	if _runtime != null:
+		_runtime.start_drag(items)
+
+func get_runtime() -> ZoneRuntime:
+	_ensure_runtime()
+	return _runtime
+
+func get_layout_policy_resource() -> ZoneLayoutPolicy:
+	_ensure_default_resources()
+	if _layout_policy != null:
+		return _layout_policy
+	if _preset != null:
+		return _preset.resolve_layout_policy(_default_layout_policy)
+	return _default_layout_policy
+
+func get_display_style_resource() -> ZoneDisplayStyle:
+	_ensure_default_resources()
+	if _display_style != null:
+		return _display_style
+	if _preset != null:
+		return _preset.resolve_display_style(_default_display_style)
+	return _default_display_style
+
+func get_interaction_config() -> ZoneInteraction:
+	_ensure_default_resources()
+	if _interaction != null:
+		return _interaction
+	if _preset != null:
+		return _preset.resolve_interaction(_default_interaction)
+	return _default_interaction
+
+func get_sort_policy_resource() -> ZoneSortPolicy:
+	_ensure_default_resources()
+	if _sort_policy != null:
+		return _sort_policy
+	if _preset != null:
+		return _preset.resolve_sort_policy(_default_sort_policy)
+	return _default_sort_policy
+
+func get_permission_policy_resource() -> ZonePermissionPolicy:
+	_ensure_default_resources()
+	if _permission_policy != null:
+		return _permission_policy
+	if _preset != null:
+		return _preset.resolve_permission_policy(_default_permission_policy)
+	return _default_permission_policy
+
+func get_drag_visual_factory_resource() -> ZoneDragVisualFactory:
+	_ensure_default_resources()
+	if _drag_visual_factory != null:
+		return _drag_visual_factory
+	if _preset != null:
+		return _preset.resolve_drag_visual_factory(_default_drag_visual_factory)
+	return _default_drag_visual_factory
+
+func get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator:
+	if not is_inside_tree():
+		return null
+	if create_if_missing:
+		return ZoneDragCoordinator.ensure_for(self)
+	var viewport = get_viewport()
+	if viewport == null:
+		return null
+	var existing = viewport.get_node_or_null(ZoneDragCoordinator.COORDINATOR_NAME)
+	if existing is ZoneDragCoordinator:
+		return existing as ZoneDragCoordinator
+	return null
+
+func _ensure_runtime() -> void:
+	if _runtime == null:
+		_runtime = ZoneRuntime.new(self)
+
+func _ensure_default_resources() -> void:
+	if _default_layout_policy == null:
+		var layout := ZoneHBoxLayout.new()
+		layout.item_spacing = 14.0
+		layout.padding_left = 12.0
+		layout.padding_top = 12.0
+		_default_layout_policy = layout
+	if _default_display_style == null:
+		_default_display_style = ZoneCardDisplay.new()
+	if _default_interaction == null:
+		_default_interaction = ZoneInteraction.new()
+	if _default_sort_policy == null:
+		_default_sort_policy = ZoneManualSort.new()
+	if _default_permission_policy == null:
+		_default_permission_policy = ZoneAllowAllPermission.new()
+	if _default_drag_visual_factory == null:
+		_default_drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
+
+func _ensure_internal_nodes() -> void:
+	_items_root = _ensure_internal_root(_items_root, ITEMS_ROOT_NAME)
+	_preview_root = _ensure_internal_root(_preview_root, PREVIEW_ROOT_NAME)
+	if _items_root != null and _preview_root != null and _items_root.get_index() > _preview_root.get_index():
+		move_child(_items_root, 0)
+	if _preview_root != null:
+		move_child(_preview_root, get_child_count() - 1)
+
+func _ensure_internal_root(existing: Control, node_name: String) -> Control:
+	var root = existing
+	if root == null or not is_instance_valid(root) or root.get_parent() != self:
+		root = get_node_or_null(node_name) as Control
+	if root == null:
+		root = Control.new()
+		root.name = node_name
+		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(root)
+	_sync_internal_root_owner(root)
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.offset_left = 0.0
+	root.offset_top = 0.0
+	root.offset_right = 0.0
+	root.offset_bottom = 0.0
+	root.focus_mode = Control.FOCUS_NONE
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.clip_contents = false
+	return root
+
+func _sync_internal_root_owner(root: Node) -> void:
+	if root == null:
+		return
+	if owner != null and root.owner != owner:
+		root.owner = owner
+
+func _is_expected_direct_child(child: Node) -> bool:
+	return child == _items_root \
+		or child == _preview_root \
+		or child.name.begins_with("__NascentSoul")
+
+func _handle_configuration_changed() -> void:
+	_ensure_internal_nodes()
+	update_configuration_warnings()
+	queue_redraw()
+	if _runtime == null:
+		return
+	_runtime.bind()
+	if is_inside_tree():
+		call_deferred("refresh")
+
+func _on_zone_resized() -> void:
 	refresh()
 	layout_changed.emit()
-	
-	if is_instance_valid(source) and source != self:
-		source.refresh()
-		source.layout_changed.emit()
-
-func _cancel_drag():
-	for item in ZoneDragContext.dragging_items:
-		if is_instance_valid(item):
-			item.visible = true
-	_clear_ghost()
-	ZoneDragContext.clear()
-	refresh()
-
-func _create_ghost():
-	if ZoneDragContext.dragging_items.is_empty(): return
-	var drag_item = ZoneDragContext.dragging_items[0]
-	
-	var ghost_scn = drag_item.get_meta("zone_ghost_scene", null) if drag_item.has_meta("zone_ghost_scene") else null
-	if ghost_scn and ghost_scn is PackedScene:
-		_ghost_instance = ghost_scn.instantiate()
-		_ghost_instance.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		container.add_child(_ghost_instance)
-		if is_instance_valid(ZoneDragContext.cursor_proxy):
-			_ghost_instance.global_position = ZoneDragContext.cursor_proxy.global_position
-	else:
-		_ghost_instance = Control.new()
-		_ghost_instance.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_ghost_instance.custom_minimum_size = drag_item.size
-		_ghost_instance.size = drag_item.size
-		container.add_child(_ghost_instance)
-
-func _clear_ghost():
-	if is_instance_valid(_ghost_instance):
-		_ghost_instance.queue_free()
-	_ghost_instance = null
-
-func _register_item(item: Control):
-	if not Engine.is_editor_hint() and interaction:
-		interaction.register_item(self, item)
-	if not Engine.is_editor_hint():
-		if not item.gui_input.is_connected(_on_item_gui_input):
-			item.gui_input.connect(_on_item_gui_input.bind(item))
-
-func _on_child_entered(node: Node):
-	if node is Control and node != _ghost_instance:
-		_register_item(node)
-		if not ZoneDragContext.is_dragging:
-			refresh()
-			layout_changed.emit()
-
-func _on_child_exited(node: Node):
-	if node is Control:
-		if not ZoneDragContext.is_dragging:
-			refresh()
-			layout_changed.emit()
-
-func _on_item_gui_input(event: InputEvent, item: Control):
-	if not Engine.is_editor_hint() and interaction:
-		interaction.handle_input(self, item, event)

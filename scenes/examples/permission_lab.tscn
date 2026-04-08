@@ -1,0 +1,299 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/examples/permission_lab.gd" id="1_scene"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="12_theme"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="13_card_spec"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="3_pile"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="4_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_preset.tres" id="5_board"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="7_pile_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_vbox_layout.gd" id="8_vbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="9_capacity"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_source_permission.gd" id="10_source"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd" id="11_composite"]
+
+[sub_resource type="Resource" id="PermissionDeckPileLayout"]
+script = ExtResource("7_pile_layout")
+overlap_x = 16.0
+
+[sub_resource type="Resource" id="PermissionBoardCapacityPermission"]
+script = ExtResource("9_capacity")
+max_items = 2
+reject_reason = "Board 在这个实验里只允许 2 张牌。\nBoard only allows two cards in this lab."
+
+[sub_resource type="Resource" id="PermissionSanctumLayout"]
+script = ExtResource("8_vbox_layout")
+item_spacing = 10.0
+padding_top = 14.0
+
+[sub_resource type="Resource" id="PermissionSanctumSourcePermission"]
+script = ExtResource("10_source")
+allowed_source_zone_names = PackedStringArray("HandZone")
+reject_reason = "Sanctum 只接收来自 HandZone 的卡牌。\nSanctum only accepts cards that come from HandZone."
+
+[sub_resource type="Resource" id="PermissionSanctumCapacityPermission"]
+script = ExtResource("9_capacity")
+max_items = 2
+reject_reason = "Sanctum 在这个实验里也只允许 2 张牌。\nSanctum also allows only two cards in this lab."
+
+[sub_resource type="Resource" id="PermissionSanctumCompositePermission"]
+script = ExtResource("11_composite")
+policies = [SubResource("PermissionSanctumSourcePermission"), SubResource("PermissionSanctumCapacityPermission")]
+
+[sub_resource type="Resource" id="PermissionDeckCardRune"]
+script = ExtResource("13_card_spec")
+title = "Rune"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="PermissionDeckCardShard"]
+script = ExtResource("13_card_spec")
+title = "Shard"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="PermissionDeckCardBeacon"]
+script = ExtResource("13_card_spec")
+title = "Beacon"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="PermissionDeckCardMirror"]
+script = ExtResource("13_card_spec")
+title = "Mirror"
+cost = 2
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="PermissionHandCardBloom"]
+script = ExtResource("13_card_spec")
+title = "Bloom"
+cost = 2
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="PermissionHandCardTrace"]
+script = ExtResource("13_card_spec")
+title = "Trace"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="PermissionHandCardArc"]
+script = ExtResource("13_card_spec")
+title = "Arc"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="StyleBoxFlat" id="PermissionDeckZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.59, 0.53, 0.26, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="PermissionHandZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.33, 0.55, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="PermissionBoardZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.27, 0.48, 0.7, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="PermissionSanctumZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.63, 0.41, 0.68, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="PermissionDiscardZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.53, 0.26, 0.31, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[node name="PermissionLab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scene")
+theme = ExtResource("12_theme")
+deck_cards = [SubResource("PermissionDeckCardRune"), SubResource("PermissionDeckCardShard"), SubResource("PermissionDeckCardBeacon"), SubResource("PermissionDeckCardMirror")]
+hand_cards = [SubResource("PermissionHandCardBloom"), SubResource("PermissionHandCardTrace"), SubResource("PermissionHandCardArc")]
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"DemoSceneMargin"
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_type_variation = &"DemoRootVBox"
+
+[node name="Grid" type="GridContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 5
+theme_type_variation = &"DemoPermissionGrid"
+
+[node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/Grid/DeckColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoGoldHeading"
+text = "牌库 / Deck"
+
+[node name="DeckZone" type="Control" parent="RootMargin/RootVBox/Grid/DeckColumn"]
+custom_minimum_size = Vector2(160, 220)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("PermissionDeckZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("3_pile")
+layout_policy = SubResource("PermissionDeckPileLayout")
+
+[node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "手牌 / Hand"
+
+[node name="HandZone" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn"]
+custom_minimum_size = Vector2(180, 220)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("PermissionHandZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("4_hand")
+
+[node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "战场 / Board"
+
+[node name="BoardRuleLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "任意来源 / Any source"
+
+[node name="BoardCapacityLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "容量 0 / 2 / Capacity 0 / 2"
+
+[node name="BoardZone" type="Control" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+custom_minimum_size = Vector2(180, 220)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("PermissionBoardZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("5_board")
+permission_policy = SubResource("PermissionBoardCapacityPermission")
+
+[node name="SanctumColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="SanctumLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoVioletHeading"
+text = "圣所 / Sanctum"
+
+[node name="SanctumRuleLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "仅 HandZone / HandZone only"
+
+[node name="SanctumCapacityLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "容量 0 / 2 / Capacity 0 / 2"
+
+[node name="SanctumZone" type="Control" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+custom_minimum_size = Vector2(180, 220)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("PermissionSanctumZonePanel")
+script = ExtResource("2_zone")
+layout_policy = SubResource("PermissionSanctumLayout")
+permission_policy = SubResource("PermissionSanctumCompositePermission")
+
+[node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoRoseHeading"
+text = "弃牌堆 / Discard"
+
+[node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
+custom_minimum_size = Vector2(160, 220)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("PermissionDiscardZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("6_discard")
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoStatusLabel"
+text = "最近 / Latest: Loading permission lab..."

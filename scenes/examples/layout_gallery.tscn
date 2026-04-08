@@ -1,0 +1,275 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/examples/layout_gallery.gd" id="1_scene"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="10_theme"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="11_card_spec"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="3_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="4_pile"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hbox_layout.gd" id="5_hbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_vbox_layout.gd" id="6_vbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="7_pile_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_property_sort.gd" id="8_property_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_group_sort.gd" id="9_group_sort"]
+
+[sub_resource type="Resource" id="LayoutRowLayout"]
+script = ExtResource("5_hbox_layout")
+item_spacing = 14.0
+padding_left = 16.0
+padding_top = 12.0
+
+[sub_resource type="Resource" id="LayoutListLayout"]
+script = ExtResource("6_vbox_layout")
+item_spacing = 10.0
+padding_top = 12.0
+
+[sub_resource type="Resource" id="LayoutPileLayout"]
+script = ExtResource("7_pile_layout")
+overlap_x = 22.0
+padding_left = 16.0
+padding_top = 20.0
+
+[sub_resource type="Resource" id="LayoutRowSort"]
+script = ExtResource("8_property_sort")
+metadata_key = "example_cost"
+
+[sub_resource type="Resource" id="LayoutListSort"]
+script = ExtResource("9_group_sort")
+group_metadata_key = "example_primary_tag"
+group_order = PackedStringArray("attack", "skill", "power")
+item_metadata_key = "example_cost"
+
+[sub_resource type="Resource" id="LayoutCardPulse"]
+script = ExtResource("11_card_spec")
+title = "Pulse"
+cost = 2
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="LayoutCardWard"]
+script = ExtResource("11_card_spec")
+title = "Ward"
+cost = 1
+tags = PackedStringArray("skill")
+
+[sub_resource type="Resource" id="LayoutCardAnchor"]
+script = ExtResource("11_card_spec")
+title = "Anchor"
+cost = 3
+tags = PackedStringArray("power")
+
+[sub_resource type="Resource" id="LayoutCardBurst"]
+script = ExtResource("11_card_spec")
+title = "Burst"
+cost = 1
+tags = PackedStringArray("attack")
+
+[sub_resource type="Resource" id="LayoutCardLoom"]
+script = ExtResource("11_card_spec")
+title = "Loom"
+cost = 2
+tags = PackedStringArray("skill")
+
+[sub_resource type="StyleBoxFlat" id="LayoutHandZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.55, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="LayoutRowZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.31, 0.45, 0.7, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="LayoutListZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.54, 0.44, 0.23, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="LayoutPileZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.56, 0.29, 0.36, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[node name="LayoutGallery" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scene")
+theme = ExtResource("10_theme")
+gallery_cards = [SubResource("LayoutCardPulse"), SubResource("LayoutCardWard"), SubResource("LayoutCardAnchor"), SubResource("LayoutCardBurst"), SubResource("LayoutCardLoom")]
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"DemoSceneMargin"
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_type_variation = &"DemoRootVBox"
+
+[node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoToolbarHBox"
+
+[node name="SortButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "切换横排序 / Toggle row sort"
+
+[node name="ResetButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+theme_type_variation = &"DemoDangerActionButton"
+text = "重置卡牌 / Reset cards"
+
+[node name="SortModeLabel" type="Label" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Row 费用升序 / Row cost ascending"
+
+[node name="Grid" type="GridContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+theme_type_variation = &"DemoLayoutGrid"
+
+[node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "手牌弧线 / Hand"
+
+[node name="HandCaptionLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "适合手牌与奖励选择 / Best for player hands and reward picks"
+
+[node name="HandZone" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn"]
+custom_minimum_size = Vector2(260, 220)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("LayoutHandZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("3_hand")
+
+[node name="RowColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="RowLabel" type="Label" parent="RootMargin/RootVBox/Grid/RowColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "横向排布 / HBox"
+
+[node name="RowCaptionLabel" type="Label" parent="RootMargin/RootVBox/Grid/RowColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "稳定左到右阅读 / Stable left-to-right reading"
+
+[node name="RowZone" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn"]
+custom_minimum_size = Vector2(260, 220)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("LayoutRowZonePanel")
+script = ExtResource("2_zone")
+layout_policy = SubResource("LayoutRowLayout")
+sort_policy = SubResource("LayoutRowSort")
+
+[node name="ListColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="ListLabel" type="Label" parent="RootMargin/RootVBox/Grid/ListColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoGoldHeading"
+text = "分组列表 / Grouped list"
+
+[node name="ListCaptionLabel" type="Label" parent="RootMargin/RootVBox/Grid/ListColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "先按 primary tag 分组，再按费用 / Groups by primary tag before cost"
+
+[node name="ListZone" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn"]
+custom_minimum_size = Vector2(260, 240)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_contents = true
+theme_override_styles/panel = SubResource("LayoutListZonePanel")
+script = ExtResource("2_zone")
+layout_policy = SubResource("LayoutListLayout")
+sort_policy = SubResource("LayoutListSort")
+
+[node name="PileColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="PileLabel" type="Label" parent="RootMargin/RootVBox/Grid/PileColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoRoseHeading"
+text = "叠堆排布 / Pile"
+
+[node name="PileCaptionLabel" type="Label" parent="RootMargin/RootVBox/Grid/PileColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "适合牌库、弃牌堆与累计感区域 / Best for decks, discards, and accumulated stacks"
+
+[node name="PileZone" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn"]
+custom_minimum_size = Vector2(260, 240)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("LayoutPileZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("4_pile")
+layout_policy = SubResource("LayoutPileLayout")
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoStatusLabel"
+text = "最近 / Latest: Loading layout gallery..."

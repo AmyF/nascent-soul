@@ -1,61 +1,41 @@
 @tool
-class_name ZoneVBoxLayout extends ZoneLayout
+class_name ZoneVBoxLayout extends ZoneLayoutPolicy
 
 @export var item_spacing: float = 10.0
 @export var padding_top: float = 10.0
 
-func calculate(items: Array[Control], container_size: Vector2, ghost_index: int = -1, ghost_size: Vector2 = Vector2.ZERO, ghost_instance: Control = null) -> Dictionary:
-	var result = {}
-	var current_y = padding_top
-	
-	var total_count = items.size()
-	if ghost_index != -1: total_count += 1
-	
-	var item_iter = 0
-	
-	for i in range(total_count):
-		var is_ghost_slot = (i == ghost_index)
-		var pos = Vector2(0, current_y)
-		var size_y = 0.0
-		
-		if is_ghost_slot:
-			size_y = ghost_size.y
-			if is_instance_valid(ghost_instance):
-				result[ghost_instance] = {
-					"pos": pos,
-					"rot": 0.0,
-					"scale": Vector2.ONE,
-					"z_index": 0
-				}
-		else:
-			if item_iter < items.size():
-				var item = items[item_iter]
-				if is_instance_valid(item):
-					result[item] = {
-						"pos": pos,
-						"rot": 0.0,
-						"scale": Vector2.ONE,
-						"z_index": 0
-					}
-					size_y = item.size.y
-				item_iter += 1
-		
-		current_y += size_y + item_spacing
-		
-	return result
+func calculate(items: Array[Control], container_size: Vector2, ghost_item: Control = null, ghost_index: int = -1) -> Array[ZonePlacement]:
+	var render_items: Array[Control] = items.duplicate()
+	if is_instance_valid(ghost_item) and ghost_index >= 0:
+		render_items.insert(clampi(ghost_index, 0, render_items.size()), ghost_item)
+	var placements: Array[ZonePlacement] = []
+	var current_y = _resolve_start_y(render_items, container_size)
+	for i in range(render_items.size()):
+		var item = render_items[i]
+		var size = resolve_item_size(item)
+		var x = max(0.0, (container_size.x - size.x) * 0.5)
+		placements.append(ZonePlacement.new(item, Vector2(x, current_y), 0.0, Vector2.ONE, i, item == ghost_item))
+		current_y += size.y + item_spacing
+	return placements
 
 func get_insertion_index(items: Array[Control], container_size: Vector2, mouse_pos: Vector2) -> int:
-	var current_y = padding_top
+	var current_y = _resolve_start_y(items, container_size)
 	var count = items.size()
-	
 	for i in range(count):
-		if not is_instance_valid(items[i]): continue
-		var h = items[i].size.y
+		if not is_instance_valid(items[i]):
+			continue
+		var h = resolve_item_size(items[i]).y
 		var center_y = current_y + h / 2.0
-		
 		if mouse_pos.y < center_y:
 			return i
-		
 		current_y += h + item_spacing
-		
 	return count
+
+func _resolve_start_y(items: Array[Control], container_size: Vector2) -> float:
+	var total_height = 0.0
+	for i in range(items.size()):
+		total_height += resolve_item_size(items[i]).y
+		if i > 0:
+			total_height += item_spacing
+	var available_height = max(0.0, container_size.y - padding_top * 2.0)
+	return padding_top + max(0.0, (available_height - total_height) * 0.5)

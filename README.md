@@ -1,63 +1,87 @@
+# NascentSoul
 
-# 介绍
+NascentSoul is a Godot 4.6 card-zone plugin built around one idea: a zone should feel like a real UI component, while its behavior stays modular. `Zone` is the actual `Control` you place in the scene, and layout, display, drag/drop permissions, sorting, interaction rules, and drag visuals are all composed from resources instead of being hardwired into one monolith.
 
-NascentSoul提供了一个模块化的框架，可以快速构建卡牌游戏中的常见功能，如牌库、手牌、弃牌堆等区域管理。
-
-> 作者正在使用该库构建自己的卡牌游戏，会持续更新此库。欢迎提需求相关Issue。
-
-这个插件的核心是 `Zone` 系统，它是一个区域管理器，通过组合不同的逻辑模块来实现各种游戏机制：
-
-- **权限控制** (`ZonePermission`)：控制哪些对象可以进入特定区域
-- **布局管理** (`ZoneLayout`)：处理对象在区域内的排列方式，包括弧形布局、堆叠布局、水平布局等
-- **显示逻辑** (`ZoneDisplay`)：管理对象的视觉状态，如悬停效果、选中状态等
-- **交互处理** (`ZoneInteraction`)：处理点击、拖拽、多选等用户交互
-- **排序逻辑** (`ZoneSort`)：定义区域内对象的排序规则
-
-插件还提供了一个基础的卡牌实现 (`ZoneCard`)，支持翻面动画和高亮效果。
-
-## 示例
-
-一个简单的拖拽示例。
-
-## 结构
+## Architecture
 
 ```mermaid
-graph TD
-    subgraph "场景树结构 (Scene Tree Structure)"
-        ParentControl["父容器 (Control)"]
-        ParentControl -- "场景树包含" --> Zone["Zone (Node)<br/>核心协调器"]
-        ParentControl -- "场景树包含" --> ManagedObject["被管理对象 (Control)<br/>卡牌/棋子"]
-    end
-
-    subgraph "逻辑与继承关系 (Logical & Inheritance Relationships)"
-        subgraph "可配置的逻辑模块 (Logic Resources)"
-            LP[ZonePermission<br/>权限]
-            LS[ZoneSort<br/>排序]
-            LD[ZoneDisplay<br/>显示]
-            LL[ZoneLayout<br/>布局]
-            LI[ZoneInteraction<br/>交互]
-        end
-
-        subgraph "具体实现 (Game-Specific Implementation)"
-            CardDisplay["ZoneCardDisplay<br/>(继承自 ZoneDisplay)"]
-        end
-
-        %% 核心逻辑关系
-        Zone -. "逻辑上管理 (引用)" .-> ManagedObject
-        Zone -. "引用" .-> LP
-        Zone -. "引用" .-> LS
-        Zone -. "引用" .-> LD
-        Zone -. "引用" .-> LL
-        Zone -. "引用" .-> LI
-
-        %% 交互关系
-        LI -. "连接信号到" .-> ManagedObject
-
-        %% 继承关系
-        LD -- "可被继承为" --> CardDisplay
-    end
+flowchart LR
+    Zone["Zone (Control)"] --> Items["ItemsRoot"]
+    Zone --> Preview["PreviewRoot"]
+    Zone --> Runtime["ZoneRuntime"]
+    Zone --> Preset["ZonePreset"]
+    Preset --> Layout["ZoneLayoutPolicy"]
+    Preset --> Display["ZoneDisplayStyle"]
+    Preset --> Interaction["ZoneInteraction"]
+    Preset --> Sort["ZoneSortPolicy"]
+    Preset --> Permission["ZonePermissionPolicy"]
+    Preset --> DragVisual["ZoneDragVisualFactory"]
+    Runtime --> Coordinator["ZoneDragCoordinator"]
+    Runtime --> Layout
+    Runtime --> Display
+    Runtime --> Interaction
+    Runtime --> Sort
+    Runtime --> Permission
+    Runtime --> DragVisual
 ```
 
-## 项目状态
+- `Zone` is the UI surface. It owns input, sizing, theme, `ItemsRoot`, and `PreviewRoot`.
+- `ZoneRuntime` owns live state. Selection, drag sessions, hover feedback, display caches, and transfer handoff data live here instead of inside shared `Resource` instances.
+- `ZonePreset` is the inspector-friendly entry point. It bundles common combinations of `ZoneLayoutPolicy`, `ZoneDisplayStyle`, `ZoneInteraction`, `ZoneSortPolicy`, `ZonePermissionPolicy`, and `ZoneDragVisualFactory`.
+- `ItemsRoot` is the only source of managed items. `PreviewRoot` is reserved for ghost and preview visuals and never participates in logical item order.
+- `ZoneDragCoordinator` handles scene-level drag orchestration so cross-zone movement stays predictable without pushing runtime state into globals.
 
-⚠️ 此项目仍在早期开发阶段，API 可能会有变化。
+## Why This Shape Works
+
+- It matches how card games are actually authored in Godot: zones are visible controls, not invisible coordinators hanging off another node.
+- Behavior stays composable. A hand, board, pile, discard, or custom area is mostly a different combination of policies and styles, not a different subsystem.
+- Runtime state stays local and safe. You can reuse presets and policy resources without leaking selection state, tween caches, or drag state across zones.
+- The same core pipeline covers inspector-authored scenes, scripted setup, drag/drop, keyboard navigation, and demo recipes.
+
+## Quick Start
+
+```gdscript
+var zone := Zone.new()
+zone.custom_minimum_size = Vector2(320, 220)
+zone.size = zone.custom_minimum_size
+zone.preset = load("res://addons/nascentsoul/presets/hand_zone_preset.tres")
+add_child(zone)
+
+var data := CardData.new()
+data.title = "Spark"
+
+var card := ZoneCard.new()
+card.data = data
+card.face_up = true
+
+zone.add_item(card)
+```
+
+Configuration precedence is always:
+
+`override > ZonePreset > built-in default`
+
+The authored shape is simple:
+
+- Put managed items under `ItemsRoot`.
+- Let `PreviewRoot` stay runtime-only.
+- Treat `Zone` itself as the area, not as a helper attached to some external container.
+
+## Learn by Opening the Repo
+
+- [`scenes/demo.tscn`](scenes/demo.tscn): example hub and the fastest way to inspect the plugin in context.
+- [`scenes/examples/transfer_playground.tscn`](scenes/examples/transfer_playground.tscn): end-to-end card flow from deck to hand, board, and discard.
+- [`scenes/examples/layout_gallery.tscn`](scenes/examples/layout_gallery.tscn): compare hand, row, grouped-list, and pile layouts side by side.
+- [`scenes/examples/permission_lab.tscn`](scenes/examples/permission_lab.tscn): inspect capacity and source-based drop rules.
+- [`scenes/examples/zone_recipes.tscn`](scenes/examples/zone_recipes.tscn): copyable starter setup for deck, hand, board, and discard zones.
+
+The editor plugin exposes these entry points directly:
+
+- `Create Zone From Preset`
+- `Open NascentSoul Example Hub`
+- `Open NascentSoul Zone Recipes`
+- `Open NascentSoul README`
+
+## Project Status
+
+NascentSoul `1.0.0` marks the current public shape: `Zone extends Control`, inspector-driven presets, modular runtime behavior, and scene-authored examples as the canonical source of usage. The architecture is intended to be the stable foundation of the plugin going forward.

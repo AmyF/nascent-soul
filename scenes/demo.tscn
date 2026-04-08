@@ -1,35 +1,72 @@
-[gd_scene load_steps=2 format=3 uid="uid://ck4csschxh7la"]
+[gd_scene format=3 uid="uid://lx5kwklh25li"]
 
-[ext_resource type="Script" uid="uid://ckym6xo6gjtu" path="res://scenes/demo.gd" id="1_tqfh0"]
+[ext_resource type="Script" uid="uid://ckym6xo6gjtu" path="res://scenes/demo.gd" id="1_demo"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="6_theme"]
+[ext_resource type="PackedScene" path="res://scenes/examples/transfer_playground.tscn" id="2_transfer"]
+[ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="3_layouts"]
+[ext_resource type="PackedScene" path="res://scenes/examples/permission_lab.tscn" id="4_rules"]
+[ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="5_recipes"]
 
-[node name="Demo" type="Control"]
+[node name="DemoHub" type="Control" unique_id=1823012048]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_tqfh0")
+script = ExtResource("1_demo")
+theme = ExtResource("6_theme")
 
-[node name="BoardPanel" type="Panel" parent="."]
-custom_minimum_size = Vector2(200, 0)
+[node name="RootMargin" type="MarginContainer" parent="." unique_id=364584155]
 layout_mode = 1
-anchors_preset = 11
-anchor_left = 1.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -200.0
-offset_bottom = -201.0
-grow_horizontal = 0
-grow_vertical = 2
-
-[node name="HandPanel" type="Panel" parent="."]
-custom_minimum_size = Vector2(0, 200)
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -200.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
+theme_type_variation = &"DemoHubMargin"
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin" unique_id=550835841]
+layout_mode = 2
+theme_type_variation = &"DemoRootVBox"
+
+[node name="TitleLabel" type="Label" parent="RootMargin/RootVBox" unique_id=1988887791]
+layout_mode = 2
+theme_type_variation = &"DemoHubTitle"
+text = "NascentSoul 示例总览 / NascentSoul Example Hub"
+
+[node name="TabContainer" type="TabContainer" parent="RootMargin/RootVBox" unique_id=554985846]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="Transfer转移" type="Control" parent="RootMargin/RootVBox/TabContainer" unique_id=2082156427]
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Transfer转移" instance=ExtResource("2_transfer")]
+layout_mode = 2
+
+[node name="Layouts布局" type="Control" parent="RootMargin/RootVBox/TabContainer" unique_id=207490087]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Layouts布局" instance=ExtResource("3_layouts")]
+layout_mode = 2
+
+[node name="Rules规则" type="Control" parent="RootMargin/RootVBox/TabContainer" unique_id=1220656855]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Rules规则" instance=ExtResource("4_rules")]
+layout_mode = 2
+
+[node name="Recipes模板" type="Control" parent="RootMargin/RootVBox/TabContainer" unique_id=1691078307]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 3
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Recipes模板" instance=ExtResource("5_recipes")]
+layout_mode = 2

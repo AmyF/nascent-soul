@@ -11,7 +11,8 @@ config_version=5
 [application]
 
 config/name="NascentSoul"
-config/features=PackedStringArray("4.5", "Forward Plus")
+run/main_scene="res://scenes/demo.tscn"
+config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="uid://b2a5egb26y47l"
 
 [display]
