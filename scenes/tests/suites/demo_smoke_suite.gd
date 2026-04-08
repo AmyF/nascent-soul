@@ -10,6 +10,7 @@ func _init() -> void:
 	_suite_name = "demo-smoke"
 
 func _run_suite() -> void:
+	_test_static_demo_scene_configuration()
 	await _test_demo_hub_summary_panels()
 	await _reset_root()
 	await _test_transfer_playground_guidance()
@@ -19,6 +20,50 @@ func _run_suite() -> void:
 	await _test_layout_gallery_mode_and_captions()
 	await _reset_root()
 	await _test_zone_recipes_copy_hint_and_reset()
+
+func _test_static_demo_scene_configuration() -> void:
+	var demo = DEMO_SCENE.instantiate()
+	var tab_container = demo.get_node_or_null("RootMargin/RootVBox/TabContainer") as TabContainer
+	_check(tab_container != null, "demo hub should serialize its tab container")
+	if tab_container != null:
+		_check(tab_container.get_child_count() == 4, "demo hub should keep four static example tabs")
+		for tab in tab_container.get_children():
+			_check(tab.get_node_or_null("Content") != null, "demo hub tabs should statically embed their example scenes")
+	var transfer = TRANSFER_SCENE.instantiate()
+	var transfer_board = transfer.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardZone") as Zone
+	_check(transfer.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardRuleLabel") != null, "transfer playground should serialize the board rule label")
+	_check(transfer.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardCapacityLabel") != null, "transfer playground should serialize the board capacity label")
+	_check(transfer_board != null and transfer_board.preset != null, "transfer playground board zone should serialize its preset")
+	_check(transfer_board != null and transfer_board.permission_policy is ZoneCapacityPermission, "transfer playground board zone should serialize its capacity policy")
+	_check(transfer_board != null and transfer_board.drag_visual_factory is ZoneConfigurableDragVisualFactory, "transfer playground board zone should serialize its drag visual factory")
+	var permission = PERMISSION_SCENE.instantiate()
+	var permission_board = permission.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
+	var sanctum_zone = permission.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone") as Zone
+	_check(permission.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardCapacityLabel") != null, "permission lab should serialize the board capacity label")
+	_check(permission.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumCapacityLabel") != null, "permission lab should serialize the sanctum capacity label")
+	_check(permission_board != null and permission_board.permission_policy is ZoneCapacityPermission, "permission lab board zone should serialize its capacity policy")
+	_check(sanctum_zone != null and sanctum_zone.layout_policy is ZoneVBoxLayout, "permission lab sanctum zone should serialize its layout policy")
+	_check(sanctum_zone != null and sanctum_zone.permission_policy is ZoneCompositePermission, "permission lab sanctum zone should serialize its composite permission")
+	var layouts = LAYOUT_SCENE.instantiate()
+	var row_zone = layouts.get_node_or_null("RootMargin/RootVBox/Grid/RowColumn/RowZone") as Zone
+	var list_zone = layouts.get_node_or_null("RootMargin/RootVBox/Grid/ListColumn/ListZone") as Zone
+	_check(layouts.get_node_or_null("RootMargin/RootVBox/Toolbar/SortModeLabel") != null, "layout gallery should serialize its sort mode label")
+	_check(layouts.get_node_or_null("RootMargin/RootVBox/Grid/HandColumn/HandCaptionLabel") != null, "layout gallery should serialize its hand caption label")
+	_check(row_zone != null and row_zone.layout_policy is ZoneHBoxLayout, "layout gallery row zone should serialize its row layout")
+	_check(row_zone != null and row_zone.sort_policy is ZonePropertySort, "layout gallery row zone should serialize its row sort")
+	_check(list_zone != null and list_zone.layout_policy is ZoneVBoxLayout, "layout gallery list zone should serialize its list layout")
+	_check(list_zone != null and list_zone.sort_policy is ZoneGroupSort, "layout gallery list zone should serialize its list sort")
+	var recipes = RECIPES_SCENE.instantiate()
+	var recipes_board = recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone") as Zone
+	_check(recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardDetails") != null, "zone recipes should serialize the static board recipe copy")
+	_check(recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardCapacityLabel") != null, "zone recipes should serialize the dynamic board capacity label")
+	_check(recipes_board != null and recipes_board.preset != null, "zone recipes board zone should serialize its preset")
+	_check(recipes_board != null and recipes_board.permission_policy is ZoneCapacityPermission, "zone recipes board zone should serialize its capacity policy")
+	demo.free()
+	transfer.free()
+	permission.free()
+	layouts.free()
+	recipes.free()
 
 func _test_demo_hub_summary_panels() -> void:
 	var scene = DEMO_SCENE.instantiate()
@@ -41,20 +86,22 @@ func _test_transfer_playground_guidance() -> void:
 	add_child(scene)
 	await _settle_frames(3)
 	var board_rule_label = scene.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardRuleLabel") as Label
+	var board_capacity_label = scene.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardCapacityLabel") as Label
 	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
 	var hand_zone = scene.get_node_or_null("RootMargin/RootVBox/HandZone") as Zone
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardZone") as Zone
 	_check(scene.get_node_or_null("RootMargin/RootVBox/InfoRow") == null, "transfer playground should avoid large onboarding cards over the play area")
-	_check(board_rule_label != null and board_rule_label.text.contains("2 / 5"), "transfer playground should show the initial board occupancy")
+	_check(board_rule_label != null and (board_rule_label.text.contains("Full") or board_rule_label.text.contains("满员")), "transfer playground should keep the board rule copy static and visible")
+	_check(board_capacity_label != null and board_capacity_label.text.contains("2 / 5"), "transfer playground should show the initial board occupancy in a dedicated capacity label")
 	_check(hand_zone != null and board_zone != null, "transfer playground smoke should keep the hand and board zones accessible")
 	_check(board_zone != null and board_zone.size.y >= 220.0, "transfer playground should keep the board zone tall enough to use comfortably")
 	_check(hand_zone != null and hand_zone.size.y >= 140.0, "transfer playground should keep the hand zone tall enough to use comfortably")
-	if board_rule_label == null or status == null or hand_zone == null or board_zone == null:
+	if board_capacity_label == null or status == null or hand_zone == null or board_zone == null:
 		return
 	var hand_item = hand_zone.get_items()[0]
 	_check(hand_zone.move_item_to(hand_item, board_zone, board_zone.get_item_count()), "transfer playground smoke should move a hand card onto the board")
 	await _settle_frames(3)
-	_check(board_rule_label.text.contains("3 / 5"), "transfer playground board rule label should refresh after a successful move")
+	_check(board_capacity_label.text.contains("3 / 5"), "transfer playground board capacity label should refresh after a successful move")
 	_check(status.text.contains(hand_item.name), "transfer playground status should mention the most recent moved card")
 
 func _test_permission_lab_rule_cards_and_reject_feedback() -> void:
@@ -62,16 +109,20 @@ func _test_permission_lab_rule_cards_and_reject_feedback() -> void:
 	add_child(scene)
 	await _settle_frames(3)
 	var board_rule_label = scene.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardRuleLabel") as Label
+	var board_capacity_label = scene.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardCapacityLabel") as Label
 	var sanctum_rule_label = scene.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumRuleLabel") as Label
+	var sanctum_capacity_label = scene.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumCapacityLabel") as Label
 	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
 	var hand_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/HandColumn/HandZone") as Zone
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
 	_check(scene.get_node_or_null("RootMargin/RootVBox/InfoRow") == null, "permission lab should avoid large onboarding cards over the play area")
-	_check(board_rule_label != null and board_rule_label.text.contains("0 / 2"), "permission lab should show the board capacity rule before interaction")
+	_check(board_rule_label != null and board_rule_label.text.contains("Any source"), "permission lab should keep the board rule copy static and visible")
+	_check(board_capacity_label != null and board_capacity_label.text.contains("0 / 2"), "permission lab should show the board capacity before interaction")
 	_check(sanctum_rule_label != null and sanctum_rule_label.text.contains("HandZone"), "permission lab should show the sanctum source restriction before interaction")
+	_check(sanctum_capacity_label != null and sanctum_capacity_label.text.contains("0 / 2"), "permission lab should show the sanctum capacity before interaction")
 	_check(hand_zone != null and board_zone != null, "permission lab smoke should keep the hand and board zones accessible")
 	_check(board_zone != null and board_zone.size.y >= 200.0, "permission lab should preserve enough zone height after adding guidance")
-	if board_rule_label == null or sanctum_rule_label == null or status == null or hand_zone == null or board_zone == null:
+	if board_capacity_label == null or sanctum_rule_label == null or status == null or hand_zone == null or board_zone == null:
 		return
 	for _i in range(2):
 		var item = hand_zone.get_items()[0]
@@ -80,7 +131,7 @@ func _test_permission_lab_rule_cards_and_reject_feedback() -> void:
 	var rejected_item = hand_zone.get_items()[0]
 	_check(not hand_zone.move_item_to(rejected_item, board_zone, board_zone.get_item_count()), "permission lab should reject transfers once the board is full")
 	await _settle_frames(2)
-	_check(board_rule_label.text.contains("2 / 2"), "permission lab board rule label should refresh to the full state")
+	_check(board_capacity_label.text.contains("2 / 2"), "permission lab board capacity label should refresh to the full state")
 	_check(status.text.contains("rejected") or status.text.contains("拒绝"), "permission lab status should surface the rejection feedback")
 
 func _test_layout_gallery_mode_and_captions() -> void:
@@ -97,7 +148,7 @@ func _test_layout_gallery_mode_and_captions() -> void:
 	_check(scene.get_node_or_null("RootMargin/RootVBox/InfoRow") == null, "layout gallery should avoid large onboarding cards above the comparison grid")
 	_check(sort_mode_label != null and sort_mode_label.text.contains("ascending"), "layout gallery should show the current row sort mode outside the toggle button")
 	_check(hand_caption != null and not hand_caption.text.is_empty(), "layout gallery should describe the hand layout use case")
-	_check(row_caption != null and row_caption.text.contains("升序"), "layout gallery should describe the current row ordering")
+	_check(row_caption != null and row_caption.text.contains("Stable"), "layout gallery should keep the row layout caption static")
 	_check(list_caption != null and list_caption.text.contains("primary tag"), "layout gallery should explain the grouped list semantics")
 	_check(pile_caption != null and (pile_caption.text.contains("牌库") or pile_caption.text.contains("decks")), "layout gallery should explain the pile layout use case")
 	_check(hand_zone != null and hand_zone.size.y >= 200.0, "layout gallery should keep the top-row layouts visually usable")
@@ -111,10 +162,12 @@ func _test_zone_recipes_copy_hint_and_reset() -> void:
 	add_child(scene)
 	await _settle_frames(3)
 	var board_details = scene.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardDetails") as Label
+	var board_capacity_label = scene.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardCapacityLabel") as Label
 	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone") as Zone
 	_check(scene.get_node_or_null("RootMargin/RootVBox/InfoRow") == null, "zone recipes should keep the recipe board clear of large onboarding cards")
-	_check(board_details != null and board_details.text.contains("BoardZonePreset"), "zone recipes should describe the board recipe preset")
+	_check(board_details != null and board_details.text.contains("BoardZonePreset"), "zone recipes should keep the board recipe copy static")
+	_check(board_capacity_label != null and board_capacity_label.text.contains("2 / 4"), "zone recipes should show the board capacity in a dedicated dynamic label")
 	_check(board_zone != null and board_zone.size.y >= 220.0, "zone recipes should keep the board recipe large enough to inspect and copy")
 	if status == null:
 		return

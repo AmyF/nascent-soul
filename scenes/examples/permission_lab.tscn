@@ -1,7 +1,104 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/examples/permission_lab.gd" id="1_jq44b"]
-[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_z7r60"]
+[ext_resource type="Script" path="res://scenes/examples/permission_lab.gd" id="1_scene"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="3_pile"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="4_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_preset.tres" id="5_board"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="7_pile_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_vbox_layout.gd" id="8_vbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="9_capacity"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_source_permission.gd" id="10_source"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd" id="11_composite"]
+
+[sub_resource type="Resource" id="DeckPileLayout"]
+script = ExtResource("7_pile_layout")
+overlap_x = 16.0
+
+[sub_resource type="Resource" id="BoardCapacityPermission"]
+script = ExtResource("9_capacity")
+max_items = 2
+reject_reason = "Board 在这个实验里只允许 2 张牌。\nBoard only allows two cards in this lab."
+
+[sub_resource type="Resource" id="SanctumLayout"]
+script = ExtResource("8_vbox_layout")
+item_spacing = 10.0
+padding_top = 14.0
+
+[sub_resource type="Resource" id="SanctumSourcePermission"]
+script = ExtResource("10_source")
+allowed_source_zone_names = PackedStringArray("HandZone")
+reject_reason = "Sanctum 只接收来自 HandZone 的卡牌。\nSanctum only accepts cards that come from HandZone."
+
+[sub_resource type="Resource" id="SanctumCapacityPermission"]
+script = ExtResource("9_capacity")
+max_items = 2
+reject_reason = "Sanctum 在这个实验里也只允许 2 张牌。\nSanctum also allows only two cards in this lab."
+
+[sub_resource type="Resource" id="SanctumCompositePermission"]
+script = ExtResource("11_composite")
+policies = [SubResource("SanctumSourcePermission"), SubResource("SanctumCapacityPermission")]
+
+[sub_resource type="StyleBoxFlat" id="DeckZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.59, 0.53, 0.26, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="HandZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.33, 0.55, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="BoardZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.27, 0.48, 0.7, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="SanctumZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.63, 0.41, 0.68, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="DiscardZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.53, 0.26, 0.31, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [node name="PermissionLab" type="Control"]
 layout_mode = 3
@@ -10,7 +107,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_jq44b")
+script = ExtResource("1_scene")
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -28,11 +125,6 @@ theme_override_constants/margin_bottom = 16
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
-layout_mode = 2
-autowrap_mode = 3
-text = "Loading permission lab..."
-
 [node name="Grid" type="GridContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -42,69 +134,137 @@ theme_override_constants/h_separation = 12
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
+theme_override_constants/separation = 6
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/Grid/DeckColumn"]
 layout_mode = 2
-text = "Deck"
+theme_override_colors/font_color = Color(0.96, 0.92, 0.74, 1)
+theme_override_font_sizes/font_size = 14
+text = "牌库 / Deck"
 
 [node name="DeckZone" type="Control" parent="RootMargin/RootVBox/Grid/DeckColumn"]
 custom_minimum_size = Vector2(160, 220)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("2_z7r60")
+theme_override_styles/panel = SubResource("DeckZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("3_pile")
+layout_policy = SubResource("DeckPileLayout")
 
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
+theme_override_constants/separation = 6
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
 layout_mode = 2
-text = "Hand"
+theme_override_colors/font_color = Color(0.84, 0.96, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "手牌 / Hand"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn"]
 custom_minimum_size = Vector2(180, 220)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("2_z7r60")
+theme_override_styles/panel = SubResource("HandZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("4_hand")
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
+theme_override_constants/separation = 6
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
 layout_mode = 2
-text = "Board (Capacity 2)"
+theme_override_colors/font_color = Color(0.83, 0.91, 0.99, 1)
+theme_override_font_sizes/font_size = 14
+text = "战场 / Board"
+
+[node name="BoardRuleLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "任意来源 / Any source"
+
+[node name="BoardCapacityLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "容量 0 / 2 / Capacity 0 / 2"
 
 [node name="BoardZone" type="Control" parent="RootMargin/RootVBox/Grid/BoardColumn"]
 custom_minimum_size = Vector2(180, 220)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("2_z7r60")
+theme_override_styles/panel = SubResource("BoardZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("5_board")
+permission_policy = SubResource("BoardCapacityPermission")
 
 [node name="SanctumColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(180, 0)
+theme_override_constants/separation = 6
 
 [node name="SanctumLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
 layout_mode = 2
-text = "Sanctum (Hand Only, Cap 2)"
+theme_override_colors/font_color = Color(0.94, 0.85, 0.99, 1)
+theme_override_font_sizes/font_size = 14
+text = "圣所 / Sanctum"
+
+[node name="SanctumRuleLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "仅 HandZone / HandZone only"
+
+[node name="SanctumCapacityLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "容量 0 / 2 / Capacity 0 / 2"
 
 [node name="SanctumZone" type="Control" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
 custom_minimum_size = Vector2(180, 220)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("2_z7r60")
+theme_override_styles/panel = SubResource("SanctumZonePanel")
+script = ExtResource("2_zone")
+layout_policy = SubResource("SanctumLayout")
+permission_policy = SubResource("SanctumCompositePermission")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
+theme_override_constants/separation = 6
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
 layout_mode = 2
-text = "Discard"
+theme_override_colors/font_color = Color(0.97, 0.85, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "弃牌堆 / Discard"
 
 [node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
 custom_minimum_size = Vector2(160, 220)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("2_z7r60")
+theme_override_styles/panel = SubResource("DiscardZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("6_discard")
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_constants/line_spacing = 2
+text = "最近 / Latest: Loading permission lab..."

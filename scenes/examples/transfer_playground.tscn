@@ -1,7 +1,75 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/examples/transfer_playground.gd" id="1_t79ps"]
-[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_7f4vk"]
+[ext_resource type="Script" path="res://scenes/examples/transfer_playground.gd" id="1_scene"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="3_pile"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="4_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_preset.tres" id="5_board"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="7_capacity"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_factory"]
+
+[sub_resource type="Resource" id="BoardCapacityPermission"]
+script = ExtResource("7_capacity")
+max_items = 5
+reject_reason = "Board 已满。先把一张牌丢进 Discard 再试。\nBoard is full. Discard a card first, then try again."
+
+[sub_resource type="Resource" id="TransferDragVisualFactory"]
+script = ExtResource("8_factory")
+ghost_mode = 0
+ghost_fill_color = Color(0.96, 0.93, 0.84, 0.08)
+ghost_border_color = Color(0.96, 0.8, 0.3, 0.72)
+proxy_mode = 0
+proxy_modulate = Color(1, 1, 1, 0.88)
+proxy_scale = Vector2(1.04, 1.04)
+
+[sub_resource type="StyleBoxFlat" id="DeckZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.59, 0.53, 0.26, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="BoardZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.27, 0.48, 0.7, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="DiscardZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.53, 0.26, 0.31, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="HandZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.33, 0.55, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [node name="TransferPlayground" type="Control"]
 layout_mode = 3
@@ -10,7 +78,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_t79ps")
+script = ExtResource("1_scene")
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -28,11 +96,6 @@ theme_override_constants/margin_bottom = 16
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
-layout_mode = 2
-autowrap_mode = 3
-text = "Loading transfer playground..."
-
 [node name="TopRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -41,52 +104,100 @@ theme_override_constants/separation = 12
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
+theme_override_constants/separation = 6
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
 layout_mode = 2
-text = "Deck"
+theme_override_colors/font_color = Color(0.96, 0.92, 0.74, 1)
+theme_override_font_sizes/font_size = 14
+text = "牌库 / Deck"
 
 [node name="DeckZone" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
 custom_minimum_size = Vector2(200, 240)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("2_7f4vk")
+theme_override_styles/panel = SubResource("DeckZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("3_pile")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
 layout_mode = 2
-text = "Board"
+theme_override_colors/font_color = Color(0.83, 0.91, 0.99, 1)
+theme_override_font_sizes/font_size = 14
+text = "战场 / Board"
+
+[node name="BoardRuleLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "满员时直接拒绝放置 / Full state rejects drops"
+
+[node name="BoardCapacityLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "容量 0 / 5 / Capacity 0 / 5"
 
 [node name="BoardZone" type="Control" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
 custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-script = ExtResource("2_7f4vk")
+theme_override_styles/panel = SubResource("BoardZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("5_board")
+permission_policy = SubResource("BoardCapacityPermission")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
+theme_override_constants/separation = 6
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
 layout_mode = 2
-text = "Discard"
+theme_override_colors/font_color = Color(0.97, 0.85, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "弃牌堆 / Discard"
 
 [node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
 custom_minimum_size = Vector2(200, 240)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("2_7f4vk")
+theme_override_styles/panel = SubResource("DiscardZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("6_discard")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
-text = "Hand"
+theme_override_colors/font_color = Color(0.84, 0.96, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "手牌 / Hand"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox"]
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
-script = ExtResource("2_7f4vk")
+theme_override_styles/panel = SubResource("HandZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("4_hand")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_constants/line_spacing = 2
+text = "最近 / Latest: Loading transfer playground..."

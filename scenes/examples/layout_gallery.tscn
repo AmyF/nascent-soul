@@ -1,7 +1,185 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/examples/layout_gallery.gd" id="1_n4rwd"]
-[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_4xyqe"]
+[ext_resource type="Script" path="res://scenes/examples/layout_gallery.gd" id="1_scene"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="3_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="4_pile"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hbox_layout.gd" id="5_hbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_vbox_layout.gd" id="6_vbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="7_pile_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_property_sort.gd" id="8_property_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_group_sort.gd" id="9_group_sort"]
+
+[sub_resource type="Resource" id="RowLayout"]
+script = ExtResource("5_hbox_layout")
+item_spacing = 14.0
+padding_left = 16.0
+padding_top = 12.0
+
+[sub_resource type="Resource" id="ListLayout"]
+script = ExtResource("6_vbox_layout")
+item_spacing = 10.0
+padding_top = 12.0
+
+[sub_resource type="Resource" id="PileLayout"]
+script = ExtResource("7_pile_layout")
+overlap_x = 22.0
+padding_left = 16.0
+padding_top = 20.0
+
+[sub_resource type="Resource" id="RowSort"]
+script = ExtResource("8_property_sort")
+metadata_key = "example_cost"
+
+[sub_resource type="Resource" id="ListSort"]
+script = ExtResource("9_group_sort")
+group_metadata_key = "example_primary_tag"
+group_order = PackedStringArray("attack", "skill", "power")
+item_metadata_key = "example_cost"
+
+[sub_resource type="StyleBoxFlat" id="RowButtonNormal"]
+bg_color = Color(0.1, 0.12, 0.16, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.31, 0.45, 0.7, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 12
+content_margin_top = 8
+content_margin_right = 12
+content_margin_bottom = 8
+
+[sub_resource type="StyleBoxFlat" id="RowButtonHover"]
+bg_color = Color(0.14, 0.17, 0.24, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.31, 0.45, 0.7, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 12
+content_margin_top = 8
+content_margin_right = 12
+content_margin_bottom = 8
+
+[sub_resource type="StyleBoxFlat" id="RowButtonPressed"]
+bg_color = Color(0.16, 0.2, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.31, 0.45, 0.7, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 12
+content_margin_top = 8
+content_margin_right = 12
+content_margin_bottom = 8
+
+[sub_resource type="StyleBoxFlat" id="ResetButtonNormal"]
+bg_color = Color(0.1, 0.12, 0.16, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.56, 0.29, 0.36, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 12
+content_margin_top = 8
+content_margin_right = 12
+content_margin_bottom = 8
+
+[sub_resource type="StyleBoxFlat" id="ResetButtonHover"]
+bg_color = Color(0.14, 0.17, 0.24, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.56, 0.29, 0.36, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 12
+content_margin_top = 8
+content_margin_right = 12
+content_margin_bottom = 8
+
+[sub_resource type="StyleBoxFlat" id="ResetButtonPressed"]
+bg_color = Color(0.16, 0.2, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.56, 0.29, 0.36, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+content_margin_left = 12
+content_margin_top = 8
+content_margin_right = 12
+content_margin_bottom = 8
+
+[sub_resource type="StyleBoxFlat" id="HandZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.55, 0.42, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="RowZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.31, 0.45, 0.7, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="ListZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.54, 0.44, 0.23, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="PileZonePanel"]
+bg_color = Color(0.08, 0.09, 0.12, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.56, 0.29, 0.36, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
 
 [node name="LayoutGallery" type="Control"]
 layout_mode = 3
@@ -10,7 +188,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_n4rwd")
+script = ExtResource("1_scene")
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -28,22 +206,38 @@ theme_override_constants/margin_bottom = 16
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
-layout_mode = 2
-autowrap_mode = 3
-text = "Loading layout gallery..."
-
 [node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="SortButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
-text = "Row Sort: Cost Asc"
+theme_override_styles/normal = SubResource("RowButtonNormal")
+theme_override_styles/hover = SubResource("RowButtonHover")
+theme_override_styles/pressed = SubResource("RowButtonPressed")
+theme_override_styles/focus = SubResource("RowButtonHover")
+theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "切换横排序 / Toggle row sort"
 
 [node name="ResetButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
-text = "Reset Cards"
+theme_override_styles/normal = SubResource("ResetButtonNormal")
+theme_override_styles/hover = SubResource("ResetButtonHover")
+theme_override_styles/pressed = SubResource("ResetButtonPressed")
+theme_override_styles/focus = SubResource("ResetButtonHover")
+theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "重置卡牌 / Reset cards"
+
+[node name="SortModeLabel" type="Label" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "Row 费用升序 / Row cost ascending"
 
 [node name="Grid" type="GridContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -55,55 +249,119 @@ theme_override_constants/v_separation = 14
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
+theme_override_constants/separation = 6
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
 layout_mode = 2
-text = "Hand Layout"
+theme_override_colors/font_color = Color(0.84, 0.96, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "手牌弧线 / Hand"
+
+[node name="HandCaptionLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "适合手牌与奖励选择 / Best for player hands and reward picks"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn"]
 custom_minimum_size = Vector2(260, 220)
 layout_mode = 2
 size_flags_horizontal = 3
-script = ExtResource("2_4xyqe")
+theme_override_styles/panel = SubResource("HandZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("3_hand")
 
 [node name="RowColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
+theme_override_constants/separation = 6
 
 [node name="RowLabel" type="Label" parent="RootMargin/RootVBox/Grid/RowColumn"]
 layout_mode = 2
-text = "Horizontal Layout"
+theme_override_colors/font_color = Color(0.83, 0.91, 0.99, 1)
+theme_override_font_sizes/font_size = 14
+text = "横向排布 / HBox"
+
+[node name="RowCaptionLabel" type="Label" parent="RootMargin/RootVBox/Grid/RowColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "稳定左到右阅读 / Stable left-to-right reading"
 
 [node name="RowZone" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn"]
 custom_minimum_size = Vector2(260, 220)
 layout_mode = 2
 size_flags_horizontal = 3
-script = ExtResource("2_4xyqe")
+theme_override_styles/panel = SubResource("RowZonePanel")
+script = ExtResource("2_zone")
+layout_policy = SubResource("RowLayout")
+sort_policy = SubResource("RowSort")
 
 [node name="ListColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
+theme_override_constants/separation = 6
 
 [node name="ListLabel" type="Label" parent="RootMargin/RootVBox/Grid/ListColumn"]
 layout_mode = 2
-text = "Vertical Group Sort"
+theme_override_colors/font_color = Color(0.97, 0.92, 0.78, 1)
+theme_override_font_sizes/font_size = 14
+text = "分组列表 / Grouped list"
+
+[node name="ListCaptionLabel" type="Label" parent="RootMargin/RootVBox/Grid/ListColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "先按 primary tag 分组，再按费用 / Groups by primary tag before cost"
 
 [node name="ListZone" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn"]
 custom_minimum_size = Vector2(260, 240)
 layout_mode = 2
 size_flags_horizontal = 3
-script = ExtResource("2_4xyqe")
+clip_contents = true
+theme_override_styles/panel = SubResource("ListZonePanel")
+script = ExtResource("2_zone")
+layout_policy = SubResource("ListLayout")
+sort_policy = SubResource("ListSort")
 
 [node name="PileColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
+theme_override_constants/separation = 6
 
 [node name="PileLabel" type="Label" parent="RootMargin/RootVBox/Grid/PileColumn"]
 layout_mode = 2
-text = "Pile Layout"
+theme_override_colors/font_color = Color(0.97, 0.85, 0.88, 1)
+theme_override_font_sizes/font_size = 14
+text = "叠堆排布 / Pile"
+
+[node name="PileCaptionLabel" type="Label" parent="RootMargin/RootVBox/Grid/PileColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
+theme_override_font_sizes/font_size = 11
+theme_override_constants/line_spacing = 2
+text = "适合牌库、弃牌堆与累计感区域 / Best for decks, discards, and accumulated stacks"
 
 [node name="PileZone" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn"]
 custom_minimum_size = Vector2(260, 240)
 layout_mode = 2
 size_flags_horizontal = 3
-script = ExtResource("2_4xyqe")
+theme_override_styles/panel = SubResource("PileZonePanel")
+script = ExtResource("2_zone")
+preset = ExtResource("4_pile")
+layout_policy = SubResource("PileLayout")
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_constants/line_spacing = 2
+text = "最近 / Latest: Loading layout gallery..."
