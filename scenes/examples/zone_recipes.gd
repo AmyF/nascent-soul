@@ -1,11 +1,10 @@
 extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
-
-var _deck_zone: Zone
-var _hand_zone: Zone
-var _board_zone: Zone
-var _discard_zone: Zone
+const HAND_PRESET = preload("res://addons/nascentsoul/presets/hand_zone_preset.tres")
+const BOARD_PRESET = preload("res://addons/nascentsoul/presets/board_zone_preset.tres")
+const PILE_PRESET = preload("res://addons/nascentsoul/presets/pile_zone_preset.tres")
+const DISCARD_PRESET = preload("res://addons/nascentsoul/presets/discard_zone_preset.tres")
 
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var reset_button: Button = $RootMargin/RootVBox/Toolbar/ResetButton
@@ -13,24 +12,17 @@ var _discard_zone: Zone
 @onready var hand_details: Label = $RootMargin/RootVBox/RecipesGrid/HandColumn/HandDetails
 @onready var board_details: Label = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardDetails
 @onready var discard_details: Label = $RootMargin/RootVBox/RecipesGrid/DiscardColumn/DiscardDetails
-@onready var deck_panel: Panel = $RootMargin/RootVBox/RecipesGrid/DeckColumn/DeckPanel
-@onready var hand_panel: Panel = $RootMargin/RootVBox/RecipesGrid/HandColumn/HandPanel
-@onready var board_panel: Panel = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardPanel
-@onready var discard_panel: Panel = $RootMargin/RootVBox/RecipesGrid/DiscardColumn/DiscardPanel
+@onready var _deck_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DeckColumn/DeckZone
+@onready var _hand_zone: Zone = $RootMargin/RootVBox/RecipesGrid/HandColumn/HandZone
+@onready var _board_zone: Zone = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone
+@onready var _discard_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DiscardColumn/DiscardZone
 
 func _ready() -> void:
-	_configure_panels()
 	_describe_recipes()
-	_build_zones()
+	_configure_zones()
 	_populate_cards()
 	_wire_actions()
 	_set_status("Recipe board: start from Deck / Hand / Board / Discard, then replace the policies or visuals that are unique to your game.")
-
-func _configure_panels() -> void:
-	ExampleSupport.configure_panel(deck_panel, Color(0.59, 0.53, 0.26))
-	ExampleSupport.configure_panel(hand_panel, Color(0.33, 0.55, 0.42))
-	ExampleSupport.configure_panel(board_panel, Color(0.27, 0.48, 0.70))
-	ExampleSupport.configure_panel(discard_panel, Color(0.53, 0.26, 0.31))
 
 func _describe_recipes() -> void:
 	deck_details.text = "Pile layout + ZoneCardDisplay\nBest for draw piles and hidden stacks."
@@ -38,26 +30,19 @@ func _describe_recipes() -> void:
 	board_details.text = "HBox layout + capacity permission\nUse for battlefield rows or active slots."
 	discard_details.text = "Pile layout + allow-all permission\nUse for discard, graveyard, or exhaust piles."
 
-func _build_zones() -> void:
-	var deck_layout := ZonePileLayout.new()
-	deck_layout.overlap_x = 16.0
-	var hand_layout := ZoneHandLayout.new()
-	hand_layout.arch_angle_deg = 38.0
-	hand_layout.arch_height = 26.0
-	hand_layout.card_spacing_angle = 5.5
-	var board_layout := ZoneHBoxLayout.new()
-	board_layout.item_spacing = 16.0
-	board_layout.padding_left = 14.0
-	board_layout.padding_top = 12.0
-	var discard_layout := ZonePileLayout.new()
-	discard_layout.overlap_x = 18.0
+func _configure_zones() -> void:
+	_deck_zone.preset = PILE_PRESET
+	_hand_zone.preset = HAND_PRESET
+	_board_zone.preset = BOARD_PRESET
+	_discard_zone.preset = DISCARD_PRESET
 	var board_capacity := ZoneCapacityPermission.new()
 	board_capacity.max_items = 4
 	board_capacity.reject_reason = "Board recipe is full. Raise max_items or discard a card."
-	_deck_zone = ExampleSupport.make_zone(deck_panel, "DeckZone", deck_layout)
-	_hand_zone = ExampleSupport.make_zone(hand_panel, "HandZone", hand_layout)
-	_board_zone = ExampleSupport.make_zone(board_panel, "BoardZone", board_layout, null, board_capacity)
-	_discard_zone = ExampleSupport.make_zone(discard_panel, "DiscardZone", discard_layout)
+	_board_zone.permission_policy = board_capacity
+	ExampleSupport.configure_zone(_deck_zone, Color(0.59, 0.53, 0.26))
+	ExampleSupport.configure_zone(_hand_zone, Color(0.33, 0.55, 0.42))
+	ExampleSupport.configure_zone(_board_zone, Color(0.27, 0.48, 0.70))
+	ExampleSupport.configure_zone(_discard_zone, Color(0.53, 0.26, 0.31))
 
 func _populate_cards() -> void:
 	for spec in [

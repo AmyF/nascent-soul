@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/examples/zone_recipes.gd" id="1_0qnmx"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_ftj0b"]
 
 [node name="ZoneRecipes" type="Control"]
 layout_mode = 3
@@ -60,10 +61,11 @@ layout_mode = 2
 autowrap_mode = 3
 text = "Loading..."
 
-[node name="DeckPanel" type="Panel" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
+[node name="DeckZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
 custom_minimum_size = Vector2(220, 320)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_ftj0b")
 
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
@@ -79,11 +81,12 @@ layout_mode = 2
 autowrap_mode = 3
 text = "Loading..."
 
-[node name="HandPanel" type="Panel" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
+[node name="HandZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
 custom_minimum_size = Vector2(320, 320)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+script = ExtResource("2_ftj0b")
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
@@ -99,11 +102,12 @@ layout_mode = 2
 autowrap_mode = 3
 text = "Loading..."
 
-[node name="BoardPanel" type="Panel" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
+[node name="BoardZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
 custom_minimum_size = Vector2(320, 320)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+script = ExtResource("2_ftj0b")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
@@ -118,7 +122,8 @@ layout_mode = 2
 autowrap_mode = 3
 text = "Loading..."
 
-[node name="DiscardPanel" type="Panel" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
+[node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
 custom_minimum_size = Vector2(220, 320)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_ftj0b")

@@ -13,3 +13,11 @@ class_name ZoneInteraction extends Resource
 @export var ctrl_toggles_selection: bool = true
 @export var shift_range_select_enabled: bool = true
 @export var clear_selection_on_background_click: bool = true
+
+@export_group("Keyboard")
+@export var keyboard_navigation_enabled: bool = true
+@export var wrap_navigation: bool = true
+@export var next_item_action: StringName = &"ui_right"
+@export var previous_item_action: StringName = &"ui_left"
+@export var activate_item_action: StringName = &"ui_accept"
+@export var clear_selection_action: StringName = &"ui_cancel"

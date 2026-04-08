@@ -40,7 +40,8 @@ func _zone_item_names(zone: Zone) -> Array[String]:
 
 func _managed_control_names(container: Control) -> Array[String]:
 	var names: Array[String] = []
-	for child in container.get_children():
+	var resolved_container = _resolve_managed_container(container)
+	for child in resolved_container.get_children():
 		if child is Control:
 			names.append((child as Control).name)
 	return names
@@ -48,8 +49,13 @@ func _managed_control_names(container: Control) -> Array[String]:
 func _unmanaged_control_names(zone: Zone) -> Array[String]:
 	var unmanaged: Array[String] = []
 	var managed_items = zone.get_items()
-	for child in zone.container.get_children():
+	var items_root = zone.get_items_root()
+	for child in items_root.get_children():
 		if child is Control and child not in managed_items:
+			unmanaged.append((child as Control).name if (child as Control).name != "" else child.get_class())
+	var preview_root = zone.get_preview_root()
+	for child in preview_root.get_children():
+		if child is Control:
 			unmanaged.append((child as Control).name if (child as Control).name != "" else child.get_class())
 	return unmanaged
 
@@ -86,28 +92,36 @@ func _emit_mouse_button(item: Control, button_index: MouseButton, pressed: bool,
 	item.gui_input.emit(event)
 
 func _emit_background_left_click(container: Control, global_position: Vector2 = Vector2(-1, -1)) -> void:
+	var target = _resolve_interaction_target(container)
 	var click_position = global_position
 	if click_position.x < 0.0 and click_position.y < 0.0:
-		click_position = container.global_position + container.size * 0.5
-	var local_position = click_position - container.global_position
+		click_position = target.global_position + target.size * 0.5
+	var local_position = click_position - target.global_position
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
 	press.position = local_position
 	press.global_position = click_position
-	container.gui_input.emit(press)
+	target.gui_input.emit(press)
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.pressed = false
 	release.position = local_position
 	release.global_position = click_position
-	container.gui_input.emit(release)
+	target.gui_input.emit(release)
 
 func _emit_mouse_entered(item: Control) -> void:
 	item.mouse_entered.emit()
 
 func _emit_mouse_exited(item: Control) -> void:
 	item.mouse_exited.emit()
+
+func _emit_action_input(control: Control, action_name: StringName) -> void:
+	var target = _resolve_interaction_target(control)
+	var event := InputEventAction.new()
+	event.action = action_name
+	event.pressed = true
+	target.gui_input.emit(event)
 
 func _overlay_visible(card: ZoneCard) -> bool:
 	var overlay = card.get_node_or_null("VisualRoot/HighlightOverlay")
@@ -130,7 +144,30 @@ func _all_items_within(zone: Zone, container: Control, tolerance: float = 1.0) -
 
 func _find_unmanaged_control(zone: Zone) -> Control:
 	var managed_items = zone.get_items()
-	for child in zone.container.get_children():
+	for child in zone.get_preview_root().get_children():
+		if child is Control:
+			return child as Control
+	for child in zone.get_items_root().get_children():
 		if child is Control and child not in managed_items:
 			return child as Control
+	return null
+
+func _resolve_managed_container(control: Control) -> Control:
+	if control is Zone:
+		return (control as Zone).get_items_root()
+	var child_zone = _resolve_child_zone(control)
+	if child_zone != null:
+		return child_zone.get_items_root()
+	return control
+
+func _resolve_interaction_target(control: Control) -> Control:
+	if control is Zone:
+		return control
+	var child_zone = _resolve_child_zone(control)
+	return child_zone if child_zone != null else control
+
+func _resolve_child_zone(control: Control) -> Zone:
+	for child in control.get_children():
+		if child is Zone:
+			return child as Zone
 	return null

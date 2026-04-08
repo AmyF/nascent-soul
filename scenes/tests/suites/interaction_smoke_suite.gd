@@ -14,6 +14,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_shift_range_selection()
 	await _reset_root()
+	await _test_keyboard_navigation_actions()
+	await _reset_root()
 	await _test_drop_preview_clear_signal()
 
 func _test_hover_and_selection_visuals() -> void:
@@ -117,6 +119,43 @@ func _test_shift_range_selection() -> void:
 	_emit_left_click(delta, false, true)
 	await _settle_frames(1)
 	_check(zone.get_runtime().selection_state.get_selected_items() == [alpha, beta, gamma, delta], "repeated shift-click should keep the original anchor until a normal click changes it")
+
+func _test_keyboard_navigation_actions() -> void:
+	var panel = _make_panel("KeyboardPanel", Vector2(24, 24), Vector2(780, 280))
+	var interaction = ZoneInteraction.new()
+	interaction.keyboard_navigation_enabled = true
+	interaction.next_item_action = &"zone_test_next"
+	interaction.previous_item_action = &"zone_test_prev"
+	interaction.activate_item_action = &"zone_test_activate"
+	interaction.clear_selection_action = &"zone_test_clear"
+	var zone = ExampleSupport.make_zone(panel, "KeyboardZone", ZoneHBoxLayout.new(), null, null, null, interaction)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
+	var gamma = ExampleSupport.make_card("Gamma", 3, ["power"], true)
+	var activated: Array[String] = []
+	zone.item_clicked.connect(func(item: Control) -> void:
+		activated.append(item.name)
+	)
+	for card in [alpha, beta, gamma]:
+		zone.add_item(card)
+	await _settle_frames(2)
+	zone.grab_focus()
+	await _settle_frames(1)
+	_emit_action_input(zone, &"zone_test_next")
+	await _settle_frames(1)
+	_check(zone.get_selected_items() == [alpha], "keyboard next should select the first card when there is no active selection")
+	_emit_action_input(zone, &"zone_test_next")
+	await _settle_frames(1)
+	_check(zone.get_selected_items() == [beta], "keyboard next should move the selection forward")
+	_emit_action_input(zone, &"zone_test_prev")
+	await _settle_frames(1)
+	_check(zone.get_selected_items() == [alpha], "keyboard previous should move the selection backward")
+	_emit_action_input(zone, &"zone_test_activate")
+	await _settle_frames(1)
+	_check(activated == ["Alpha"], "keyboard activate should emit item_clicked for the current item")
+	_emit_action_input(zone, &"zone_test_clear")
+	await _settle_frames(1)
+	_check(zone.get_selected_items().is_empty(), "keyboard clear should clear the current selection")
 
 func _test_drop_preview_clear_signal() -> void:
 	var target_panel = _make_panel("PreviewTargetPanel", Vector2.ZERO, Vector2(620, 260))

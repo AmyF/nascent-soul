@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/examples/permission_lab.gd" id="1_jq44b"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_z7r60"]
 
 [node name="PermissionLab" type="Control"]
 layout_mode = 3
@@ -46,10 +47,11 @@ custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 text = "Deck"
 
-[node name="DeckPanel" type="Panel" parent="RootMargin/RootVBox/Grid/DeckColumn"]
+[node name="DeckZone" type="Control" parent="RootMargin/RootVBox/Grid/DeckColumn"]
 custom_minimum_size = Vector2(180, 300)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_z7r60")
 
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -59,10 +61,11 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 text = "Hand"
 
-[node name="HandPanel" type="Panel" parent="RootMargin/RootVBox/Grid/HandColumn"]
+[node name="HandZone" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn"]
 custom_minimum_size = Vector2(220, 300)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_z7r60")
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -72,10 +75,11 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 text = "Board (Capacity 2)"
 
-[node name="BoardPanel" type="Panel" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+[node name="BoardZone" type="Control" parent="RootMargin/RootVBox/Grid/BoardColumn"]
 custom_minimum_size = Vector2(220, 300)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_z7r60")
 
 [node name="SanctumColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -83,12 +87,13 @@ custom_minimum_size = Vector2(220, 0)
 
 [node name="SanctumLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
 layout_mode = 2
-text = "Sanctum (Hand Only)"
+text = "Sanctum (Hand Only, Cap 2)"
 
-[node name="SanctumPanel" type="Panel" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+[node name="SanctumZone" type="Control" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
 custom_minimum_size = Vector2(220, 300)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_z7r60")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -98,7 +103,8 @@ custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 text = "Discard"
 
-[node name="DiscardPanel" type="Panel" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
+[node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
 custom_minimum_size = Vector2(180, 300)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_z7r60")

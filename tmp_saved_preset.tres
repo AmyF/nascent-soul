@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="ZonePreset" format=3]
+
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="1_w4kx3"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_6unid"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_7f1mq"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hand_layout.gd" id="4_8xk23"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_permission.gd" id="5_1u8ld"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_pdw4d"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_2x2so"]
+
+[sub_resource type="Resource" id="Resource_fpdbw"]
+script = ExtResource("1_w4kx3")
+
+[sub_resource type="Resource" id="Resource_3wnm5"]
+script = ExtResource("2_6unid")
+
+[sub_resource type="Resource" id="Resource_cusch"]
+script = ExtResource("3_7f1mq")
+
+[sub_resource type="Resource" id="Resource_uec50"]
+script = ExtResource("4_8xk23")
+
+[sub_resource type="Resource" id="Resource_qmj2f"]
+script = ExtResource("5_1u8ld")
+
+[sub_resource type="Resource" id="Resource_dglgn"]
+script = ExtResource("7_2x2so")
+
+[resource]
+script = ExtResource("6_pdw4d")
+layout_policy = SubResource("Resource_uec50")
+display_style = SubResource("Resource_fpdbw")
+interaction = SubResource("Resource_cusch")
+sort_policy = SubResource("Resource_dglgn")
+permission_policy = SubResource("Resource_qmj2f")
+drag_visual_factory = SubResource("Resource_3wnm5")

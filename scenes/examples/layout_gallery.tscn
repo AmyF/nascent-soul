@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/examples/layout_gallery.gd" id="1_n4rwd"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_4xyqe"]
 
 [node name="LayoutGallery" type="Control"]
 layout_mode = 3
@@ -58,10 +59,11 @@ layout_mode = 2
 layout_mode = 2
 text = "Hand Layout"
 
-[node name="HandPanel" type="Panel" parent="RootMargin/RootVBox/Grid/HandColumn"]
+[node name="HandZone" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn"]
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("2_4xyqe")
 
 [node name="RowColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -70,22 +72,24 @@ layout_mode = 2
 layout_mode = 2
 text = "Horizontal Layout"
 
-[node name="RowPanel" type="Panel" parent="RootMargin/RootVBox/Grid/RowColumn"]
+[node name="RowZone" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn"]
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("2_4xyqe")
 
 [node name="ListColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 
 [node name="ListLabel" type="Label" parent="RootMargin/RootVBox/Grid/ListColumn"]
 layout_mode = 2
-text = "Vertical Layout"
+text = "Vertical Group Sort"
 
-[node name="ListPanel" type="Panel" parent="RootMargin/RootVBox/Grid/ListColumn"]
+[node name="ListZone" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn"]
 custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("2_4xyqe")
 
 [node name="PileColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -94,7 +98,8 @@ layout_mode = 2
 layout_mode = 2
 text = "Pile Layout"
 
-[node name="PilePanel" type="Panel" parent="RootMargin/RootVBox/Grid/PileColumn"]
+[node name="PileZone" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn"]
 custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("2_4xyqe")

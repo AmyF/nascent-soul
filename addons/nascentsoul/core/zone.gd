@@ -1,5 +1,8 @@
 @tool
-class_name Zone extends Node
+class_name Zone extends Control
+
+const ITEMS_ROOT_NAME := "ItemsRoot"
+const PREVIEW_ROOT_NAME := "PreviewRoot"
 
 # Drag lifecycle contract:
 # `drag_started` fires on the source zone.
@@ -15,28 +18,43 @@ signal item_hover_exited(item: Control)
 signal selection_changed(items: Array)
 signal drag_started(items: Array, source_zone: Zone)
 signal drop_preview_changed(items: Array, target_zone: Zone, target_index: int)
+signal item_added(item: Control, index: int)
+signal item_removed(item: Control, from_index: int)
 signal item_reordered(item: Control, from_index: int, to_index: int)
 signal item_transferred(item: Control, source_zone: Zone, target_zone: Zone, to_index: int)
 signal drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reason: String)
 signal layout_changed()
 
-var _container: Control = null
+var _preset: ZonePreset = null
 var _layout_policy: ZoneLayoutPolicy = null
 var _display_style: ZoneDisplayStyle = null
-var _interaction: ZoneInteraction = ZoneInteraction.new()
+var _interaction: ZoneInteraction = null
 var _sort_policy: ZoneSortPolicy = null
 var _permission_policy: ZonePermissionPolicy = null
+var _drag_visual_factory: ZoneDragVisualFactory = null
 
-@export var container: Control:
+var _runtime: ZoneRuntime
+var _items_root: Control = null
+var _preview_root: Control = null
+
+var _default_layout_policy: ZoneLayoutPolicy = null
+var _default_display_style: ZoneDisplayStyle = null
+var _default_interaction: ZoneInteraction = null
+var _default_sort_policy: ZoneSortPolicy = null
+var _default_permission_policy: ZonePermissionPolicy = null
+var _default_drag_visual_factory: ZoneDragVisualFactory = null
+
+@export_group("Preset")
+@export var preset: ZonePreset:
 	get:
-		return _container
+		return _preset
 	set(value):
-		if _container == value:
+		if _preset == value:
 			return
-		_container = value
-		_handle_configuration_changed(true)
+		_preset = value
+		_handle_configuration_changed()
 
-@export_group("Policies")
+@export_group("Advanced Overrides")
 @export var layout_policy: ZoneLayoutPolicy:
 	get:
 		return _layout_policy
@@ -45,6 +63,7 @@ var _permission_policy: ZonePermissionPolicy = null
 			return
 		_layout_policy = value
 		_handle_configuration_changed()
+
 @export var display_style: ZoneDisplayStyle:
 	get:
 		return _display_style
@@ -53,7 +72,8 @@ var _permission_policy: ZonePermissionPolicy = null
 			return
 		_display_style = value
 		_handle_configuration_changed()
-@export var interaction: ZoneInteraction = ZoneInteraction.new():
+
+@export var interaction: ZoneInteraction:
 	get:
 		return _interaction
 	set(value):
@@ -61,6 +81,7 @@ var _permission_policy: ZonePermissionPolicy = null
 			return
 		_interaction = value
 		_handle_configuration_changed()
+
 @export var sort_policy: ZoneSortPolicy:
 	get:
 		return _sort_policy
@@ -69,6 +90,7 @@ var _permission_policy: ZonePermissionPolicy = null
 			return
 		_sort_policy = value
 		_handle_configuration_changed()
+
 @export var permission_policy: ZonePermissionPolicy:
 	get:
 		return _permission_policy
@@ -78,12 +100,27 @@ var _permission_policy: ZonePermissionPolicy = null
 		_permission_policy = value
 		_handle_configuration_changed()
 
-var _runtime: ZoneRuntime
+@export var drag_visual_factory: ZoneDragVisualFactory:
+	get:
+		return _drag_visual_factory
+	set(value):
+		if _drag_visual_factory == value:
+			return
+		_drag_visual_factory = value
+		_handle_configuration_changed()
 
 func _ready() -> void:
+	focus_mode = Control.FOCUS_ALL
+	if mouse_filter == Control.MOUSE_FILTER_IGNORE:
+		mouse_filter = Control.MOUSE_FILTER_STOP
+	_ensure_internal_nodes()
 	update_configuration_warnings()
+	queue_redraw()
 	_ensure_runtime()
 	_runtime.bind()
+	var resized_callable = Callable(self, "_on_zone_resized")
+	if not resized.is_connected(resized_callable):
+		resized.connect(resized_callable)
 	call_deferred("refresh")
 	set_process(not Engine.is_editor_hint())
 
@@ -97,45 +134,50 @@ func _process(delta: float) -> void:
 	if _runtime != null:
 		_runtime.process(delta)
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_THEME_CHANGED:
+		queue_redraw()
+
+func _draw() -> void:
+	var stylebox = get_theme_stylebox("panel", "Panel")
+	if stylebox != null:
+		draw_style_box(stylebox, Rect2(Vector2.ZERO, size))
+
 func _get_configuration_warnings() -> PackedStringArray:
+	_ensure_internal_nodes()
+	_ensure_default_resources()
 	var warnings := PackedStringArray()
-	var container_size = _resolve_container_size()
-	if container == null:
-		warnings.append("Zone requires a container Control.")
-	else:
-		if container is Container:
-			warnings.append("Container-derived nodes also manage child layout. Prefer Panel or plain Control as a Zone container.")
-		if container.mouse_filter == Control.MOUSE_FILTER_IGNORE and interaction != null and interaction.clear_selection_on_background_click:
-			warnings.append("The container ignores mouse input, so background-click deselection will not trigger. Use Stop or Pass on the container mouse_filter.")
-		if container.clip_contents and (layout_policy is ZoneHandLayout or layout_policy is ZonePileLayout or display_style is ZoneCardDisplay):
-			warnings.append("The container clips its children. Hover lift, drag previews, and pile overlap may be cut off.")
-		var sibling_zones := 0
-		for child in container.get_children():
-			if child is Zone:
-				sibling_zones += 1
-		if sibling_zones > 1 or (sibling_zones == 1 and not is_ancestor_of(container) and get_parent() != container):
-			warnings.append("More than one Zone appears to manage this container. Use one Zone per container to avoid conflicting refreshes.")
-		if container_size != Vector2.ZERO:
-			if layout_policy is ZoneHandLayout and (layout_policy as ZoneHandLayout).would_escape_container(container_size):
-				warnings.append("The current hand layout values push cards outside the container. Reduce arch settings or use a taller panel.")
-			if layout_policy is ZonePileLayout and (layout_policy as ZonePileLayout).would_escape_container(container_size):
-				warnings.append("The current pile layout values push cards outside the container. Reduce overlap or increase the container size.")
-	if layout_policy == null:
-		warnings.append("Zone requires a layout_policy to calculate placements.")
-	if display_style == null:
-		warnings.append("Zone requires a display_style to present placements.")
-	if interaction == null:
-		warnings.append("Zone has no interaction resource. Click, drag, hover, and long-press signals will not be emitted.")
-	if sort_policy == null:
-		warnings.append("Zone has no sort_policy. Items will stay in container child order until you reorder them explicitly.")
-	if permission_policy == null:
-		warnings.append("Zone has no permission_policy. Drops will be accepted by default.")
+	var resolved_layout = get_layout_policy_resource()
+	var resolved_display = get_display_style_resource()
+	if clip_contents and (resolved_layout is ZoneHandLayout or resolved_layout is ZonePileLayout or resolved_display is ZoneCardDisplay):
+		warnings.append("Zone clips its children. Hover lift, drag previews, and pile overlap may be cut off.")
+	if size != Vector2.ZERO:
+		if resolved_layout is ZoneHandLayout and (resolved_layout as ZoneHandLayout).would_escape_container(size):
+			warnings.append("The current hand layout values push cards outside the zone. Reduce arch settings or use a taller zone.")
+		if resolved_layout is ZonePileLayout and (resolved_layout as ZonePileLayout).would_escape_container(size):
+			warnings.append("The current pile layout values push cards outside the zone. Reduce overlap or increase the zone size.")
+	for child in get_children():
+		if _is_expected_direct_child(child):
+			continue
+		if child is Control:
+			warnings.append("Direct child '%s' is not managed. Put card items under ItemsRoot instead of attaching them directly to Zone." % child.name)
+			break
 	return warnings
 
 func refresh() -> void:
+	_ensure_internal_nodes()
 	_ensure_runtime()
 	if _runtime != null:
 		_runtime.refresh()
+	queue_redraw()
+
+func get_items_root() -> Control:
+	_ensure_internal_nodes()
+	return _items_root
+
+func get_preview_root() -> Control:
+	_ensure_internal_nodes()
+	return _preview_root
 
 func get_items() -> Array[Control]:
 	_ensure_runtime()
@@ -144,6 +186,14 @@ func get_items() -> Array[Control]:
 func get_item_count() -> int:
 	_ensure_runtime()
 	return _runtime.get_item_count()
+
+func get_selected_items() -> Array[Control]:
+	_ensure_runtime()
+	return _runtime.selection_state.get_selected_items()
+
+func is_selected(item: Control) -> bool:
+	_ensure_runtime()
+	return _runtime.selection_state.is_selected(item)
 
 func has_item(item: Control) -> bool:
 	_ensure_runtime()
@@ -164,6 +214,10 @@ func remove_item(item: Control) -> bool:
 func move_item_to(item: Control, target_zone: Zone, index: int = -1) -> bool:
 	_ensure_runtime()
 	return _runtime.move_item_to(item, target_zone, index)
+
+func transfer_items(items: Array[Control], target_zone: Zone, index: int = -1) -> bool:
+	_ensure_runtime()
+	return _runtime.transfer_items(items, target_zone, index)
 
 func reorder_item(item: Control, index: int) -> bool:
 	_ensure_runtime()
@@ -188,6 +242,54 @@ func get_runtime() -> ZoneRuntime:
 	_ensure_runtime()
 	return _runtime
 
+func get_layout_policy_resource() -> ZoneLayoutPolicy:
+	_ensure_default_resources()
+	if _layout_policy != null:
+		return _layout_policy
+	if _preset != null:
+		return _preset.resolve_layout_policy(_default_layout_policy)
+	return _default_layout_policy
+
+func get_display_style_resource() -> ZoneDisplayStyle:
+	_ensure_default_resources()
+	if _display_style != null:
+		return _display_style
+	if _preset != null:
+		return _preset.resolve_display_style(_default_display_style)
+	return _default_display_style
+
+func get_interaction_config() -> ZoneInteraction:
+	_ensure_default_resources()
+	if _interaction != null:
+		return _interaction
+	if _preset != null:
+		return _preset.resolve_interaction(_default_interaction)
+	return _default_interaction
+
+func get_sort_policy_resource() -> ZoneSortPolicy:
+	_ensure_default_resources()
+	if _sort_policy != null:
+		return _sort_policy
+	if _preset != null:
+		return _preset.resolve_sort_policy(_default_sort_policy)
+	return _default_sort_policy
+
+func get_permission_policy_resource() -> ZonePermissionPolicy:
+	_ensure_default_resources()
+	if _permission_policy != null:
+		return _permission_policy
+	if _preset != null:
+		return _preset.resolve_permission_policy(_default_permission_policy)
+	return _default_permission_policy
+
+func get_drag_visual_factory_resource() -> ZoneDragVisualFactory:
+	_ensure_default_resources()
+	if _drag_visual_factory != null:
+		return _drag_visual_factory
+	if _preset != null:
+		return _preset.resolve_drag_visual_factory(_default_drag_visual_factory)
+	return _default_drag_visual_factory
+
 func get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator:
 	if not is_inside_tree():
 		return null
@@ -205,20 +307,73 @@ func _ensure_runtime() -> void:
 	if _runtime == null:
 		_runtime = ZoneRuntime.new(self)
 
-func _handle_configuration_changed(rebind_runtime: bool = false) -> void:
+func _ensure_default_resources() -> void:
+	if _default_layout_policy == null:
+		var layout := ZoneHBoxLayout.new()
+		layout.item_spacing = 14.0
+		layout.padding_left = 12.0
+		layout.padding_top = 12.0
+		_default_layout_policy = layout
+	if _default_display_style == null:
+		_default_display_style = ZoneCardDisplay.new()
+	if _default_interaction == null:
+		_default_interaction = ZoneInteraction.new()
+	if _default_sort_policy == null:
+		_default_sort_policy = ZoneManualSort.new()
+	if _default_permission_policy == null:
+		_default_permission_policy = ZoneAllowAllPermission.new()
+	if _default_drag_visual_factory == null:
+		_default_drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
+
+func _ensure_internal_nodes() -> void:
+	_items_root = _ensure_internal_root(_items_root, ITEMS_ROOT_NAME)
+	_preview_root = _ensure_internal_root(_preview_root, PREVIEW_ROOT_NAME)
+	if _items_root != null and _preview_root != null and _items_root.get_index() > _preview_root.get_index():
+		move_child(_items_root, 0)
+	if _preview_root != null:
+		move_child(_preview_root, get_child_count() - 1)
+
+func _ensure_internal_root(existing: Control, node_name: String) -> Control:
+	var root = existing
+	if root == null or not is_instance_valid(root) or root.get_parent() != self:
+		root = get_node_or_null(node_name) as Control
+	if root == null:
+		root = Control.new()
+		root.name = node_name
+		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(root)
+	_sync_internal_root_owner(root)
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.offset_left = 0.0
+	root.offset_top = 0.0
+	root.offset_right = 0.0
+	root.offset_bottom = 0.0
+	root.focus_mode = Control.FOCUS_NONE
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.clip_contents = false
+	return root
+
+func _sync_internal_root_owner(root: Node) -> void:
+	if root == null:
+		return
+	if owner != null and root.owner != owner:
+		root.owner = owner
+
+func _is_expected_direct_child(child: Node) -> bool:
+	return child == _items_root \
+		or child == _preview_root \
+		or child.name.begins_with("__NascentSoul")
+
+func _handle_configuration_changed() -> void:
+	_ensure_internal_nodes()
 	update_configuration_warnings()
+	queue_redraw()
 	if _runtime == null:
 		return
-	if rebind_runtime:
-		_runtime.bind()
+	_runtime.bind()
 	if is_inside_tree():
 		call_deferred("refresh")
 
-func _resolve_container_size() -> Vector2:
-	if container == null:
-		return Vector2.ZERO
-	if container.size != Vector2.ZERO:
-		return container.size
-	if container.custom_minimum_size != Vector2.ZERO:
-		return container.custom_minimum_size
-	return Vector2.ZERO
+func _on_zone_resized() -> void:
+	refresh()
+	layout_changed.emit()

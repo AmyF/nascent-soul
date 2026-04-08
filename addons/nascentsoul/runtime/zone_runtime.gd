@@ -13,38 +13,41 @@ var _is_pressed: bool = false
 var _has_dragged: bool = false
 var _long_press_item: Control = null
 var _long_press_timer: Timer = null
-var _bound_container: Control = null
+var _bound_items_root: Control = null
 
 func _init(p_zone: Zone) -> void:
 	zone = p_zone
 
 func bind() -> void:
-	if zone.container == null:
-		_disconnect_container(_bound_container)
-		_bound_container = null
+	var items_root = zone.get_items_root()
+	if items_root == null:
+		_disconnect_items_root(_bound_items_root)
+		_disconnect_zone_input()
+		_bound_items_root = null
 		_clear_runtime_items(false)
 		_clear_preview_internal()
 		return
-	if _bound_container != null and _bound_container != zone.container:
-		_disconnect_container(_bound_container)
+	if _bound_items_root != null and _bound_items_root != items_root:
+		_disconnect_items_root(_bound_items_root)
 	_clear_preview_internal()
 	_ensure_long_press_timer()
-	if _bound_container != zone.container:
-		var entered_callable = Callable(self, "_on_container_child_entered")
-		if not zone.container.child_entered_tree.is_connected(entered_callable):
-			zone.container.child_entered_tree.connect(entered_callable)
-		var exiting_callable = Callable(self, "_on_container_child_exiting")
-		if not zone.container.child_exiting_tree.is_connected(exiting_callable):
-			zone.container.child_exiting_tree.connect(exiting_callable)
-		var gui_input_callable = Callable(self, "_on_container_gui_input")
-		if not zone.container.gui_input.is_connected(gui_input_callable):
-			zone.container.gui_input.connect(gui_input_callable)
-		_bound_container = zone.container
-	_rebuild_items_from_container()
+	if _bound_items_root != items_root:
+		var entered_callable = Callable(self, "_on_items_root_child_entered")
+		if not items_root.child_entered_tree.is_connected(entered_callable):
+			items_root.child_entered_tree.connect(entered_callable)
+		var exiting_callable = Callable(self, "_on_items_root_child_exiting")
+		if not items_root.child_exiting_tree.is_connected(exiting_callable):
+			items_root.child_exiting_tree.connect(exiting_callable)
+		_bound_items_root = items_root
+	var gui_input_callable = Callable(self, "_on_zone_gui_input")
+	if not zone.gui_input.is_connected(gui_input_callable):
+		zone.gui_input.connect(gui_input_callable)
+	_rebuild_items_from_root()
 
 func unbind() -> void:
-	_disconnect_container(_bound_container)
-	_bound_container = null
+	_disconnect_items_root(_bound_items_root)
+	_disconnect_zone_input()
+	_bound_items_root = null
 	_clear_runtime_items(false)
 	clear_display_state()
 	_clear_preview_internal()
@@ -53,9 +56,9 @@ func unbind() -> void:
 	_long_press_timer = null
 
 func process(_delta: float) -> void:
-	if _bound_container != zone.container:
+	if _bound_items_root != zone.get_items_root():
 		bind()
-	if zone.container == null:
+	if zone.get_items_root() == null:
 		return
 	var coordinator = zone.get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
@@ -74,18 +77,21 @@ func process(_delta: float) -> void:
 	_update_hover_preview(session)
 
 func refresh() -> void:
-	if zone.container == null or zone.layout_policy == null or zone.display_style == null:
+	var layout_policy = zone.get_layout_policy_resource()
+	var display_style = zone.get_display_style_resource()
+	if zone.get_items_root() == null or layout_policy == null or display_style == null:
 		return
 	var coordinator = zone.get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
 	var layout_items := _get_layout_items(session)
-	if zone.sort_policy != null and session == null:
-		layout_items = zone.sort_policy.sort_items(layout_items)
+	var sort_policy = zone.get_sort_policy_resource()
+	if sort_policy != null and session == null:
+		layout_items = sort_policy.sort_items(layout_items)
 	var ghost_index := -1
 	if session != null and session.hover_zone == zone and is_instance_valid(_ghost_instance):
 		ghost_index = clampi(session.preview_index, 0, layout_items.size())
-	var placements = zone.layout_policy.calculate(layout_items, zone.container.size, _ghost_instance, ghost_index)
-	zone.display_style.apply(zone, self, placements)
+	var placements = layout_policy.calculate(layout_items, zone.size, _ghost_instance, ghost_index)
+	display_style.apply(zone, self, placements)
 
 func get_items() -> Array[Control]:
 	return _items.duplicate()
@@ -100,15 +106,16 @@ func add_item(item: Control) -> bool:
 	return insert_item(item, _items.size())
 
 func insert_item(item: Control, index: int) -> bool:
-	if not is_instance_valid(item) or zone.container == null:
+	var items_root = zone.get_items_root()
+	if not is_instance_valid(item) or items_root == null:
 		return false
 	if _contains_item_reference(item):
 		return reorder_item(item, index)
-	if item.get_parent() != zone.container:
+	if item.get_parent() != items_root:
 		if item.get_parent() != null:
-			item.reparent(zone.container, false)
+			item.reparent(items_root, false)
 		else:
-			zone.container.add_child(item)
+			items_root.add_child(item)
 	_register_item(item)
 	var target_index = clampi(index, 0, _items.size())
 	if _contains_item_reference(item):
@@ -117,6 +124,7 @@ func insert_item(item: Control, index: int) -> bool:
 	_items.insert(target_index, item)
 	item.visible = true
 	_sync_container_order()
+	zone.item_added.emit(item, target_index)
 	refresh()
 	zone.layout_changed.emit()
 	return true
@@ -124,9 +132,13 @@ func insert_item(item: Control, index: int) -> bool:
 func remove_item(item: Control) -> bool:
 	if not has_item(item):
 		return false
+	var previous_index = _find_item_index(item)
 	var selection_changed = _remove_item_from_state(item, false, true)
-	if item.get_parent() == zone.container:
-		zone.container.remove_child(item)
+	var items_root = zone.get_items_root()
+	if items_root != null and item.get_parent() == items_root:
+		items_root.remove_child(item)
+	if previous_index >= 0:
+		zone.item_removed.emit(item, previous_index)
 	refresh()
 	if selection_changed:
 		zone.selection_changed.emit(selection_state.get_selected_items())
@@ -139,7 +151,32 @@ func move_item_to(item: Control, target_zone: Zone, index: int = -1) -> bool:
 	if target_zone == zone:
 		return reorder_item(item, index)
 	var moving_items: Array[Control] = [item]
-	return _transfer_items_to(target_zone, moving_items, index, Vector2.ZERO)
+	var request = ZoneDropRequest.new(target_zone, zone, moving_items, index, Vector2.ZERO)
+	var decision = target_zone.get_runtime()._evaluate_drop_request(request)
+	if not decision.allowed:
+		target_zone.get_runtime()._emit_drop_rejected_items(moving_items, zone, decision.reason)
+		return false
+	var target_index = decision.target_index if decision.target_index >= 0 else index
+	return _transfer_items_to(target_zone, moving_items, target_index, Vector2.ZERO)
+
+func transfer_items(items: Array[Control], target_zone: Zone, index: int = -1) -> bool:
+	if target_zone == null or items.is_empty():
+		return false
+	var moving_items: Array[Control] = []
+	for item in _items:
+		if _array_contains_valid_control(items, item):
+			moving_items.append(item)
+	if moving_items.is_empty():
+		return false
+	if target_zone == zone:
+		return _reorder_items(moving_items, index)
+	var request = ZoneDropRequest.new(target_zone, zone, moving_items, index, Vector2.ZERO)
+	var decision = target_zone.get_runtime()._evaluate_drop_request(request)
+	if not decision.allowed:
+		target_zone.get_runtime()._emit_drop_rejected_items(moving_items, zone, decision.reason)
+		return false
+	var target_index = decision.target_index if decision.target_index >= 0 else index
+	return _transfer_items_to(target_zone, moving_items, target_index, Vector2.ZERO)
 
 func reorder_item(item: Control, index: int) -> bool:
 	if not has_item(item):
@@ -156,7 +193,8 @@ func select_item(item: Control, additive: bool = false) -> void:
 	if not has_item(item):
 		return
 	var changed = false
-	if additive and zone.interaction != null and zone.interaction.multi_select_enabled:
+	var interaction = zone.get_interaction_config()
+	if additive and interaction != null and interaction.multi_select_enabled:
 		changed = selection_state.toggle_item(item)
 	else:
 		changed = selection_state.select_single(item)
@@ -165,7 +203,7 @@ func select_item(item: Control, additive: bool = false) -> void:
 		refresh()
 
 func start_drag(items: Array[Control]) -> void:
-	if zone.container == null or items.is_empty():
+	if zone.get_items_root() == null or items.is_empty():
 		return
 	var valid_items: Array[Control] = []
 	for item in _items:
@@ -208,11 +246,7 @@ func perform_drop(session: ZoneDragSession) -> bool:
 		_cleanup_drag_session(session, true, true)
 		return false
 	var request = ZoneDropRequest.new(zone, session.source_zone, session.items, session.preview_index, _get_drop_global_position(session))
-	var decision = ZoneDropDecision.new(true, "", request.requested_index)
-	if zone.permission_policy != null:
-		decision = zone.permission_policy.evaluate_drop(request)
-	if decision == null:
-		decision = ZoneDropDecision.new(true, "", request.requested_index)
+	var decision = _evaluate_drop_request(request)
 	if not decision.allowed:
 		_emit_drop_rejected(session, decision.reason)
 		_cleanup_drag_session(session, true, true)
@@ -265,8 +299,9 @@ func get_display_state(style: Resource) -> Dictionary:
 	return _display_state[key]
 
 func resolve_item_size(item: Control) -> Vector2:
-	if zone.layout_policy != null:
-		return zone.layout_policy.resolve_item_size(item)
+	var layout_policy = zone.get_layout_policy_resource()
+	if layout_policy != null:
+		return layout_policy.resolve_item_size(item)
 	if not is_instance_valid(item):
 		return Vector2.ZERO
 	if item.size != Vector2.ZERO:
@@ -286,18 +321,19 @@ func _ensure_long_press_timer() -> void:
 	if not _long_press_timer.timeout.is_connected(timeout_callable):
 		_long_press_timer.timeout.connect(timeout_callable)
 
-func _rebuild_items_from_container() -> void:
-	if zone.container == null:
+func _rebuild_items_from_root() -> void:
+	var items_root = zone.get_items_root()
+	if items_root == null:
 		_clear_runtime_items(true)
 		return
 	var container_items: Array[Control] = []
-	for child in zone.container.get_children():
+	for child in items_root.get_children():
 		if child is Control and child != _ghost_instance:
 			container_items.append(child as Control)
 	var selection_changed = false
 	var existing_items := _items.duplicate()
 	for item in existing_items:
-		if not is_instance_valid(item) or item.get_parent() != zone.container or item not in container_items:
+		if not is_instance_valid(item) or item.get_parent() != items_root or item not in container_items:
 			selection_changed = _remove_item_from_state(item, false, true) or selection_changed
 	for i in range(container_items.size()):
 		var item = container_items[i]
@@ -349,27 +385,32 @@ func _unregister_item(item) -> void:
 			item.mouse_exited.disconnect(bindings["mouse_exited"])
 	_item_bindings.erase(item)
 
-func _on_container_child_entered(_node: Node) -> void:
-	call_deferred("_handle_container_structure_changed")
+func _on_items_root_child_entered(_node: Node) -> void:
+	call_deferred("_handle_items_root_structure_changed")
 
-func _on_container_child_exiting(_node: Node) -> void:
-	call_deferred("_handle_container_structure_changed")
+func _on_items_root_child_exiting(_node: Node) -> void:
+	call_deferred("_handle_items_root_structure_changed")
 
 func _on_item_gui_input(event: InputEvent, item: Control) -> void:
-	if zone.interaction == null:
+	if zone.get_interaction_config() == null:
 		return
 	if event is InputEventMouseButton:
 		_handle_mouse_button(event as InputEventMouseButton, item)
 	elif event is InputEventMouseMotion:
 		_handle_mouse_motion(event as InputEventMouseMotion, item)
 
-func _on_container_gui_input(event: InputEvent) -> void:
-	if zone.interaction == null or not zone.interaction.clear_selection_on_background_click:
+func _on_zone_gui_input(event: InputEvent) -> void:
+	var interaction = zone.get_interaction_config()
+	if interaction == null:
+		return
+	if _handle_keyboard_navigation(event, interaction):
 		return
 	if event is not InputEventMouseButton:
 		return
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or mouse_event.pressed:
+		return
+	if not interaction.clear_selection_on_background_click:
 		return
 	var coordinator = zone.get_drag_coordinator(false)
 	if coordinator != null and coordinator.get_session() != null:
@@ -395,15 +436,17 @@ func _on_item_mouse_exited(item: Control) -> void:
 		refresh()
 
 func _handle_mouse_button(event: InputEventMouseButton, item: Control) -> void:
+	var interaction = zone.get_interaction_config()
 	if event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
+			zone.grab_focus()
 			_is_pressed = true
 			_has_dragged = false
 			_pressed_item = item
 			_pressed_position = event.global_position
 			_long_press_item = item
-			if zone.interaction.long_press_enabled and is_instance_valid(_long_press_timer):
-				_long_press_timer.wait_time = zone.interaction.long_press_time
+			if interaction != null and interaction.long_press_enabled and is_instance_valid(_long_press_timer):
+				_long_press_timer.wait_time = interaction.long_press_time
 				_long_press_timer.start()
 		else:
 			_stop_long_press_timer()
@@ -422,9 +465,10 @@ func _handle_mouse_button(event: InputEventMouseButton, item: Control) -> void:
 func _handle_mouse_motion(event: InputEventMouseMotion, item: Control) -> void:
 	if not _is_pressed or _has_dragged or not is_instance_valid(_pressed_item) or _pressed_item != item:
 		return
-	if zone.interaction == null or not zone.interaction.drag_enabled:
+	var interaction = zone.get_interaction_config()
+	if interaction == null or not interaction.drag_enabled:
 		return
-	if event.global_position.distance_to(_pressed_position) <= zone.interaction.drag_threshold:
+	if event.global_position.distance_to(_pressed_position) <= interaction.drag_threshold:
 		return
 	_has_dragged = true
 	_is_pressed = false
@@ -433,11 +477,12 @@ func _handle_mouse_motion(event: InputEventMouseMotion, item: Control) -> void:
 	start_drag(drag_items)
 
 func _apply_click_selection(item: Control, event: InputEventMouseButton) -> void:
-	if zone.interaction == null or not zone.interaction.select_on_click:
+	var interaction = zone.get_interaction_config()
+	if interaction == null or not interaction.select_on_click:
 		return
-	var additive = zone.interaction.multi_select_enabled and zone.interaction.ctrl_toggles_selection and event.ctrl_pressed
+	var additive = interaction.multi_select_enabled and interaction.ctrl_toggles_selection and event.ctrl_pressed
 	var changed = false
-	if zone.interaction.multi_select_enabled and zone.interaction.shift_range_select_enabled and event.shift_pressed:
+	if interaction.multi_select_enabled and interaction.shift_range_select_enabled and event.shift_pressed:
 		changed = selection_state.select_range(_items, item, additive)
 	else:
 		if additive:
@@ -447,6 +492,65 @@ func _apply_click_selection(item: Control, event: InputEventMouseButton) -> void
 	if changed:
 		zone.selection_changed.emit(selection_state.get_selected_items())
 		refresh()
+
+func _handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction) -> bool:
+	if not interaction.keyboard_navigation_enabled or not zone.has_focus():
+		return false
+	if _matches_action(event, interaction.next_item_action):
+		_move_keyboard_selection(1, interaction.wrap_navigation)
+		return true
+	if _matches_action(event, interaction.previous_item_action):
+		_move_keyboard_selection(-1, interaction.wrap_navigation)
+		return true
+	if _matches_action(event, interaction.activate_item_action):
+		var active_item = _get_keyboard_active_item()
+		if active_item != null:
+			zone.item_clicked.emit(active_item)
+		return true
+	if _matches_action(event, interaction.clear_selection_action):
+		_clear_background_interaction()
+		return true
+	return false
+
+func _matches_action(event: InputEvent, action_name: StringName) -> bool:
+	if action_name == StringName():
+		return false
+	if event is InputEventAction:
+		var action_event := event as InputEventAction
+		return action_event.action == action_name and action_event.pressed
+	if not InputMap.has_action(action_name):
+		return false
+	return event.is_action_pressed(action_name, false, true)
+
+func _move_keyboard_selection(direction: int, wrap_navigation: bool) -> void:
+	if _items.is_empty():
+		return
+	var current_item = _get_keyboard_active_item()
+	var current_index = _find_item_index(current_item) if current_item != null else -1
+	if current_index == -1:
+		current_index = 0 if direction >= 0 else _items.size() - 1
+	else:
+		current_index += direction
+		if wrap_navigation:
+			current_index = wrapi(current_index, 0, _items.size())
+		else:
+			current_index = clampi(current_index, 0, _items.size() - 1)
+	var next_item = _items[current_index]
+	if not is_instance_valid(next_item):
+		return
+	if selection_state.select_single(next_item):
+		zone.selection_changed.emit(selection_state.get_selected_items())
+		refresh()
+
+func _get_keyboard_active_item() -> Control:
+	if is_instance_valid(selection_state.anchor_item):
+		return selection_state.anchor_item
+	var selected = selection_state.get_selected_items()
+	if not selected.is_empty():
+		var last_item = selected[selected.size() - 1]
+		if is_instance_valid(last_item):
+			return last_item
+	return selection_state.hovered_item if is_instance_valid(selection_state.hovered_item) else null
 
 func _resolve_drag_items(item: Control) -> Array[Control]:
 	if selection_state.is_selected(item) and selection_state.get_selected_items().size() > 1:
@@ -472,10 +576,11 @@ func _on_long_press_timeout() -> void:
 	zone.item_long_pressed.emit(item)
 
 func _update_hover_preview(session: ZoneDragSession) -> void:
-	if zone.container == null:
+	var items_root = zone.get_items_root()
+	if items_root == null:
 		return
 	var global_mouse = zone.get_viewport().get_mouse_position()
-	var is_hovering = zone.container.get_global_rect().has_point(global_mouse)
+	var is_hovering = zone.get_global_rect().has_point(global_mouse)
 	if not is_hovering:
 		if session.hover_zone == zone:
 			session.hover_zone = null
@@ -487,8 +592,9 @@ func _update_hover_preview(session: ZoneDragSession) -> void:
 		_create_ghost(session.items[0])
 	var visible_items = _get_layout_items(session)
 	var target_index = visible_items.size()
-	if zone.layout_policy != null:
-		target_index = zone.layout_policy.get_insertion_index(visible_items, zone.container.size, zone.container.get_local_mouse_position())
+	var layout_policy = zone.get_layout_policy_resource()
+	if layout_policy != null:
+		target_index = layout_policy.get_insertion_index(visible_items, zone.size, zone.get_local_mouse_position())
 	target_index = clampi(target_index, 0, visible_items.size())
 	var changed = session.hover_zone != zone or session.preview_index != target_index
 	session.hover_zone = zone
@@ -509,14 +615,15 @@ func _get_layout_items(session: ZoneDragSession) -> Array[Control]:
 	return layout_items
 
 func _create_ghost(source_item: Control) -> void:
-	if zone.container == null or not is_instance_valid(source_item):
+	var preview_root = zone.get_preview_root()
+	if preview_root == null or not is_instance_valid(source_item):
 		return
-	var ghost: Control = null
-	if source_item.has_method("create_zone_ghost"):
+	var ghost = _create_factory_ghost(source_item)
+	if ghost == null and source_item.has_method("create_zone_ghost"):
 		var created = source_item.call("create_zone_ghost")
 		if created is Control:
 			ghost = created as Control
-	elif source_item.has_meta("zone_ghost_scene"):
+	elif ghost == null and source_item.has_meta("zone_ghost_scene"):
 		var ghost_scene = source_item.get_meta("zone_ghost_scene")
 		if ghost_scene is PackedScene:
 			ghost = ghost_scene.instantiate() as Control
@@ -527,10 +634,17 @@ func _create_ghost(source_item: Control) -> void:
 		fallback.size = resolve_item_size(source_item)
 		ghost = fallback
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	zone.container.add_child(ghost)
+	if ghost.get_parent() != preview_root:
+		if ghost.get_parent() != null:
+			ghost.reparent(preview_root, false)
+		else:
+			preview_root.add_child(ghost)
 	_ghost_instance = ghost
 
 func _create_cursor_proxy(source_item: Control) -> Control:
+	var factory_proxy = _create_factory_proxy(source_item)
+	if factory_proxy != null:
+		return factory_proxy
 	if source_item.has_method("create_drag_proxy"):
 		var created = source_item.call("create_drag_proxy")
 		if created is Control:
@@ -547,6 +661,24 @@ func _create_cursor_proxy(source_item: Control) -> Control:
 	fallback.size = resolve_item_size(source_item)
 	fallback.global_position = source_item.global_position
 	return fallback
+
+func _create_factory_ghost(source_item: Control) -> Control:
+	var factory = zone.get_drag_visual_factory_resource()
+	if factory == null:
+		return null
+	var created = factory.create_ghost(zone, self, source_item)
+	if created is Control and created != source_item and is_instance_valid(created):
+		return created as Control
+	return null
+
+func _create_factory_proxy(source_item: Control) -> Control:
+	var factory = zone.get_drag_visual_factory_resource()
+	if factory == null:
+		return null
+	var created = factory.create_drag_proxy(zone, self, source_item)
+	if created is Control and created != source_item and is_instance_valid(created):
+		return created as Control
+	return null
 
 func _clear_preview_internal() -> void:
 	if is_instance_valid(_ghost_instance):
@@ -580,18 +712,23 @@ func _reorder_items(items_to_move: Array[Control], target_index: int) -> bool:
 	return true
 
 func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], target_index: int, drop_position: Vector2, source_zone_override: Zone = null) -> bool:
-	if target_zone == null or target_zone.container == null:
+	if target_zone == null or target_zone.get_items_root() == null:
 		return false
 	var source_zone = source_zone_override if source_zone_override != null else zone
 	var moving_items: Array[Control] = []
+	var original_indices: Dictionary = {}
 	for item in _items:
 		if _array_contains_valid_control(items_to_move, item):
+			original_indices[item] = _find_item_index(item)
 			moving_items.append(item)
 	if moving_items.is_empty():
 		return false
 	var selection_changed = false
 	for item in moving_items:
 		selection_changed = _remove_item_from_state(item, false, true) or selection_changed
+		var from_index = original_indices.get(item, -1)
+		if from_index >= 0:
+			zone.item_removed.emit(item, from_index)
 	var target_runtime = target_zone.get_runtime()
 	target_runtime._insert_transferred_items(moving_items, target_index, drop_position)
 	for item in moving_items:
@@ -608,31 +745,34 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], target
 	return true
 
 func _insert_transferred_items(moving_items: Array[Control], target_index: int, drop_position: Vector2) -> void:
+	var items_root = zone.get_items_root()
 	target_index = clampi(target_index, 0, _items.size())
 	for offset in range(moving_items.size()):
 		var item = moving_items[offset]
 		if _contains_item_reference(item):
 			_erase_item_reference(item)
-		if item.get_parent() != zone.container:
+		if item.get_parent() != items_root:
 			if item.get_parent() != null:
-				item.reparent(zone.container, false)
+				item.reparent(items_root, false)
 			else:
-				zone.container.add_child(item)
+				items_root.add_child(item)
 		item.visible = true
 		if drop_position != Vector2.ZERO:
 			item.global_position = drop_position
 		_register_item(item)
 		_items.insert(target_index + offset, item)
+		zone.item_added.emit(item, target_index + offset)
 	_sync_container_order()
 	refresh()
 
 func _sync_container_order() -> void:
-	if zone.container == null:
+	var items_root = zone.get_items_root()
+	if items_root == null:
 		return
 	for index in range(_items.size()):
 		var item = _items[index]
-		if is_instance_valid(item) and item.get_parent() == zone.container:
-			zone.container.move_child(item, index)
+		if is_instance_valid(item) and item.get_parent() == items_root:
+			items_root.move_child(item, index)
 
 func _emit_item_transferred(source_zone: Zone, target_zone: Zone, moving_items: Array[Control]) -> void:
 	for item in moving_items:
@@ -646,6 +786,11 @@ func _emit_drop_rejected(session: ZoneDragSession, reason: String) -> void:
 	zone.drop_rejected.emit(session.items, source_zone, zone, reason)
 	if source_zone != null and source_zone != zone:
 		source_zone.drop_rejected.emit(session.items, source_zone, zone, reason)
+
+func _emit_drop_rejected_items(items: Array[Control], source_zone: Zone, reason: String) -> void:
+	zone.drop_rejected.emit(items, source_zone, zone, reason)
+	if source_zone != null and source_zone != zone:
+		source_zone.drop_rejected.emit(items, source_zone, zone, reason)
 
 func _cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit_layout_changed: bool) -> void:
 	session.prune_invalid_items()
@@ -705,8 +850,9 @@ func _remove_item_from_state(item, remove_from_container: bool, clear_visuals: b
 	_erase_item_reference(item)
 	if item in _item_bindings:
 		_unregister_item(item)
-	if item_is_valid and remove_from_container and item.get_parent() == zone.container:
-		zone.container.remove_child(item)
+	var items_root = zone.get_items_root()
+	if item_is_valid and remove_from_container and items_root != null and item.get_parent() == items_root:
+		items_root.remove_child(item)
 	if clear_visuals:
 		_clear_item_visual_state(item, true)
 	if selection_state.prune(_items):
@@ -760,31 +906,34 @@ func _get_drop_global_position(session: ZoneDragSession) -> Vector2:
 		return session.cursor_proxy.global_position
 	return Vector2.ZERO
 
-func _disconnect_container(container: Control) -> void:
-	if container == null:
+func _disconnect_items_root(items_root: Control) -> void:
+	if items_root == null:
 		return
-	var entered_callable = Callable(self, "_on_container_child_entered")
-	if container.child_entered_tree.is_connected(entered_callable):
-		container.child_entered_tree.disconnect(entered_callable)
-	var exiting_callable = Callable(self, "_on_container_child_exiting")
-	if container.child_exiting_tree.is_connected(exiting_callable):
-		container.child_exiting_tree.disconnect(exiting_callable)
-	var gui_input_callable = Callable(self, "_on_container_gui_input")
-	if container.gui_input.is_connected(gui_input_callable):
-		container.gui_input.disconnect(gui_input_callable)
+	var entered_callable = Callable(self, "_on_items_root_child_entered")
+	if items_root.child_entered_tree.is_connected(entered_callable):
+		items_root.child_entered_tree.disconnect(entered_callable)
+	var exiting_callable = Callable(self, "_on_items_root_child_exiting")
+	if items_root.child_exiting_tree.is_connected(exiting_callable):
+		items_root.child_exiting_tree.disconnect(exiting_callable)
 
-func _handle_container_structure_changed() -> void:
-	_rebuild_items_from_container()
+func _disconnect_zone_input() -> void:
+	var gui_input_callable = Callable(self, "_on_zone_gui_input")
+	if zone.gui_input.is_connected(gui_input_callable):
+		zone.gui_input.disconnect(gui_input_callable)
+
+func _handle_items_root_structure_changed() -> void:
+	_rebuild_items_from_root()
 	var coordinator = zone.get_drag_coordinator(false)
 	if coordinator == null or coordinator.get_session() == null:
 		refresh()
 		zone.layout_changed.emit()
 
 func _container_order_needs_sync() -> bool:
-	if zone.container == null:
+	var items_root = zone.get_items_root()
+	if items_root == null:
 		return false
 	var control_index = 0
-	for child in zone.container.get_children():
+	for child in items_root.get_children():
 		if child is not Control or child == _ghost_instance:
 			continue
 		if control_index >= _items.size():
@@ -853,3 +1002,12 @@ func _clear_preview_for_session(session: ZoneDragSession) -> void:
 	if should_emit:
 		zone.drop_preview_changed.emit(session.items if session != null else [], zone, -1)
 	_clear_preview_internal()
+
+func _evaluate_drop_request(request: ZoneDropRequest) -> ZoneDropDecision:
+	var decision = ZoneDropDecision.new(true, "", request.requested_index)
+	var permission_policy = zone.get_permission_policy_resource()
+	if permission_policy != null:
+		decision = permission_policy.evaluate_drop(request)
+	if decision == null:
+		return ZoneDropDecision.new(true, "", request.requested_index)
+	return decision

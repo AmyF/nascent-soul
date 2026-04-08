@@ -42,7 +42,11 @@ func start_drag(source_zone: Node, items: Array[Control], drag_offset: Vector2, 
 	if is_instance_valid(cursor_proxy):
 		cursor_proxy.top_level = true
 		cursor_proxy.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(cursor_proxy)
+		if cursor_proxy.get_parent() != self:
+			if cursor_proxy.get_parent() != null:
+				cursor_proxy.reparent(self, false)
+			else:
+				add_child(cursor_proxy)
 	return active_session
 
 func clear_session() -> void:

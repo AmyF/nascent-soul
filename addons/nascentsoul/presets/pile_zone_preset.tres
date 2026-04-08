@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ZonePreset" format=3]
+
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="1_display"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_factory"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_interaction"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="4_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_permission.gd" id="5_permission"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_preset"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_sort"]
+
+[sub_resource type="Resource" id="Resource_display"]
+script = ExtResource("1_display")
+
+[sub_resource type="Resource" id="Resource_factory"]
+script = ExtResource("2_factory")
+
+[sub_resource type="Resource" id="Resource_interaction"]
+script = ExtResource("3_interaction")
+keyboard_navigation_enabled = true
+wrap_navigation = true
+
+[sub_resource type="Resource" id="Resource_layout"]
+script = ExtResource("4_layout")
+overlap_x = 18.0
+padding_left = 16.0
+padding_top = 20.0
+
+[sub_resource type="Resource" id="Resource_permission"]
+script = ExtResource("5_permission")
+
+[sub_resource type="Resource" id="Resource_sort"]
+script = ExtResource("7_sort")
+
+[resource]
+script = ExtResource("6_preset")
+layout_policy = SubResource("Resource_layout")
+display_style = SubResource("Resource_display")
+interaction = SubResource("Resource_interaction")
+sort_policy = SubResource("Resource_sort")
+permission_policy = SubResource("Resource_permission")
+drag_visual_factory = SubResource("Resource_factory")

@@ -1,53 +1,47 @@
 extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
-
-var _deck_zone: Zone
-var _hand_zone: Zone
-var _board_zone: Zone
-var _discard_zone: Zone
+const HAND_PRESET = preload("res://addons/nascentsoul/presets/hand_zone_preset.tres")
+const BOARD_PRESET = preload("res://addons/nascentsoul/presets/board_zone_preset.tres")
+const PILE_PRESET = preload("res://addons/nascentsoul/presets/pile_zone_preset.tres")
+const DISCARD_PRESET = preload("res://addons/nascentsoul/presets/discard_zone_preset.tres")
 
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
-@onready var deck_panel: Panel = $RootMargin/RootVBox/TopRow/DeckColumn/DeckPanel
-@onready var board_panel: Panel = $RootMargin/RootVBox/TopRow/BoardColumn/BoardPanel
-@onready var discard_panel: Panel = $RootMargin/RootVBox/TopRow/DiscardColumn/DiscardPanel
-@onready var hand_panel: Panel = $RootMargin/RootVBox/HandPanel
+@onready var _deck_zone: Zone = $RootMargin/RootVBox/TopRow/DeckColumn/DeckZone
+@onready var _board_zone: Zone = $RootMargin/RootVBox/TopRow/BoardColumn/BoardZone
+@onready var _discard_zone: Zone = $RootMargin/RootVBox/TopRow/DiscardColumn/DiscardZone
+@onready var _hand_zone: Zone = $RootMargin/RootVBox/HandZone
 
 func _ready() -> void:
-	_configure_panels()
-	_build_zones()
+	_configure_zones()
 	_populate_cards()
 	_wire_demo_actions()
 	_set_status("Playground: drag between zones, double-click deck to draw, double-click hand to play, right-click hand or board to discard.")
 
-func _configure_panels() -> void:
-	ExampleSupport.configure_panel(deck_panel, Color(0.59, 0.53, 0.26))
-	ExampleSupport.configure_panel(board_panel, Color(0.27, 0.48, 0.70))
-	ExampleSupport.configure_panel(discard_panel, Color(0.53, 0.26, 0.31))
-	ExampleSupport.configure_panel(hand_panel, Color(0.33, 0.55, 0.42))
-
-func _build_zones() -> void:
-	var hand_layout := ZoneHandLayout.new()
-	hand_layout.arch_angle_deg = 42.0
-	hand_layout.arch_height = 34.0
-	hand_layout.card_spacing_angle = 5.5
-	hand_layout.center_offset_y = 0.0
-
-	var board_layout := ZoneHBoxLayout.new()
-	board_layout.item_spacing = 18.0
-	board_layout.padding_left = 18.0
-
-	var pile_layout := ZonePileLayout.new()
-	pile_layout.overlap_x = 18.0
-
+func _configure_zones() -> void:
+	_deck_zone.preset = PILE_PRESET
+	_hand_zone.preset = HAND_PRESET
+	_board_zone.preset = BOARD_PRESET
+	_discard_zone.preset = DISCARD_PRESET
 	var board_capacity := ZoneCapacityPermission.new()
 	board_capacity.max_items = 5
 	board_capacity.reject_reason = "Board is full. Try discarding first."
+	_board_zone.permission_policy = board_capacity
 
-	_deck_zone = ExampleSupport.make_zone(deck_panel, "DeckZone", pile_layout)
-	_hand_zone = ExampleSupport.make_zone(hand_panel, "HandZone", hand_layout)
-	_board_zone = ExampleSupport.make_zone(board_panel, "BoardZone", board_layout, null, board_capacity)
-	_discard_zone = ExampleSupport.make_zone(discard_panel, "DiscardZone", pile_layout)
+	var drag_visual_factory := ZoneConfigurableDragVisualFactory.new()
+	drag_visual_factory.ghost_mode = ZoneConfigurableDragVisualFactory.GhostMode.OUTLINE_PANEL
+	drag_visual_factory.ghost_fill_color = Color(0.96, 0.93, 0.84, 0.08)
+	drag_visual_factory.ghost_border_color = Color(0.96, 0.80, 0.30, 0.72)
+	drag_visual_factory.proxy_mode = ZoneConfigurableDragVisualFactory.ProxyMode.DUPLICATE
+	drag_visual_factory.proxy_modulate = Color(1, 1, 1, 0.88)
+	drag_visual_factory.proxy_scale = Vector2(1.04, 1.04)
+	for zone in [_deck_zone, _hand_zone, _board_zone, _discard_zone]:
+		zone.drag_visual_factory = drag_visual_factory
+		zone.refresh()
+	ExampleSupport.configure_zone(_deck_zone, Color(0.59, 0.53, 0.26))
+	ExampleSupport.configure_zone(_board_zone, Color(0.27, 0.48, 0.70))
+	ExampleSupport.configure_zone(_discard_zone, Color(0.53, 0.26, 0.31))
+	ExampleSupport.configure_zone(_hand_zone, Color(0.33, 0.55, 0.42))
 
 func _populate_cards() -> void:
 	for spec in [

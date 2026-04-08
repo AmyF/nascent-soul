@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/examples/transfer_playground.gd" id="1_t79ps"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_7f4vk"]
 
 [node name="TransferPlayground" type="Control"]
 layout_mode = 3
@@ -45,10 +46,11 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 text = "Deck"
 
-[node name="DeckPanel" type="Panel" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
+[node name="DeckZone" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
 custom_minimum_size = Vector2(220, 320)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_7f4vk")
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
@@ -58,11 +60,12 @@ size_flags_horizontal = 3
 layout_mode = 2
 text = "Board"
 
-[node name="BoardPanel" type="Panel" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
+[node name="BoardZone" type="Control" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
 custom_minimum_size = Vector2(0, 320)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+script = ExtResource("2_7f4vk")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
@@ -72,16 +75,18 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 text = "Discard"
 
-[node name="DiscardPanel" type="Panel" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
+[node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
 custom_minimum_size = Vector2(220, 320)
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("2_7f4vk")
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
 text = "Hand"
 
-[node name="HandPanel" type="Panel" parent="RootMargin/RootVBox"]
+[node name="HandZone" type="Control" parent="RootMargin/RootVBox"]
 custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("2_7f4vk")

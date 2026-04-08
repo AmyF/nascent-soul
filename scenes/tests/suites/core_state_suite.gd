@@ -1,12 +1,28 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
+const ZoneCompositePermissionScript = preload("res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd")
+const ZoneConfigurableDragVisualFactoryScript = preload("res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd")
+const ZoneGroupSortScript = preload("res://addons/nascentsoul/impl/sorts/zone_group_sort.gd")
+const HAND_PRESET = preload("res://addons/nascentsoul/presets/hand_zone_preset.tres")
+const BOARD_PRESET = preload("res://addons/nascentsoul/presets/board_zone_preset.tres")
+
 func _init() -> void:
 	_suite_name = "core-state"
 
 func _run_suite() -> void:
 	await _test_reorder_and_remove()
 	await _reset_root()
+	await _test_internal_roots_and_preset_override()
+	await _reset_root()
 	await _test_drag_transfer_and_selection_prune()
+	await _reset_root()
+	await _test_batch_transfer_api()
+	await _reset_root()
+	await _test_composite_permission()
+	await _reset_root()
+	await _test_group_sort_policy()
+	await _reset_root()
+	await _test_drag_visual_factory()
 	await _reset_root()
 	await _test_permission_reject_cleanup()
 	await _reset_root()
@@ -49,6 +65,26 @@ func _test_reorder_and_remove() -> void:
 	_check(_unmanaged_control_names(zone).is_empty(), "remove should not leave ghost or unmanaged controls behind")
 	gamma.free()
 
+func _test_internal_roots_and_preset_override() -> void:
+	var panel = _make_panel("PresetPanel", Vector2(24, 24), Vector2(620, 260))
+	var zone = ExampleSupport.make_zone(panel, "PresetZone", null, null, null, null, null, null, HAND_PRESET)
+	var override_layout := ZoneHBoxLayout.new()
+	override_layout.item_spacing = 20.0
+	override_layout.padding_left = 10.0
+	zone.layout_policy = override_layout
+	var override_permission := ZoneCapacityPermission.new()
+	override_permission.max_items = 2
+	zone.permission_policy = override_permission
+	await _settle_frames(2)
+	_check(zone.get_items_root() != null, "zone should always create an ItemsRoot child")
+	_check(zone.get_preview_root() != null, "zone should always create a PreviewRoot child")
+	_check(zone.get_items_root().get_parent() == zone, "ItemsRoot should belong to the zone itself")
+	_check(zone.get_preview_root().get_parent() == zone, "PreviewRoot should belong to the zone itself")
+	_check(zone.get_layout_policy_resource() == override_layout, "layout override should take precedence over preset layout")
+	_check(zone.get_permission_policy_resource() == override_permission, "permission override should take precedence over preset permission")
+	_check(zone.get_display_style_resource() == HAND_PRESET.display_style, "preset display style should resolve when no override exists")
+	_check(zone.get_drag_visual_factory_resource() == HAND_PRESET.drag_visual_factory, "preset drag visual factory should resolve when no override exists")
+
 func _test_drag_transfer_and_selection_prune() -> void:
 	var target_panel = _make_panel("TargetPanel", Vector2.ZERO, Vector2(620, 260))
 	var source_panel = _make_panel("SourcePanel", Vector2(24, 320), Vector2(620, 260))
@@ -87,6 +123,27 @@ func _test_drag_transfer_and_selection_prune() -> void:
 	_check(_unmanaged_control_names(source_zone).is_empty(), "successful transfer should not leave a source ghost behind")
 	_check(_unmanaged_control_names(target_zone).is_empty(), "successful transfer should not leave a target ghost behind")
 
+func _test_batch_transfer_api() -> void:
+	var target_panel = _make_panel("BatchTargetPanel", Vector2.ZERO, Vector2(620, 260))
+	var source_panel = _make_panel("BatchSourcePanel", Vector2(24, 320), Vector2(620, 260))
+	var source_zone = ExampleSupport.make_zone(source_panel, "BatchSourceZone", ZoneHBoxLayout.new(), null, null, null, null, null, HAND_PRESET)
+	var target_zone = ExampleSupport.make_zone(target_panel, "BatchTargetZone", ZoneHBoxLayout.new(), null, null, null, null, null, BOARD_PRESET)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
+	var gamma = ExampleSupport.make_card("Gamma", 3, ["power"], true)
+	var ward = ExampleSupport.make_card("Ward", 1, ["skill"], true)
+	source_zone.add_item(alpha)
+	source_zone.add_item(beta)
+	source_zone.add_item(gamma)
+	target_zone.add_item(ward)
+	await _settle_frames(2)
+	_check(source_zone.transfer_items([gamma, alpha], target_zone, 1), "batch transfer should accept arbitrary input order and preserve logical zone order")
+	await _settle_frames(2)
+	_check(_zone_item_names(source_zone) == ["Beta"], "batch transfer should remove all moved items from the source zone")
+	_check(_zone_item_names(target_zone) == ["Ward", "Alpha", "Gamma"], "batch transfer should insert items using the source zone's logical order")
+	_check(_unmanaged_control_names(source_zone).is_empty(), "batch transfer should not leave unmanaged controls in the source zone")
+	_check(_unmanaged_control_names(target_zone).is_empty(), "batch transfer should not leave unmanaged controls in the target zone")
+
 func _test_permission_reject_cleanup() -> void:
 	var target_panel = _make_panel("RejectTargetPanel", Vector2.ZERO, Vector2(620, 260))
 	var source_panel = _make_panel("RejectSourcePanel", Vector2(24, 320), Vector2(620, 260))
@@ -122,6 +179,126 @@ func _test_permission_reject_cleanup() -> void:
 	_check(_unmanaged_control_names(source_zone).is_empty(), "rejected drop should not leave a source ghost behind")
 	_check(_unmanaged_control_names(target_zone).is_empty(), "rejected drop should not leave a target ghost behind")
 
+func _test_composite_permission() -> void:
+	var target_panel = _make_panel("CompositeTargetPanel", Vector2.ZERO, Vector2(620, 260))
+	var hand_panel = _make_panel("CompositeHandPanel", Vector2(24, 320), Vector2(620, 260))
+	var deck_panel = _make_panel("CompositeDeckPanel", Vector2(24, 616), Vector2(620, 260))
+	var hand_zone = ExampleSupport.make_zone(hand_panel, "HandZone", ZoneHBoxLayout.new())
+	var deck_zone = ExampleSupport.make_zone(deck_panel, "DeckZone", ZoneHBoxLayout.new())
+	var source_policy := ZoneSourcePermission.new()
+	source_policy.allowed_source_zone_names = PackedStringArray(["HandZone"])
+	source_policy.reject_reason = "Composite target only accepts cards from HandZone."
+	var capacity_policy := ZoneCapacityPermission.new()
+	capacity_policy.max_items = 1
+	capacity_policy.reject_reason = "Composite target is full."
+	var composite_policy := ZoneCompositePermissionScript.new()
+	composite_policy.combine_mode = ZoneCompositePermissionScript.CombineMode.ALL
+	composite_policy.policies = [source_policy, capacity_policy]
+	var target_zone = ExampleSupport.make_zone(target_panel, "CompositeTargetZone", ZoneHBoxLayout.new(), null, composite_policy)
+	var hand_alpha = ExampleSupport.make_card("HandAlpha", 1, ["skill"], true)
+	var hand_beta = ExampleSupport.make_card("HandBeta", 2, ["attack"], true)
+	var deck_alpha = ExampleSupport.make_card("DeckAlpha", 1, ["skill"], false)
+	var reject_events: Array[String] = []
+	target_zone.drop_rejected.connect(func(items: Array, source_zone_ref: Zone, _target_zone_ref: Zone, reason: String) -> void:
+		var item_name = items[0].name if not items.is_empty() and items[0] is Control else "Selection"
+		reject_events.append("%s:%s:%s" % [item_name, source_zone_ref.name if source_zone_ref != null else "Unknown", reason])
+	)
+	hand_zone.add_item(hand_alpha)
+	hand_zone.add_item(hand_beta)
+	deck_zone.add_item(deck_alpha)
+	await _settle_frames(2)
+	_check(hand_zone.move_item_to(hand_alpha, target_zone, 0), "composite permission should allow a card from the allowed source zone")
+	await _settle_frames(2)
+	_check(_zone_item_names(target_zone) == ["HandAlpha"], "composite permission should insert the first allowed card")
+	_check(not hand_zone.move_item_to(hand_beta, target_zone, 1), "composite permission should reject a second card when capacity is full")
+	await _settle_frames(2)
+	_check(_zone_item_names(hand_zone) == ["HandBeta"], "capacity rejection should leave the second hand card in the source zone")
+	_check(not deck_zone.move_item_to(deck_alpha, target_zone, 1), "composite permission should reject a card from a disallowed source zone")
+	await _settle_frames(2)
+	_check(_zone_item_names(deck_zone) == ["DeckAlpha"], "source rejection should leave the deck card in the source zone")
+	_check(reject_events == [
+		"HandBeta:HandZone:Composite target is full.",
+		"DeckAlpha:DeckZone:Composite target only accepts cards from HandZone."
+	], "composite permission should surface the specific rejecting reason")
+
+func _test_group_sort_policy() -> void:
+	var panel = _make_panel("GroupSortPanel", Vector2(24, 24), Vector2(920, 280))
+	var sort_policy := ZoneGroupSortScript.new()
+	sort_policy.group_metadata_key = "example_primary_tag"
+	sort_policy.group_order = PackedStringArray(["attack", "skill", "power"])
+	sort_policy.item_metadata_key = "example_cost"
+	var layout := ZoneHBoxLayout.new()
+	layout.item_spacing = 12.0
+	layout.padding_left = 12.0
+	layout.padding_top = 12.0
+	var zone = ExampleSupport.make_zone(panel, "GroupSortZone", layout, null, null, sort_policy)
+	var attack_low = ExampleSupport.make_card("AttackLow", 1, ["attack"], true)
+	var skill_mid = ExampleSupport.make_card("SkillMid", 2, ["skill"], true)
+	var power_high = ExampleSupport.make_card("PowerHigh", 3, ["power"], true)
+	var attack_high = ExampleSupport.make_card("AttackHigh", 3, ["attack"], true)
+	var skill_low = ExampleSupport.make_card("SkillLow", 1, ["skill"], true)
+	var skill_low_b = ExampleSupport.make_card("SkillLowB", 1, ["skill"], true)
+	for item in [skill_mid, power_high, attack_high, attack_low, skill_low, skill_low_b]:
+		zone.add_item(item)
+	await _settle_frames(2)
+	var sorted = sort_policy.sort_items(zone.get_items())
+	_check(_control_name_list(sorted) == ["AttackLow", "AttackHigh", "SkillLow", "SkillLowB", "SkillMid", "PowerHigh"], "group sort should cluster by group order and then sort within each group")
+	_check(skill_low.position.x < skill_low_b.position.x, "group sort should keep insertion order stable when group and item keys are equal")
+	var last_x = -1.0
+	for item in sorted:
+		_check(item.position.x > last_x, "row layout should render cards from left to right in grouped sort order")
+		last_x = item.position.x
+
+func _test_drag_visual_factory() -> void:
+	var target_panel = _make_panel("FactoryTargetPanel", Vector2.ZERO, Vector2(620, 260))
+	var source_panel = _make_panel("FactorySourcePanel", Vector2(24, 320), Vector2(620, 260))
+	var source_factory := ZoneConfigurableDragVisualFactoryScript.new()
+	source_factory.prefer_item_methods = false
+	source_factory.proxy_mode = ZoneConfigurableDragVisualFactoryScript.ProxyMode.COLOR_RECT
+	source_factory.proxy_color = Color(0.28, 0.72, 0.96, 0.74)
+	source_factory.proxy_scale = Vector2(1.12, 1.08)
+	var target_factory := ZoneConfigurableDragVisualFactoryScript.new()
+	target_factory.prefer_item_methods = false
+	target_factory.allow_meta_ghost_scene = false
+	target_factory.ghost_mode = ZoneConfigurableDragVisualFactoryScript.GhostMode.OUTLINE_PANEL
+	target_factory.ghost_fill_color = Color(0.12, 0.16, 0.24, 0.18)
+	target_factory.ghost_border_color = Color(0.92, 0.82, 0.36, 0.84)
+	target_factory.ghost_corner_radius = 10
+	var source_zone = ExampleSupport.make_zone(source_panel, "FactorySourceZone", ZoneHBoxLayout.new(), null, null, null, null, source_factory)
+	var target_zone = ExampleSupport.make_zone(target_panel, "FactoryTargetZone", ZoneHBoxLayout.new(), null, null, null, null, target_factory)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	source_zone.add_item(alpha)
+	await _settle_frames(2)
+	source_zone.start_drag([alpha])
+	var coordinator = source_zone.get_drag_coordinator(false)
+	var session = coordinator.get_session() if coordinator != null else null
+	_check(session != null, "drag visual factory should still create a drag session")
+	if session == null:
+		return
+	_check(session.cursor_proxy is ColorRect, "custom drag visual factory should be able to replace the drag proxy")
+	if session.cursor_proxy is ColorRect:
+		var proxy := session.cursor_proxy as ColorRect
+		_check(proxy.color == source_factory.proxy_color, "custom drag proxy should use the configured color")
+		_check(proxy.scale == source_factory.proxy_scale, "custom drag proxy should use the configured scale")
+	var target_runtime = target_zone.get_runtime()
+	target_runtime._create_ghost(alpha)
+	session.hover_zone = target_zone
+	session.preview_index = 0
+	target_zone.refresh()
+	var ghost = _find_unmanaged_control(target_zone)
+	_check(ghost is Panel, "custom drag visual factory should be able to replace the preview ghost")
+	if ghost is Panel:
+		var ghost_style = (ghost as Panel).get_theme_stylebox("panel")
+		_check(ghost_style is StyleBoxFlat, "custom preview ghost should install a flat panel style")
+		if ghost_style is StyleBoxFlat:
+			var style := ghost_style as StyleBoxFlat
+			_check(style.bg_color == target_factory.ghost_fill_color, "custom preview ghost should use the configured fill color")
+			_check(style.border_color == target_factory.ghost_border_color, "custom preview ghost should use the configured border color")
+	source_zone.get_runtime().cancel_drag(session)
+	await _settle_frames(2)
+	_check(_unmanaged_control_names(source_zone).is_empty(), "custom proxy cleanup should not leave unmanaged controls in the source zone")
+	_check(_unmanaged_control_names(target_zone).is_empty(), "custom ghost cleanup should not leave unmanaged controls in the target zone")
+
 func _test_drag_cancel_cleanup() -> void:
 	var panel = _make_panel("CancelPanel", Vector2(24, 24), Vector2(620, 260))
 	var zone = ExampleSupport.make_zone(panel, "CancelZone", ZoneHBoxLayout.new())
@@ -149,13 +326,13 @@ func _test_external_reconciliation() -> void:
 	zone.add_item(alpha)
 	zone.add_item(beta)
 	await _settle_frames(2)
-	panel.move_child(beta, 0)
+	zone.get_items_root().move_child(beta, 0)
 	await _settle_frames(2)
 	_check(_zone_item_names(zone) == ["Alpha", "Beta"], "external reorder should not rewrite logical order")
 	_check(_managed_control_names(panel) == ["Alpha", "Beta"], "external reorder should be reconciled back to logical order")
 	var gamma = ExampleSupport.make_card("Gamma", 3, ["power"], true)
-	panel.add_child(gamma)
-	panel.move_child(gamma, 1)
+	zone.get_items_root().add_child(gamma)
+	zone.get_items_root().move_child(gamma, 1)
 	await _settle_frames(2)
 	_check(_zone_item_names(zone) == ["Alpha", "Gamma", "Beta"], "external add should be reconciled into logical order without reordering existing items")
 	_check(_managed_control_names(panel) == ["Alpha", "Gamma", "Beta"], "external add should sync container order after reconciliation")
@@ -192,3 +369,9 @@ func _test_freed_item_during_drag_session() -> void:
 	_check(coordinator.get_session() == null, "freeing the dragged card should auto-clear the drag session")
 	_check(zone.get_item_count() == 0, "freeing the dragged card should reconcile it out of the zone")
 	_check(_unmanaged_control_names(zone).is_empty(), "freeing the dragged card should not leave ghost controls behind")
+
+func _control_name_list(items: Array[Control]) -> Array[String]:
+	var names: Array[String] = []
+	for item in items:
+		names.append(item.name)
+	return names

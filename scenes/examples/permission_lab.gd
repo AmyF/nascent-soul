@@ -1,43 +1,33 @@
 extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
-
-var _deck_zone: Zone
-var _hand_zone: Zone
-var _board_zone: Zone
-var _sanctum_zone: Zone
-var _discard_zone: Zone
+const ZoneCompositePermissionScript = preload("res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd")
+const HAND_PRESET = preload("res://addons/nascentsoul/presets/hand_zone_preset.tres")
+const BOARD_PRESET = preload("res://addons/nascentsoul/presets/board_zone_preset.tres")
+const PILE_PRESET = preload("res://addons/nascentsoul/presets/pile_zone_preset.tres")
+const DISCARD_PRESET = preload("res://addons/nascentsoul/presets/discard_zone_preset.tres")
 
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
-@onready var deck_panel: Panel = $RootMargin/RootVBox/Grid/DeckColumn/DeckPanel
-@onready var hand_panel: Panel = $RootMargin/RootVBox/Grid/HandColumn/HandPanel
-@onready var board_panel: Panel = $RootMargin/RootVBox/Grid/BoardColumn/BoardPanel
-@onready var sanctum_panel: Panel = $RootMargin/RootVBox/Grid/SanctumColumn/SanctumPanel
-@onready var discard_panel: Panel = $RootMargin/RootVBox/Grid/DiscardColumn/DiscardPanel
+@onready var _deck_zone: Zone = $RootMargin/RootVBox/Grid/DeckColumn/DeckZone
+@onready var _hand_zone: Zone = $RootMargin/RootVBox/Grid/HandColumn/HandZone
+@onready var _board_zone: Zone = $RootMargin/RootVBox/Grid/BoardColumn/BoardZone
+@onready var _sanctum_zone: Zone = $RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone
+@onready var _discard_zone: Zone = $RootMargin/RootVBox/Grid/DiscardColumn/DiscardZone
 
 func _ready() -> void:
-	_configure_panels()
-	_build_zones()
+	_configure_zones()
 	_populate_cards()
 	_wire_actions()
-	_set_status("Permission lab: double-click deck to draw, right-click hand to send to Board, double-click hand to send to Sanctum. Dragging from the wrong source or exceeding capacity will be rejected.")
+	_set_status("Permission lab: double-click deck to draw, right-click hand to send to Board, double-click hand to send to Sanctum. Board and Sanctum now both enforce their permission rules for drag-and-drop and direct move_item_to calls.")
 
-func _configure_panels() -> void:
-	ExampleSupport.configure_panel(deck_panel, Color(0.59, 0.53, 0.26))
-	ExampleSupport.configure_panel(hand_panel, Color(0.33, 0.55, 0.42))
-	ExampleSupport.configure_panel(board_panel, Color(0.27, 0.48, 0.70))
-	ExampleSupport.configure_panel(sanctum_panel, Color(0.63, 0.41, 0.68))
-	ExampleSupport.configure_panel(discard_panel, Color(0.53, 0.26, 0.31))
+func _configure_zones() -> void:
+	_deck_zone.preset = PILE_PRESET
+	_hand_zone.preset = HAND_PRESET
+	_board_zone.preset = BOARD_PRESET
+	_discard_zone.preset = DISCARD_PRESET
 
-func _build_zones() -> void:
 	var pile_layout := ZonePileLayout.new()
 	pile_layout.overlap_x = 16.0
-	var hand_layout := ZoneHBoxLayout.new()
-	hand_layout.item_spacing = 14.0
-	hand_layout.padding_left = 14.0
-	var board_layout := ZoneHBoxLayout.new()
-	board_layout.item_spacing = 16.0
-	board_layout.padding_left = 14.0
 	var sanctum_layout := ZoneVBoxLayout.new()
 	sanctum_layout.item_spacing = 10.0
 	sanctum_layout.padding_top = 14.0
@@ -45,16 +35,28 @@ func _build_zones() -> void:
 	var board_capacity := ZoneCapacityPermission.new()
 	board_capacity.max_items = 2
 	board_capacity.reject_reason = "Board only allows two cards in this example."
+	_board_zone.permission_policy = board_capacity
 
 	var sanctum_source := ZoneSourcePermission.new()
 	sanctum_source.allowed_source_zone_names = PackedStringArray(["HandZone"])
 	sanctum_source.reject_reason = "Sanctum only accepts cards that come from HandZone."
 
-	_deck_zone = ExampleSupport.make_zone(deck_panel, "DeckZone", pile_layout)
-	_hand_zone = ExampleSupport.make_zone(hand_panel, "HandZone", hand_layout)
-	_board_zone = ExampleSupport.make_zone(board_panel, "BoardZone", board_layout, null, board_capacity)
-	_sanctum_zone = ExampleSupport.make_zone(sanctum_panel, "SanctumZone", sanctum_layout, null, sanctum_source)
-	_discard_zone = ExampleSupport.make_zone(discard_panel, "DiscardZone", pile_layout)
+	var sanctum_capacity := ZoneCapacityPermission.new()
+	sanctum_capacity.max_items = 2
+	sanctum_capacity.reject_reason = "Sanctum only allows two cards in this example."
+
+	var sanctum_rules := ZoneCompositePermissionScript.new()
+	sanctum_rules.combine_mode = ZoneCompositePermissionScript.CombineMode.ALL
+	sanctum_rules.policies = [sanctum_source, sanctum_capacity]
+
+	_deck_zone.layout_policy = pile_layout
+	_sanctum_zone.layout_policy = sanctum_layout
+	_sanctum_zone.permission_policy = sanctum_rules
+	ExampleSupport.configure_zone(_deck_zone, Color(0.59, 0.53, 0.26))
+	ExampleSupport.configure_zone(_hand_zone, Color(0.33, 0.55, 0.42))
+	ExampleSupport.configure_zone(_board_zone, Color(0.27, 0.48, 0.70))
+	ExampleSupport.configure_zone(_sanctum_zone, Color(0.63, 0.41, 0.68))
+	ExampleSupport.configure_zone(_discard_zone, Color(0.53, 0.26, 0.31))
 
 func _populate_cards() -> void:
 	for spec in [
