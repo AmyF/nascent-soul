@@ -53,19 +53,27 @@ func _ready() -> void:
 	_ensure_nodes()
 	_refresh_visuals()
 
+func _exit_tree() -> void:
+	_kill_flip_tween()
+
 func flip(to_face_up: bool = not face_up, animated: bool = true) -> void:
 	_ensure_nodes()
 	if not animated:
 		face_up = to_face_up
 		return
-	if _flip_tween != null and _flip_tween.is_valid():
-		_flip_tween.kill()
+	_kill_flip_tween()
 	_flip_tween = _visual_root.create_tween()
 	_flip_tween.tween_property(_visual_root, "scale:x", 0.0, 0.08)
-	_flip_tween.tween_callback(func() -> void:
-		face_up = to_face_up
-	)
+	_flip_tween.tween_callback(Callable(self, "_apply_flip_state").bind(to_face_up))
 	_flip_tween.tween_property(_visual_root, "scale:x", 1.0, 0.08)
+
+func _kill_flip_tween() -> void:
+	if _flip_tween != null and _flip_tween.is_valid():
+		_flip_tween.kill()
+	_flip_tween = null
+
+func _apply_flip_state(to_face_up: bool) -> void:
+	face_up = to_face_up
 
 func set_hovered_visual(value: bool) -> void:
 	if _hovered_visual == value:

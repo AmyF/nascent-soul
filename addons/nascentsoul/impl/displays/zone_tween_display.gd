@@ -10,6 +10,7 @@ func apply(zone: Node, runtime, placements: Array[ZonePlacement]) -> void:
 	var active_tweens: Dictionary = state["active_tweens"]
 	var target_cache: Dictionary = state["target_cache"]
 	var should_animate = duration > 0.0 and DisplayServer.get_name() != "headless"
+	_prune_inactive_tweens(active_tweens)
 	var placed_lookup: Dictionary = {}
 	for placement in placements:
 		if is_instance_valid(placement.item):
@@ -58,10 +59,6 @@ func apply(zone: Node, runtime, placements: Array[ZonePlacement]) -> void:
 		tween.tween_property(item, "scale", placement.scale, duration)
 		active_tweens[item] = tween
 		target_cache[item] = _cache_transform(placement)
-		tween.finished.connect(func() -> void:
-			if active_tweens.get(item) == tween:
-				active_tweens.erase(item)
-		)
 
 func _apply_transform(item: Control, placement: ZonePlacement) -> void:
 	item.position = placement.position
@@ -81,6 +78,18 @@ func _kill_tween(active_tweens: Dictionary, item: Control) -> void:
 		active_tweens[item].kill()
 		active_tweens.erase(item)
 
+func _prune_inactive_tweens(active_tweens: Dictionary) -> void:
+	var stale_items: Array = []
+	for item in active_tweens.keys():
+		var tween = active_tweens[item]
+		if not is_instance_valid(item):
+			stale_items.append(item)
+			continue
+		if tween == null or not tween.is_valid() or not tween.is_running():
+			stale_items.append(item)
+	for item in stale_items:
+		active_tweens.erase(item)
+
 func _apply_handoff_transform(item: Control, handoff: Dictionary, z_index: int) -> void:
 	if handoff.has("global_position"):
 		item.position = _global_to_parent_local(item, handoff["global_position"])
@@ -97,9 +106,7 @@ func _global_to_parent_local(item: Control, global_position: Vector2) -> Vector2
 	return global_position
 
 func _is_target_same(active_tweens: Dictionary, target_cache: Dictionary, item: Control, placement: ZonePlacement) -> bool:
-	if not target_cache.has(item) or not active_tweens.has(item):
-		return false
-	if not active_tweens[item].is_valid():
+	if not target_cache.has(item):
 		return false
 	var cached: Dictionary = target_cache[item]
 	if cached["position"].distance_squared_to(placement.position) > 0.1:
@@ -107,6 +114,18 @@ func _is_target_same(active_tweens: Dictionary, target_cache: Dictionary, item: 
 	if abs(cached["rotation"] - placement.rotation) > 0.001:
 		return false
 	if cached["scale"].distance_squared_to(placement.scale) > 0.001:
+		return false
+	if active_tweens.has(item):
+		var tween = active_tweens[item]
+		return tween != null and tween.is_valid() and tween.is_running()
+	return _is_transform_at_target(item, cached)
+
+func _is_transform_at_target(item: Control, target: Dictionary) -> bool:
+	if item.position.distance_squared_to(target["position"]) > 0.1:
+		return false
+	if abs(item.rotation - target["rotation"]) > 0.001:
+		return false
+	if item.scale.distance_squared_to(target["scale"]) > 0.001:
 		return false
 	return true
 

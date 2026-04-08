@@ -71,6 +71,7 @@ func process(_delta: float) -> void:
 		bind()
 	if zone.get_items_root() == null:
 		return
+	_prune_display_state()
 	var coordinator = zone.get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
 	if session == null:
@@ -326,6 +327,23 @@ func resolve_item_size(item: Control) -> Vector2:
 	if item.custom_minimum_size != Vector2.ZERO:
 		return item.custom_minimum_size
 	return Vector2(100, 150)
+
+func _prune_display_state() -> void:
+	for state in _display_state.values():
+		var active_tweens: Dictionary = state.get("active_tweens", {})
+		var target_cache: Dictionary = state.get("target_cache", {})
+		var stale_items: Array = []
+		for item in active_tweens.keys():
+			var tween = active_tweens[item]
+			if not is_instance_valid(item) or tween == null or not tween.is_valid() or not tween.is_running():
+				stale_items.append(item)
+		for item in target_cache.keys():
+			if not is_instance_valid(item) and item not in stale_items:
+				stale_items.append(item)
+		for item in stale_items:
+			active_tweens.erase(item)
+			if not is_instance_valid(item):
+				target_cache.erase(item)
 
 func _ensure_long_press_timer() -> void:
 	if is_instance_valid(_long_press_timer):
