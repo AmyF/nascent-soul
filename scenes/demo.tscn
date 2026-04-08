@@ -1,35 +1,59 @@
-[gd_scene load_steps=2 format=3 uid="uid://ck4csschxh7la"]
+[gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" uid="uid://ckym6xo6gjtu" path="res://scenes/demo.gd" id="1_tqfh0"]
+[ext_resource type="Script" path="res://scenes/demo.gd" id="1_mhr74"]
+[ext_resource type="PackedScene" path="res://scenes/examples/transfer_playground.tscn" id="2_jxvsh"]
+[ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="3_hsdp4"]
+[ext_resource type="PackedScene" path="res://scenes/examples/permission_lab.tscn" id="4_a6nxb"]
+[ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="5_jf8l8"]
 
-[node name="Demo" type="Control"]
+[node name="DemoHub" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_tqfh0")
+script = ExtResource("1_mhr74")
 
-[node name="BoardPanel" type="Panel" parent="."]
-custom_minimum_size = Vector2(200, 0)
+[node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
-anchors_preset = 11
-anchor_left = 1.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -200.0
-offset_bottom = -201.0
-grow_horizontal = 0
-grow_vertical = 2
-
-[node name="HandPanel" type="Panel" parent="."]
-custom_minimum_size = Vector2(0, 200)
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -200.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TitleLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "NascentSoul Example Hub"
+
+[node name="IntroLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Loading examples..."
+
+[node name="TabContainer" type="TabContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+current_tab = 0
+
+[node name="TransferPlayground" parent="RootMargin/RootVBox/TabContainer" instance=ExtResource("2_jxvsh")]
+layout_mode = 2
+
+[node name="LayoutGallery" parent="RootMargin/RootVBox/TabContainer" instance=ExtResource("3_hsdp4")]
+layout_mode = 2
+
+[node name="PermissionLab" parent="RootMargin/RootVBox/TabContainer" instance=ExtResource("4_a6nxb")]
+layout_mode = 2
+
+[node name="ZoneRecipes" parent="RootMargin/RootVBox/TabContainer" instance=ExtResource("5_jf8l8")]
+layout_mode = 2

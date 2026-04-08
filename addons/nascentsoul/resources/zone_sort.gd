@@ -1,5 +1,5 @@
 @tool
-class_name ZoneSort extends Resource
+class_name ZoneSortPolicy extends Resource
 
-func process_sort(items: Array[Control]) -> Array[Control]:
-	return items
+func sort_items(items: Array[Control]) -> Array[Control]:
+	return items.duplicate()

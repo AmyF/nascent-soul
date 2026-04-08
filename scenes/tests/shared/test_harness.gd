@@ -1,0 +1,136 @@
+extends Control
+class_name ZoneTestHarness
+
+const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+
+var _checks_run: int = 0
+var _failures: Array[String] = []
+var _suite_name: String = "Unnamed Suite"
+
+func run_suite() -> Dictionary:
+	custom_minimum_size = Vector2(1400, 900)
+	_checks_run = 0
+	_failures.clear()
+	await _run_suite()
+	await _reset_root()
+	ExampleSupport.clear_card_texture_cache()
+	return {
+		"name": _suite_name,
+		"checks": _checks_run,
+		"failures": _failures.duplicate()
+	}
+
+func _run_suite() -> void:
+	pass
+
+func _make_panel(name: String, position_value: Vector2, panel_size: Vector2) -> Panel:
+	var panel := Panel.new()
+	panel.name = name
+	panel.position = position_value
+	panel.custom_minimum_size = panel_size
+	panel.size = panel_size
+	add_child(panel)
+	return panel
+
+func _zone_item_names(zone: Zone) -> Array[String]:
+	var names: Array[String] = []
+	for item in zone.get_items():
+		names.append(item.name)
+	return names
+
+func _managed_control_names(container: Control) -> Array[String]:
+	var names: Array[String] = []
+	for child in container.get_children():
+		if child is Control:
+			names.append((child as Control).name)
+	return names
+
+func _unmanaged_control_names(zone: Zone) -> Array[String]:
+	var unmanaged: Array[String] = []
+	var managed_items = zone.get_items()
+	for child in zone.container.get_children():
+		if child is Control and child not in managed_items:
+			unmanaged.append((child as Control).name if (child as Control).name != "" else child.get_class())
+	return unmanaged
+
+func _check(condition: bool, message: String) -> void:
+	_checks_run += 1
+	if condition:
+		return
+	_failures.append(message)
+
+func _settle_frames(count: int) -> void:
+	for _i in range(count):
+		await get_tree().process_frame
+
+func _reset_root() -> void:
+	var children := get_children().duplicate()
+	for child in children:
+		if is_instance_valid(child):
+			child.free()
+	await _settle_frames(1)
+
+func _emit_left_click(item: Control, ctrl_pressed: bool = false, shift_pressed: bool = false) -> void:
+	_emit_mouse_button(item, MOUSE_BUTTON_LEFT, true, false, ctrl_pressed, shift_pressed)
+	_emit_mouse_button(item, MOUSE_BUTTON_LEFT, false, false, ctrl_pressed, shift_pressed)
+
+func _emit_mouse_button(item: Control, button_index: MouseButton, pressed: bool, double_click: bool = false, ctrl_pressed: bool = false, shift_pressed: bool = false) -> void:
+	var event := InputEventMouseButton.new()
+	event.button_index = button_index
+	event.pressed = pressed
+	event.double_click = double_click
+	event.ctrl_pressed = ctrl_pressed
+	event.shift_pressed = shift_pressed
+	event.position = item.size * 0.5
+	event.global_position = item.global_position + event.position
+	item.gui_input.emit(event)
+
+func _emit_background_left_click(container: Control, global_position: Vector2 = Vector2(-1, -1)) -> void:
+	var click_position = global_position
+	if click_position.x < 0.0 and click_position.y < 0.0:
+		click_position = container.global_position + container.size * 0.5
+	var local_position = click_position - container.global_position
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = local_position
+	press.global_position = click_position
+	container.gui_input.emit(press)
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.pressed = false
+	release.position = local_position
+	release.global_position = click_position
+	container.gui_input.emit(release)
+
+func _emit_mouse_entered(item: Control) -> void:
+	item.mouse_entered.emit()
+
+func _emit_mouse_exited(item: Control) -> void:
+	item.mouse_exited.emit()
+
+func _overlay_visible(card: ZoneCard) -> bool:
+	var overlay = card.get_node_or_null("VisualRoot/HighlightOverlay")
+	return overlay is CanvasItem and (overlay as CanvasItem).visible
+
+func _rect_inside(outer: Rect2, inner: Rect2, tolerance: float = 1.0) -> bool:
+	return inner.position.x >= outer.position.x - tolerance \
+		and inner.position.y >= outer.position.y - tolerance \
+		and inner.end.x <= outer.end.x + tolerance \
+		and inner.end.y <= outer.end.y + tolerance
+
+func _all_items_within(zone: Zone, container: Control, tolerance: float = 1.0) -> bool:
+	var container_rect = container.get_global_rect()
+	for item in zone.get_items():
+		if not is_instance_valid(item):
+			continue
+		if not _rect_inside(container_rect, item.get_global_rect(), tolerance):
+			return false
+	return true
+
+func _find_unmanaged_control(zone: Zone) -> Control:
+	var managed_items = zone.get_items()
+	for child in zone.container.get_children():
+		if child is Control and child not in managed_items:
+			return child as Control
+	return null

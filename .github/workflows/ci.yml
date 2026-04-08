@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  godot-headless:
+    runs-on: ubuntu-latest
+    env:
+      GODOT_BINARY: Godot_v4.6.1-stable_linux.x86_64
+      GODOT_ARCHIVE: Godot_v4.6.1-stable_linux.x86_64.zip
+      GODOT_URL: https://github.com/godotengine/godot/releases/download/godot-4.6.1-stable/Godot_v4.6.1-stable_linux.x86_64.zip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Godot 4.6.1
+        run: |
+          wget -q "$GODOT_URL"
+          unzip -q "$GODOT_ARCHIVE"
+          chmod +x "$GODOT_BINARY"
+
+      - name: Validate project opens in the editor
+        run: |
+          ./"$GODOT_BINARY" --headless --editor --path . --quit
+
+      - name: Run headless regression suites
+        run: |
+          ./"$GODOT_BINARY" --headless --path . scenes/tests/regression_runner.tscn
+
+      - name: Launch example hub
+        run: |
+          ./"$GODOT_BINARY" --headless --path . --quit-after 2

@@ -1,0 +1,104 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/examples/permission_lab.gd" id="1_jq44b"]
+
+[node name="PermissionLab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jq44b")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Loading permission lab..."
+
+[node name="Grid" type="GridContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 5
+theme_override_constants/h_separation = 16
+
+[node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
+
+[node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/Grid/DeckColumn"]
+layout_mode = 2
+text = "Deck"
+
+[node name="DeckPanel" type="Panel" parent="RootMargin/RootVBox/Grid/DeckColumn"]
+custom_minimum_size = Vector2(180, 300)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 0)
+
+[node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
+layout_mode = 2
+text = "Hand"
+
+[node name="HandPanel" type="Panel" parent="RootMargin/RootVBox/Grid/HandColumn"]
+custom_minimum_size = Vector2(220, 300)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 0)
+
+[node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+layout_mode = 2
+text = "Board (Capacity 2)"
+
+[node name="BoardPanel" type="Panel" parent="RootMargin/RootVBox/Grid/BoardColumn"]
+custom_minimum_size = Vector2(220, 300)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SanctumColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(220, 0)
+
+[node name="SanctumLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+layout_mode = 2
+text = "Sanctum (Hand Only)"
+
+[node name="SanctumPanel" type="Panel" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
+custom_minimum_size = Vector2(220, 300)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 0)
+
+[node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
+layout_mode = 2
+text = "Discard"
+
+[node name="DiscardPanel" type="Panel" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
+custom_minimum_size = Vector2(180, 300)
+layout_mode = 2
+size_flags_vertical = 3

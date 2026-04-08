@@ -1,5 +1,5 @@
 @tool
-class_name ZoneDisplay extends Resource
+class_name ZoneDisplayStyle extends Resource
 
-func apply(items: Array[Control], transforms: Dictionary, ghost_instance: Control = null):
+func apply(zone: Node, runtime, placements: Array[ZonePlacement]) -> void:
 	pass

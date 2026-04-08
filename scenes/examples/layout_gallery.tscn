@@ -1,0 +1,100 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/examples/layout_gallery.gd" id="1_n4rwd"]
+
+[node name="LayoutGallery" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_n4rwd")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Loading layout gallery..."
+
+[node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SortButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+text = "Row Sort: Cost Asc"
+
+[node name="ResetButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+text = "Reset Cards"
+
+[node name="Grid" type="GridContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 18
+
+[node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+
+[node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
+layout_mode = 2
+text = "Hand Layout"
+
+[node name="HandPanel" type="Panel" parent="RootMargin/RootVBox/Grid/HandColumn"]
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RowColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+
+[node name="RowLabel" type="Label" parent="RootMargin/RootVBox/Grid/RowColumn"]
+layout_mode = 2
+text = "Horizontal Layout"
+
+[node name="RowPanel" type="Panel" parent="RootMargin/RootVBox/Grid/RowColumn"]
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ListColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+
+[node name="ListLabel" type="Label" parent="RootMargin/RootVBox/Grid/ListColumn"]
+layout_mode = 2
+text = "Vertical Layout"
+
+[node name="ListPanel" type="Panel" parent="RootMargin/RootVBox/Grid/ListColumn"]
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PileColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
+layout_mode = 2
+
+[node name="PileLabel" type="Label" parent="RootMargin/RootVBox/Grid/PileColumn"]
+layout_mode = 2
+text = "Pile Layout"
+
+[node name="PilePanel" type="Panel" parent="RootMargin/RootVBox/Grid/PileColumn"]
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
+size_flags_horizontal = 3
