@@ -7,59 +7,12 @@
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_preset.tres" id="5_board"]
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="7_capacity"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="8_theme"]
 
 [sub_resource type="Resource" id="BoardCapacityPermission"]
 script = ExtResource("7_capacity")
 max_items = 4
 reject_reason = "Board recipe 已满。提高 max_items 或先弃掉一张牌。\nBoard recipe is full. Raise max_items or discard a card first."
-
-[sub_resource type="StyleBoxFlat" id="ResetButtonNormal"]
-bg_color = Color(0.1, 0.12, 0.16, 0.98)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.27, 0.48, 0.7, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-content_margin_left = 12
-content_margin_top = 8
-content_margin_right = 12
-content_margin_bottom = 8
-
-[sub_resource type="StyleBoxFlat" id="ResetButtonHover"]
-bg_color = Color(0.14, 0.17, 0.24, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.27, 0.48, 0.7, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-content_margin_left = 12
-content_margin_top = 8
-content_margin_right = 12
-content_margin_bottom = 8
-
-[sub_resource type="StyleBoxFlat" id="ResetButtonPressed"]
-bg_color = Color(0.16, 0.2, 0.28, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.27, 0.48, 0.7, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-content_margin_left = 12
-content_margin_top = 8
-content_margin_right = 12
-content_margin_bottom = 8
 
 [sub_resource type="StyleBoxFlat" id="DeckZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
@@ -117,6 +70,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
+theme = ExtResource("8_theme")
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -140,12 +94,7 @@ theme_override_constants/separation = 8
 
 [node name="ResetButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
-theme_override_styles/normal = SubResource("ResetButtonNormal")
-theme_override_styles/hover = SubResource("ResetButtonHover")
-theme_override_styles/pressed = SubResource("ResetButtonPressed")
-theme_override_styles/focus = SubResource("ResetButtonHover")
-theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
-theme_override_font_sizes/font_size = 12
+theme_type_variation = &"DemoPrimaryActionButton"
 text = "重置模板 / Reset recipe"
 
 [node name="RecipesGrid" type="GridContainer" parent="RootMargin/RootVBox"]
@@ -162,16 +111,13 @@ theme_override_constants/separation = 6
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.92, 0.74, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoGoldHeading"
 text = "牌库模板 / Deck recipe"
 
 [node name="DeckDetails" type="Label" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "PileZonePreset，适合抽牌堆与隐藏堆叠 / PileZonePreset for draw piles and hidden stacks"
 
 [node name="DeckZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
@@ -190,16 +136,13 @@ theme_override_constants/separation = 6
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.84, 0.96, 0.88, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoGreenHeading"
 text = "手牌模板 / Hand recipe"
 
 [node name="HandDetails" type="Label" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "HandZonePreset，适合手牌与奖励选择 / HandZonePreset for player hands and reward picks"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
@@ -219,24 +162,19 @@ theme_override_constants/separation = 6
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.83, 0.91, 0.99, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoBlueHeading"
 text = "战场模板 / Board recipe"
 
 [node name="BoardDetails" type="Label" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "BoardZonePreset，容量限制的主动位 / BoardZonePreset for capacity-limited active rows"
 
 [node name="BoardCapacityLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "容量 0 / 4 / Capacity 0 / 4"
 
 [node name="BoardZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
@@ -256,16 +194,13 @@ theme_override_constants/separation = 6
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.97, 0.85, 0.88, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoRoseHeading"
 text = "弃牌堆模板 / Discard recipe"
 
 [node name="DiscardDetails" type="Label" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "DiscardZonePreset，适合弃牌堆与回收区 / DiscardZonePreset for discard piles and recovery zones"
 
 [node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
@@ -279,7 +214,5 @@ preset = ExtResource("6_discard")
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
-theme_override_font_sizes/font_size = 12
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoStatusLabel"
 text = "最近 / Latest: Loading zone recipes..."

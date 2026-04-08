@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="3_layouts"]
 [ext_resource type="PackedScene" path="res://scenes/examples/permission_lab.tscn" id="4_rules"]
 [ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="5_recipes"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="6_theme"]
 
 [node name="DemoHub" type="Control" unique_id=1823012048]
 layout_mode = 3
@@ -14,6 +15,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_demo")
+theme = ExtResource("6_theme")
 
 [node name="RootMargin" type="MarginContainer" parent="." unique_id=364584155]
 layout_mode = 1
@@ -33,8 +35,7 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="RootMargin/RootVBox" unique_id=1988887791]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.98, 0.99, 1, 1)
-theme_override_font_sizes/font_size = 24
+theme_type_variation = &"DemoHubTitle"
 text = "NascentSoul 示例总览 / NascentSoul Example Hub"
 
 [node name="TabContainer" type="TabContainer" parent="RootMargin/RootVBox" unique_id=554985846]

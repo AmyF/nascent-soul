@@ -24,39 +24,56 @@ func _run_suite() -> void:
 func _test_static_demo_scene_configuration() -> void:
 	var demo = DEMO_SCENE.instantiate()
 	var tab_container = demo.get_node_or_null("RootMargin/RootVBox/TabContainer") as TabContainer
+	var demo_title = demo.get_node_or_null("RootMargin/RootVBox/TitleLabel") as Label
 	_check(tab_container != null, "demo hub should serialize its tab container")
+	_check(demo.theme != null, "demo hub should serialize a shared demo theme")
+	_check(demo_title != null and demo_title.theme_type_variation == &"DemoHubTitle", "demo hub title should use the shared title theme variation")
 	if tab_container != null:
 		_check(tab_container.get_child_count() == 4, "demo hub should keep four static example tabs")
 		for tab in tab_container.get_children():
 			_check(tab.get_node_or_null("Content") != null, "demo hub tabs should statically embed their example scenes")
 	var transfer = TRANSFER_SCENE.instantiate()
 	var transfer_board = transfer.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardZone") as Zone
+	var transfer_status = transfer.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
 	_check(transfer.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardRuleLabel") != null, "transfer playground should serialize the board rule label")
 	_check(transfer.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardCapacityLabel") != null, "transfer playground should serialize the board capacity label")
+	_check(transfer.theme != null, "transfer playground should serialize the shared demo theme")
+	_check(transfer_status != null and transfer_status.theme_type_variation == &"DemoStatusLabel", "transfer playground status should use the shared status theme variation")
 	_check(transfer_board != null and transfer_board.preset != null, "transfer playground board zone should serialize its preset")
 	_check(transfer_board != null and transfer_board.permission_policy is ZoneCapacityPermission, "transfer playground board zone should serialize its capacity policy")
 	_check(transfer_board != null and transfer_board.drag_visual_factory is ZoneConfigurableDragVisualFactory, "transfer playground board zone should serialize its drag visual factory")
 	var permission = PERMISSION_SCENE.instantiate()
 	var permission_board = permission.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
 	var sanctum_zone = permission.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone") as Zone
+	var sanctum_label = permission.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumLabel") as Label
 	_check(permission.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardCapacityLabel") != null, "permission lab should serialize the board capacity label")
 	_check(permission.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumCapacityLabel") != null, "permission lab should serialize the sanctum capacity label")
+	_check(permission.theme != null, "permission lab should serialize the shared demo theme")
+	_check(sanctum_label != null and sanctum_label.theme_type_variation == &"DemoVioletHeading", "permission lab sanctum label should use the shared heading theme variation")
 	_check(permission_board != null and permission_board.permission_policy is ZoneCapacityPermission, "permission lab board zone should serialize its capacity policy")
 	_check(sanctum_zone != null and sanctum_zone.layout_policy is ZoneVBoxLayout, "permission lab sanctum zone should serialize its layout policy")
 	_check(sanctum_zone != null and sanctum_zone.permission_policy is ZoneCompositePermission, "permission lab sanctum zone should serialize its composite permission")
 	var layouts = LAYOUT_SCENE.instantiate()
 	var row_zone = layouts.get_node_or_null("RootMargin/RootVBox/Grid/RowColumn/RowZone") as Zone
 	var list_zone = layouts.get_node_or_null("RootMargin/RootVBox/Grid/ListColumn/ListZone") as Zone
+	var sort_button = layouts.get_node_or_null("RootMargin/RootVBox/Toolbar/SortButton") as Button
+	var reset_button = layouts.get_node_or_null("RootMargin/RootVBox/Toolbar/ResetButton") as Button
 	_check(layouts.get_node_or_null("RootMargin/RootVBox/Toolbar/SortModeLabel") != null, "layout gallery should serialize its sort mode label")
 	_check(layouts.get_node_or_null("RootMargin/RootVBox/Grid/HandColumn/HandCaptionLabel") != null, "layout gallery should serialize its hand caption label")
+	_check(layouts.theme != null, "layout gallery should serialize the shared demo theme")
+	_check(sort_button != null and sort_button.theme_type_variation == &"DemoPrimaryActionButton", "layout gallery sort button should use the shared primary button variation")
+	_check(reset_button != null and reset_button.theme_type_variation == &"DemoDangerActionButton", "layout gallery reset button should use the shared danger button variation")
 	_check(row_zone != null and row_zone.layout_policy is ZoneHBoxLayout, "layout gallery row zone should serialize its row layout")
 	_check(row_zone != null and row_zone.sort_policy is ZonePropertySort, "layout gallery row zone should serialize its row sort")
 	_check(list_zone != null and list_zone.layout_policy is ZoneVBoxLayout, "layout gallery list zone should serialize its list layout")
 	_check(list_zone != null and list_zone.sort_policy is ZoneGroupSort, "layout gallery list zone should serialize its list sort")
 	var recipes = RECIPES_SCENE.instantiate()
 	var recipes_board = recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone") as Zone
+	var recipes_reset = recipes.get_node_or_null("RootMargin/RootVBox/Toolbar/ResetButton") as Button
 	_check(recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardDetails") != null, "zone recipes should serialize the static board recipe copy")
 	_check(recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardCapacityLabel") != null, "zone recipes should serialize the dynamic board capacity label")
+	_check(recipes.theme != null, "zone recipes should serialize the shared demo theme")
+	_check(recipes_reset != null and recipes_reset.theme_type_variation == &"DemoPrimaryActionButton", "zone recipes reset button should use the shared primary button variation")
 	_check(recipes_board != null and recipes_board.preset != null, "zone recipes board zone should serialize its preset")
 	_check(recipes_board != null and recipes_board.permission_policy is ZoneCapacityPermission, "zone recipes board zone should serialize its capacity policy")
 	demo.free()

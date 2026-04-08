@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="9_capacity"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_source_permission.gd" id="10_source"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd" id="11_composite"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="12_theme"]
 
 [sub_resource type="Resource" id="DeckPileLayout"]
 script = ExtResource("7_pile_layout")
@@ -108,6 +109,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
+theme = ExtResource("12_theme")
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -138,8 +140,7 @@ theme_override_constants/separation = 6
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/Grid/DeckColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.92, 0.74, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoGoldHeading"
 text = "牌库 / Deck"
 
 [node name="DeckZone" type="Control" parent="RootMargin/RootVBox/Grid/DeckColumn"]
@@ -158,8 +159,7 @@ theme_override_constants/separation = 6
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.84, 0.96, 0.88, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoGreenHeading"
 text = "手牌 / Hand"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn"]
@@ -177,24 +177,19 @@ theme_override_constants/separation = 6
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.83, 0.91, 0.99, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoBlueHeading"
 text = "战场 / Board"
 
 [node name="BoardRuleLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "任意来源 / Any source"
 
 [node name="BoardCapacityLabel" type="Label" parent="RootMargin/RootVBox/Grid/BoardColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "容量 0 / 2 / Capacity 0 / 2"
 
 [node name="BoardZone" type="Control" parent="RootMargin/RootVBox/Grid/BoardColumn"]
@@ -213,24 +208,19 @@ theme_override_constants/separation = 6
 
 [node name="SanctumLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.94, 0.85, 0.99, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoVioletHeading"
 text = "圣所 / Sanctum"
 
 [node name="SanctumRuleLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "仅 HandZone / HandZone only"
 
 [node name="SanctumCapacityLabel" type="Label" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "容量 0 / 2 / Capacity 0 / 2"
 
 [node name="SanctumZone" type="Control" parent="RootMargin/RootVBox/Grid/SanctumColumn"]
@@ -249,8 +239,7 @@ theme_override_constants/separation = 6
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.97, 0.85, 0.88, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoRoseHeading"
 text = "弃牌堆 / Discard"
 
 [node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/Grid/DiscardColumn"]
@@ -264,7 +253,5 @@ preset = ExtResource("6_discard")
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
-theme_override_font_sizes/font_size = 12
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoStatusLabel"
 text = "最近 / Latest: Loading permission lab..."

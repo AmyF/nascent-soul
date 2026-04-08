@@ -8,6 +8,7 @@
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="7_capacity"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_factory"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="9_theme"]
 
 [sub_resource type="Resource" id="BoardCapacityPermission"]
 script = ExtResource("7_capacity")
@@ -79,6 +80,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
+theme = ExtResource("9_theme")
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -108,8 +110,7 @@ theme_override_constants/separation = 6
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.92, 0.74, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoGoldHeading"
 text = "牌库 / Deck"
 
 [node name="DeckZone" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
@@ -128,24 +129,19 @@ theme_override_constants/separation = 6
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.83, 0.91, 0.99, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoBlueHeading"
 text = "战场 / Board"
 
 [node name="BoardRuleLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "满员时直接拒绝放置 / Full state rejects drops"
 
 [node name="BoardCapacityLabel" type="Label" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.74, 0.8, 0.88, 0.86)
-theme_override_font_sizes/font_size = 11
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoDetailLabel"
 text = "容量 0 / 5 / Capacity 0 / 5"
 
 [node name="BoardZone" type="Control" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
@@ -166,8 +162,7 @@ theme_override_constants/separation = 6
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.97, 0.85, 0.88, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoRoseHeading"
 text = "弃牌堆 / Discard"
 
 [node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
@@ -181,8 +176,7 @@ drag_visual_factory = SubResource("TransferDragVisualFactory")
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.84, 0.96, 0.88, 1)
-theme_override_font_sizes/font_size = 14
+theme_type_variation = &"DemoGreenHeading"
 text = "手牌 / Hand"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox"]
@@ -197,7 +191,5 @@ drag_visual_factory = SubResource("TransferDragVisualFactory")
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
 autowrap_mode = 3
-theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
-theme_override_font_sizes/font_size = 12
-theme_override_constants/line_spacing = 2
+theme_type_variation = &"DemoStatusLabel"
 text = "最近 / Latest: Loading transfer playground..."
