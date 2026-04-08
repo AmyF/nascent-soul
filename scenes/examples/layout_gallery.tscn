@@ -20,13 +20,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_bottom = 16
 
 [node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 10
 
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -35,7 +35,7 @@ text = "Loading layout gallery..."
 
 [node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="SortButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
@@ -49,57 +49,61 @@ text = "Reset Cards"
 layout_mode = 2
 size_flags_vertical = 3
 columns = 2
-theme_override_constants/h_separation = 18
-theme_override_constants/v_separation = 18
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
 
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/Grid/HandColumn"]
 layout_mode = 2
 text = "Hand Layout"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn"]
-custom_minimum_size = Vector2(0, 260)
+custom_minimum_size = Vector2(260, 220)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("2_4xyqe")
 
 [node name="RowColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
 
 [node name="RowLabel" type="Label" parent="RootMargin/RootVBox/Grid/RowColumn"]
 layout_mode = 2
 text = "Horizontal Layout"
 
 [node name="RowZone" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn"]
-custom_minimum_size = Vector2(0, 260)
+custom_minimum_size = Vector2(260, 220)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("2_4xyqe")
 
 [node name="ListColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
 
 [node name="ListLabel" type="Label" parent="RootMargin/RootVBox/Grid/ListColumn"]
 layout_mode = 2
 text = "Vertical Group Sort"
 
 [node name="ListZone" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn"]
-custom_minimum_size = Vector2(0, 280)
+custom_minimum_size = Vector2(260, 240)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("2_4xyqe")
 
 [node name="PileColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
 
 [node name="PileLabel" type="Label" parent="RootMargin/RootVBox/Grid/PileColumn"]
 layout_mode = 2
 text = "Pile Layout"
 
 [node name="PileZone" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn"]
-custom_minimum_size = Vector2(0, 280)
+custom_minimum_size = Vector2(260, 240)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("2_4xyqe")

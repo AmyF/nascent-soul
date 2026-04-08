@@ -1,12 +1,12 @@
-[gd_resource type="Resource" script_class="ZonePreset" format=3]
+[gd_resource type="Resource" script_class="ZonePreset" format=3 uid="uid://crjlyeyj3gqlr"]
 
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="1_display"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_factory"]
-[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_interaction"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hbox_layout.gd" id="4_layout"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="5_permission"]
-[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_preset"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_sort"]
+[ext_resource type="Script" uid="uid://pqtywij3udlj" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="1_display"]
+[ext_resource type="Script" uid="uid://l46aq6johwmi" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_factory"]
+[ext_resource type="Script" uid="uid://bfhfgvr2bgtjn" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_interaction"]
+[ext_resource type="Script" uid="uid://dx6ura8dba65" path="res://addons/nascentsoul/impl/layouts/zone_hbox_layout.gd" id="4_layout"]
+[ext_resource type="Script" uid="uid://cwcldnwvhald2" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="5_permission"]
+[ext_resource type="Script" uid="uid://lhhiiws4nn87" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_preset"]
+[ext_resource type="Script" uid="uid://b4r4k2du2v4kb" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_sort"]
 
 [sub_resource type="Resource" id="Resource_display"]
 script = ExtResource("1_display")
@@ -16,8 +16,6 @@ script = ExtResource("2_factory")
 
 [sub_resource type="Resource" id="Resource_interaction"]
 script = ExtResource("3_interaction")
-keyboard_navigation_enabled = true
-wrap_navigation = true
 
 [sub_resource type="Resource" id="Resource_layout"]
 script = ExtResource("4_layout")

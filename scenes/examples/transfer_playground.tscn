@@ -20,13 +20,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_bottom = 16
 
 [node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 10
 
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -36,18 +36,18 @@ text = "Loading transfer playground..."
 [node name="TopRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 18
+theme_override_constants/separation = 12
 
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(200, 0)
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
 layout_mode = 2
 text = "Deck"
 
 [node name="DeckZone" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn"]
-custom_minimum_size = Vector2(220, 320)
+custom_minimum_size = Vector2(200, 240)
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("2_7f4vk")
@@ -61,7 +61,7 @@ layout_mode = 2
 text = "Board"
 
 [node name="BoardZone" type="Control" parent="RootMargin/RootVBox/TopRow/BoardColumn"]
-custom_minimum_size = Vector2(0, 320)
+custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -69,14 +69,14 @@ script = ExtResource("2_7f4vk")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(200, 0)
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
 layout_mode = 2
 text = "Discard"
 
 [node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/TopRow/DiscardColumn"]
-custom_minimum_size = Vector2(220, 320)
+custom_minimum_size = Vector2(200, 240)
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("2_7f4vk")
@@ -86,7 +86,7 @@ layout_mode = 2
 text = "Hand"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox"]
-custom_minimum_size = Vector2(0, 240)
+custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("2_7f4vk")

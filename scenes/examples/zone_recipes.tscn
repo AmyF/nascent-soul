@@ -20,13 +20,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_bottom = 16
 
 [node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 10
 
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -35,7 +35,7 @@ text = "Loading zone recipes..."
 
 [node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
 [node name="ResetButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
@@ -45,12 +45,12 @@ text = "Reset Recipe"
 layout_mode = 2
 size_flags_vertical = 3
 columns = 4
-theme_override_constants/h_separation = 18
-theme_override_constants/v_separation = 14
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 10
 
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(200, 0)
 
 [node name="DeckLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
 layout_mode = 2
@@ -62,7 +62,7 @@ autowrap_mode = 3
 text = "Loading..."
 
 [node name="DeckZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
-custom_minimum_size = Vector2(220, 320)
+custom_minimum_size = Vector2(200, 240)
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("2_ftj0b")
@@ -70,7 +70,7 @@ script = ExtResource("2_ftj0b")
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(320, 0)
+custom_minimum_size = Vector2(260, 0)
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
 layout_mode = 2
@@ -82,7 +82,7 @@ autowrap_mode = 3
 text = "Loading..."
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
-custom_minimum_size = Vector2(320, 320)
+custom_minimum_size = Vector2(260, 240)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -91,7 +91,7 @@ script = ExtResource("2_ftj0b")
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(320, 0)
+custom_minimum_size = Vector2(260, 0)
 
 [node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
 layout_mode = 2
@@ -103,7 +103,7 @@ autowrap_mode = 3
 text = "Loading..."
 
 [node name="BoardZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
-custom_minimum_size = Vector2(320, 320)
+custom_minimum_size = Vector2(260, 240)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -111,7 +111,7 @@ script = ExtResource("2_ftj0b")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(200, 0)
 
 [node name="DiscardLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
 layout_mode = 2
@@ -123,7 +123,7 @@ autowrap_mode = 3
 text = "Loading..."
 
 [node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
-custom_minimum_size = Vector2(220, 320)
+custom_minimum_size = Vector2(200, 240)
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("2_ftj0b")

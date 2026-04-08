@@ -96,13 +96,24 @@ zone.add_item(card)
 
 项目默认主场景现在是 example hub：`[scenes/demo.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/demo.tscn)`。
 
-示例资产按能力拆到了 `scenes/examples/`：
+推荐按下面顺序浏览。demo hub 和场景内说明现在都采用同一套中英双语 onboarding：
 
-- `[transfer_playground.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/transfer_playground.tscn)`：牌库、手牌、战场、弃牌堆之间的拖拽和显式 `move_item_to`
-- `[layout_gallery.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/layout_gallery.tscn)`：手牌弧线、横向、分组纵向、堆叠布局对比
-- `[permission_lab.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/permission_lab.tscn)`：容量限制和来源限制
-- `[zone_recipes.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/zone_recipes.tscn)`：Deck / Hand / Board / Discard 四区 starter recipe，可直接复制到新项目
-- `[example_support.gd](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/shared/example_support.gd)`：共享的示例卡牌/zone 构造辅助
+1. `[transfer_playground.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/transfer_playground.tscn)`
+   目标：先理解 `Deck -> Hand -> Board -> Discard` 的主线流转。
+   重点：拖拽、双击、右键三种路径如何共用同一套 `Zone` API；Board 容量满时为什么不会继续显示标准 preview slot。
+2. `[layout_gallery.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/layout_gallery.tscn)`
+   目标：比较 hand、row、grouped list、pile 四种布局如何影响阅读体验。
+   重点：layout 与 sort 是独立可组合的；`Row` 的当前排序模式会显式显示在工具栏中。
+3. `[permission_lab.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/permission_lab.tscn)`
+   目标：先读规则，再试准入。
+   重点：`Board` 演示容量限制，`Sanctum` 演示“来源 + 容量”的组合权限；场景内会持续显示允许来源、当前数量和拒绝反馈。
+4. `[zone_recipes.tscn](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/zone_recipes.tscn)`
+   目标：把 `Deck / Hand / Board / Discard` 当成 starter recipe，而不是纯演示。
+   重点：每个区都写明推荐 preset、layout、permission 和最适合先改的部分，方便你复制到自己的项目里。
+
+共享 demo 构造与 UI helper 在：
+
+- `[example_support.gd](/Users/unko/repo/github.com/AmyF/nascent-soul/scenes/examples/shared/example_support.gd)`：共享卡牌/zone 构造、信息卡、badge、状态标签和示例样式辅助
 
 直接用 Godot 4.6 打开仓库即可运行。插件菜单里现在提供了：
 

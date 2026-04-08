@@ -232,6 +232,9 @@ func _test_transfer_playground_hand_to_board_drag() -> void:
 	session.preview_index = board_zone.get_item_count()
 	hand_zone.get_runtime().finalize_drag_session(session)
 	await _settle_frames(3)
+	if DisplayServer.get_name() != "headless":
+		await get_tree().create_timer(0.25).timeout
+		await _settle_frames(1)
 	_check(board_zone.get_item_count() == initial_board_count + 1, "transfer playground drag should increase board item count")
 	_check(hand_zone.get_item_count() == 4, "transfer playground drag should remove one item from hand")
 	_check(board_zone.has_item(hand_item), "transfer playground drag should move the dragged item into board")
