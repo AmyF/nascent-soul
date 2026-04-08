@@ -7,6 +7,8 @@ const PREVIEW_ROOT_NAME := "PreviewRoot"
 # Drag lifecycle contract:
 # `drag_started` fires on the source zone.
 # `drop_preview_changed(..., index)` fires on the hovered target zone, and `index = -1` means the preview was cleared.
+# `drop_hover_state_changed(..., decision)` reports whether the current hovered zone would accept the drop.
+# A hover clear is represented by `decision.target_index = -1`; rejected hovers keep their computed index but do not show a preview slot.
 # Successful drops emit `item_reordered` for same-zone moves or `item_transferred` on the target first and then the source.
 # Rejected drops emit `drop_rejected` on the target and mirrored source zone.
 signal item_clicked(item: Control)
@@ -18,6 +20,7 @@ signal item_hover_exited(item: Control)
 signal selection_changed(items: Array)
 signal drag_started(items: Array, source_zone: Zone)
 signal drop_preview_changed(items: Array, target_zone: Zone, target_index: int)
+signal drop_hover_state_changed(items: Array, target_zone: Zone, decision: ZoneDropDecision)
 signal item_added(item: Control, index: int)
 signal item_removed(item: Control, from_index: int)
 signal item_reordered(item: Control, from_index: int, to_index: int)

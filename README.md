@@ -69,11 +69,18 @@ zone.add_item(card)
 
 其余拖拽相关信号继续保留原语义：`item_reordered`、`item_transferred`、`drop_rejected`、`drop_preview_changed`、`drag_started`。
 
+拖拽 hover 状态现在另外提供：
+
+- `drop_hover_state_changed(items, target_zone, decision)`
+
+其中 `decision.allowed = false` 且 `decision.target_index >= 0` 表示“鼠标正悬停在这个 zone 上，但当前 drop 会被拒绝”，不会再伪装成可落下的 preview slot。
+
 默认交互约定：
 
 - 单击选中，`Ctrl` 单击切换多选，`Shift` 单击按当前 anchor 做范围选择。
 - 左键拖拽会触发 `drag_started`，目标区会通过 `drop_preview_changed(items, zone, index)` 连续报告预览插入位。
 - `drop_preview_changed(..., -1)` 表示当前预览已清空。
+- `drop_hover_state_changed(..., decision)` 会额外报告当前 hover 是否允许落下；已满或权限拒绝时不会显示标准 preview 占位。
 - 同区拖放完成后发 `item_reordered`；跨区拖放完成后会先由目标区发 `item_transferred`，再由源区镜像发一次。
 - 左键点击 zone 背景会清空 hover 和 selection。
 

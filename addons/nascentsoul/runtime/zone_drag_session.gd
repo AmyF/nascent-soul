@@ -5,6 +5,7 @@ var items: Array[Control] = []
 var drag_offset: Vector2 = Vector2.ZERO
 var cursor_proxy: Control = null
 var hover_zone: Node = null
+var requested_index: int = -1
 var preview_index: int = -1
 
 func _init(p_source_zone: Node = null, p_items: Array[Control] = [], p_drag_offset: Vector2 = Vector2.ZERO, p_cursor_proxy: Control = null) -> void:
@@ -18,6 +19,7 @@ func cleanup() -> void:
 		cursor_proxy.queue_free()
 	cursor_proxy = null
 	hover_zone = null
+	requested_index = -1
 	preview_index = -1
 
 func prune_invalid_items() -> bool:

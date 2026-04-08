@@ -5,6 +5,7 @@ const ZoneConfigurableDragVisualFactoryScript = preload("res://addons/nascentsou
 const ZoneGroupSortScript = preload("res://addons/nascentsoul/impl/sorts/zone_group_sort.gd")
 const HAND_PRESET = preload("res://addons/nascentsoul/presets/hand_zone_preset.tres")
 const BOARD_PRESET = preload("res://addons/nascentsoul/presets/board_zone_preset.tres")
+const TRANSFER_PLAYGROUND_SCENE = preload("res://scenes/examples/transfer_playground.tscn")
 
 func _init() -> void:
 	_suite_name = "core-state"
@@ -17,6 +18,12 @@ func _run_suite() -> void:
 	await _test_drag_transfer_and_selection_prune()
 	await _reset_root()
 	await _test_batch_transfer_api()
+	await _reset_root()
+	await _test_transfer_snapshots_preserve_animation_origins()
+	await _reset_root()
+	await _test_transfer_playground_hand_to_board_drag()
+	await _reset_root()
+	await _test_rejected_hover_hides_preview_but_still_rejects_drop()
 	await _reset_root()
 	await _test_composite_permission()
 	await _reset_root()
@@ -143,6 +150,122 @@ func _test_batch_transfer_api() -> void:
 	_check(_zone_item_names(target_zone) == ["Ward", "Alpha", "Gamma"], "batch transfer should insert items using the source zone's logical order")
 	_check(_unmanaged_control_names(source_zone).is_empty(), "batch transfer should not leave unmanaged controls in the source zone")
 	_check(_unmanaged_control_names(target_zone).is_empty(), "batch transfer should not leave unmanaged controls in the target zone")
+
+func _test_transfer_snapshots_preserve_animation_origins() -> void:
+	var panel = _make_panel("SnapshotPanel", Vector2(24, 24), Vector2(920, 280))
+	var zone = ExampleSupport.make_zone(panel, "SnapshotZone", null, null, null, null, null, null, HAND_PRESET)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
+	zone.add_item(alpha)
+	zone.add_item(beta)
+	await _settle_frames(2)
+	var alpha_origin = alpha.global_position
+	var beta_origin = beta.global_position
+	var alpha_rotation = alpha.rotation
+	var beta_rotation = beta.rotation
+	var runtime = zone.get_runtime()
+	var baseline_snapshots = runtime._build_transfer_snapshots([alpha, beta])
+	var alpha_baseline: Dictionary = baseline_snapshots.get(alpha, {})
+	var beta_baseline: Dictionary = baseline_snapshots.get(beta, {})
+	_check(alpha_baseline.get("global_position", Vector2.ZERO).distance_to(alpha_origin) <= 0.01, "baseline transfer snapshot should preserve the primary card global position")
+	_check(beta_baseline.get("global_position", Vector2.ZERO).distance_to(beta_origin) <= 0.01, "baseline transfer snapshot should preserve the secondary card global position")
+	_check(is_equal_approx(alpha_baseline.get("rotation", 0.0), alpha_rotation), "baseline transfer snapshot should preserve the primary card rotation")
+	_check(is_equal_approx(beta_baseline.get("rotation", 0.0), beta_rotation), "baseline transfer snapshot should preserve the secondary card rotation")
+	var drop_position = Vector2(540, 180)
+	var dragged_snapshots = runtime._build_transfer_snapshots([alpha, beta], drop_position)
+	var alpha_dragged: Dictionary = dragged_snapshots.get(alpha, {})
+	var beta_dragged: Dictionary = dragged_snapshots.get(beta, {})
+	var dragged_offset: Vector2 = beta_dragged.get("global_position", Vector2.ZERO) - alpha_dragged.get("global_position", Vector2.ZERO)
+	var source_offset = beta_origin - alpha_origin
+	_check(alpha_dragged.get("global_position", Vector2.ZERO).distance_to(drop_position) <= 0.01, "drag transfer snapshot should anchor the primary card at the explicit drop position")
+	_check(dragged_offset.distance_to(source_offset) <= 0.01, "drag transfer snapshot should preserve relative offsets for multi-card movement")
+	_check(is_equal_approx(alpha_dragged.get("rotation", 0.0), alpha_rotation), "drag transfer snapshot should preserve the primary card rotation")
+	_check(is_equal_approx(beta_dragged.get("rotation", 0.0), beta_rotation), "drag transfer snapshot should preserve the secondary card rotation")
+
+func _test_transfer_playground_hand_to_board_drag() -> void:
+	var scene = TRANSFER_PLAYGROUND_SCENE.instantiate()
+	add_child(scene)
+	await _settle_frames(3)
+	var hand_zone = scene.get_node("RootMargin/RootVBox/HandZone") as Zone
+	var board_zone = scene.get_node("RootMargin/RootVBox/TopRow/BoardColumn/BoardZone") as Zone
+	_check(hand_zone != null and board_zone != null, "transfer playground should expose hand and board zones")
+	if hand_zone == null or board_zone == null:
+		return
+	var hand_item = hand_zone.get_items()[0]
+	var initial_board_count = board_zone.get_item_count()
+	hand_zone.start_drag([hand_item])
+	var coordinator = hand_zone.get_drag_coordinator(false)
+	var session = coordinator.get_session() if coordinator != null else null
+	_check(session != null, "transfer playground drag should create an active session")
+	if session == null:
+		return
+	session.hover_zone = board_zone
+	session.preview_index = board_zone.get_item_count()
+	hand_zone.get_runtime().finalize_drag_session(session)
+	await _settle_frames(3)
+	_check(board_zone.get_item_count() == initial_board_count + 1, "transfer playground drag should increase board item count")
+	_check(hand_zone.get_item_count() == 4, "transfer playground drag should remove one item from hand")
+	_check(board_zone.has_item(hand_item), "transfer playground drag should move the dragged item into board")
+	_check(hand_item.visible, "transfer playground drag should leave the moved item visible")
+	_check(_rect_inside(board_zone.get_global_rect().grow(24.0), hand_item.get_global_rect(), 24.0), "transfer playground moved card should render inside the board zone")
+
+func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
+	var target_panel = _make_panel("RejectHoverTargetPanel", Vector2.ZERO, Vector2(620, 260))
+	var source_panel = _make_panel("RejectHoverSourcePanel", Vector2(24, 320), Vector2(620, 260))
+	var source_zone = ExampleSupport.make_zone(source_panel, "RejectHoverSourceZone", ZoneHBoxLayout.new())
+	var capacity = ZoneCapacityPermission.new()
+	capacity.max_items = 0
+	capacity.reject_reason = "Reject hover target is full."
+	var target_zone = ExampleSupport.make_zone(target_panel, "RejectHoverTargetZone", ZoneHBoxLayout.new(), null, capacity)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	var hover_states: Array[Dictionary] = []
+	var preview_indices: Array[int] = []
+	var reject_events: Array[String] = []
+	target_zone.drop_hover_state_changed.connect(func(items: Array, _target_zone_ref: Zone, decision: ZoneDropDecision) -> void:
+		var item_name = str(items[0].name) if not items.is_empty() and items[0] is Control else "Selection"
+		hover_states.append({
+			"item": item_name,
+			"allowed": decision.allowed,
+			"target_index": decision.target_index,
+			"reason": decision.reason
+		})
+	)
+	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target_index: int) -> void:
+		preview_indices.append(target_index)
+	)
+	target_zone.drop_rejected.connect(func(items: Array, source_zone_ref: Zone, target_zone_ref: Zone, reason: String) -> void:
+		reject_events.append("%s:%s->%s:%s" % [items[0].name, source_zone_ref.name, target_zone_ref.name, reason])
+	)
+	source_zone.add_item(alpha)
+	await _settle_frames(2)
+	source_zone.start_drag([alpha])
+	var coordinator = source_zone.get_drag_coordinator(false)
+	var session = coordinator.get_session() if coordinator != null else null
+	_check(session != null, "reject hover test requires an active drag session")
+	if session == null:
+		return
+	var target_runtime = target_zone.get_runtime()
+	var request = target_runtime._make_drop_request(target_zone, source_zone, session.items, 0, Vector2.ZERO)
+	var decision = target_runtime._resolve_drop_decision(request)
+	session.hover_zone = target_zone
+	session.requested_index = 0
+	session.preview_index = -1
+	if target_runtime._apply_hover_feedback(session.items, decision, -1, alpha):
+		target_zone.refresh()
+	_check(not decision.allowed, "reject hover should resolve to a rejected decision")
+	_check(hover_states == [{
+		"item": "Alpha",
+		"allowed": false,
+		"target_index": 0,
+		"reason": "Reject hover target is full."
+	}], "reject hover should emit hover state without advertising an insertion preview")
+	_check(preview_indices.is_empty(), "reject hover should not emit a preview slot when the drop is disallowed")
+	_check(_find_unmanaged_control(target_zone) == null, "reject hover should not create a ghost or preview control")
+	target_runtime.perform_drop(session)
+	await _settle_frames(2)
+	_check(reject_events == ["Alpha:RejectHoverSourceZone->RejectHoverTargetZone:Reject hover target is full."], "reject hover release should still emit drop_rejected")
+	_check(source_zone.has_item(alpha), "reject hover release should keep the dragged card in the source zone")
+	_check(not target_zone.has_item(alpha), "reject hover release should not insert the card into the target zone")
 
 func _test_permission_reject_cleanup() -> void:
 	var target_panel = _make_panel("RejectTargetPanel", Vector2.ZERO, Vector2(620, 260))

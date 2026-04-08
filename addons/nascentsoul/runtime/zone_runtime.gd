@@ -14,6 +14,11 @@ var _has_dragged: bool = false
 var _long_press_item: Control = null
 var _long_press_timer: Timer = null
 var _bound_items_root: Control = null
+var _hover_active: bool = false
+var _hover_allowed: bool = false
+var _hover_reason: String = ""
+var _hover_target_index: int = -1
+var _hover_preview_index: int = -1
 
 func _init(p_zone: Zone) -> void:
 	zone = p_zone
@@ -26,10 +31,12 @@ func bind() -> void:
 		_bound_items_root = null
 		_clear_runtime_items(false)
 		_clear_preview_internal()
+		_reset_hover_feedback_tracking()
 		return
 	if _bound_items_root != null and _bound_items_root != items_root:
 		_disconnect_items_root(_bound_items_root)
 	_clear_preview_internal()
+	_reset_hover_feedback_tracking()
 	_ensure_long_press_timer()
 	if _bound_items_root != items_root:
 		var entered_callable = Callable(self, "_on_items_root_child_entered")
@@ -51,6 +58,7 @@ func unbind() -> void:
 	_clear_runtime_items(false)
 	clear_display_state()
 	_clear_preview_internal()
+	_reset_hover_feedback_tracking()
 	if is_instance_valid(_long_press_timer):
 		_long_press_timer.queue_free()
 	_long_press_timer = null
@@ -63,12 +71,14 @@ func process(_delta: float) -> void:
 	var coordinator = zone.get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
 	if session == null:
+		var should_refresh = false
 		if _container_order_needs_sync():
 			_sync_container_order()
-			refresh()
+			should_refresh = true
 			zone.layout_changed.emit()
-		if is_instance_valid(_ghost_instance):
-			_clear_preview_internal()
+		if _clear_hover_feedback([]):
+			should_refresh = true
+		if should_refresh:
 			refresh()
 		return
 	if session.prune_invalid_items() and session.items.is_empty():
@@ -88,7 +98,7 @@ func refresh() -> void:
 	if sort_policy != null and session == null:
 		layout_items = sort_policy.sort_items(layout_items)
 	var ghost_index := -1
-	if session != null and session.hover_zone == zone and is_instance_valid(_ghost_instance):
+	if _should_render_ghost_for_session(session):
 		ghost_index = clampi(session.preview_index, 0, layout_items.size())
 	var placements = layout_policy.calculate(layout_items, zone.size, _ghost_instance, ghost_index)
 	display_style.apply(zone, self, placements)
@@ -113,7 +123,7 @@ func insert_item(item: Control, index: int) -> bool:
 		return reorder_item(item, index)
 	if item.get_parent() != items_root:
 		if item.get_parent() != null:
-			item.reparent(items_root, false)
+			item.reparent(items_root, true)
 		else:
 			items_root.add_child(item)
 	_register_item(item)
@@ -151,13 +161,12 @@ func move_item_to(item: Control, target_zone: Zone, index: int = -1) -> bool:
 	if target_zone == zone:
 		return reorder_item(item, index)
 	var moving_items: Array[Control] = [item]
-	var request = ZoneDropRequest.new(target_zone, zone, moving_items, index, Vector2.ZERO)
-	var decision = target_zone.get_runtime()._evaluate_drop_request(request)
+	var request = _make_drop_request(target_zone, zone, moving_items, index, Vector2.ZERO)
+	var decision = target_zone.get_runtime()._resolve_drop_decision(request)
 	if not decision.allowed:
 		target_zone.get_runtime()._emit_drop_rejected_items(moving_items, zone, decision.reason)
 		return false
-	var target_index = decision.target_index if decision.target_index >= 0 else index
-	return _transfer_items_to(target_zone, moving_items, target_index, Vector2.ZERO)
+	return _transfer_items_to(target_zone, moving_items, decision.target_index)
 
 func transfer_items(items: Array[Control], target_zone: Zone, index: int = -1) -> bool:
 	if target_zone == null or items.is_empty():
@@ -170,13 +179,12 @@ func transfer_items(items: Array[Control], target_zone: Zone, index: int = -1) -
 		return false
 	if target_zone == zone:
 		return _reorder_items(moving_items, index)
-	var request = ZoneDropRequest.new(target_zone, zone, moving_items, index, Vector2.ZERO)
-	var decision = target_zone.get_runtime()._evaluate_drop_request(request)
+	var request = _make_drop_request(target_zone, zone, moving_items, index, Vector2.ZERO)
+	var decision = target_zone.get_runtime()._resolve_drop_decision(request)
 	if not decision.allowed:
 		target_zone.get_runtime()._emit_drop_rejected_items(moving_items, zone, decision.reason)
 		return false
-	var target_index = decision.target_index if decision.target_index >= 0 else index
-	return _transfer_items_to(target_zone, moving_items, target_index, Vector2.ZERO)
+	return _transfer_items_to(target_zone, moving_items, decision.target_index)
 
 func reorder_item(item: Control, index: int) -> bool:
 	if not has_item(item):
@@ -245,16 +253,15 @@ func perform_drop(session: ZoneDragSession) -> bool:
 	if session.items.is_empty():
 		_cleanup_drag_session(session, true, true)
 		return false
-	var request = ZoneDropRequest.new(zone, session.source_zone, session.items, session.preview_index, _get_drop_global_position(session))
-	var decision = _evaluate_drop_request(request)
+	var requested_index = session.requested_index if session.requested_index >= 0 else session.preview_index
+	var request = _make_drop_request(zone, session.source_zone, session.items, requested_index, _get_drop_global_position(session))
+	var decision = _resolve_drop_decision(request)
 	if not decision.allowed:
 		_emit_drop_rejected(session, decision.reason)
 		_cleanup_drag_session(session, true, true)
 		return false
 	var source_zone = session.source_zone as Zone
 	var target_index = decision.target_index
-	if target_index < 0:
-		target_index = request.requested_index
 	if target_index < 0:
 		target_index = _items.size()
 	var success = false
@@ -277,8 +284,7 @@ func cancel_drag(session: ZoneDragSession = null) -> void:
 	_cleanup_drag_session(active_session, true, true)
 
 func clear_preview() -> void:
-	if is_instance_valid(_ghost_instance):
-		_clear_preview_internal()
+	if _clear_hover_feedback([]):
 		refresh()
 
 func clear_display_state() -> void:
@@ -584,23 +590,24 @@ func _update_hover_preview(session: ZoneDragSession) -> void:
 	if not is_hovering:
 		if session.hover_zone == zone:
 			session.hover_zone = null
+			session.requested_index = -1
 			session.preview_index = -1
-			zone.drop_preview_changed.emit(session.items, zone, -1)
-			clear_preview()
+		if _clear_hover_feedback(session.items):
+			refresh()
 		return
-	if not is_instance_valid(_ghost_instance):
-		_create_ghost(session.items[0])
 	var visible_items = _get_layout_items(session)
-	var target_index = visible_items.size()
+	var requested_index = visible_items.size()
 	var layout_policy = zone.get_layout_policy_resource()
 	if layout_policy != null:
-		target_index = layout_policy.get_insertion_index(visible_items, zone.size, zone.get_local_mouse_position())
-	target_index = clampi(target_index, 0, visible_items.size())
-	var changed = session.hover_zone != zone or session.preview_index != target_index
+		requested_index = layout_policy.get_insertion_index(visible_items, zone.size, zone.get_local_mouse_position())
+	requested_index = clampi(requested_index, 0, visible_items.size())
+	var request = _make_drop_request(zone, session.source_zone, session.items, requested_index, global_mouse)
+	var decision = _resolve_drop_decision(request)
+	var preview_index = decision.target_index if decision.allowed else -1
 	session.hover_zone = zone
-	session.preview_index = target_index
-	if changed:
-		zone.drop_preview_changed.emit(session.items, zone, target_index)
+	session.requested_index = requested_index
+	session.preview_index = preview_index
+	if _apply_hover_feedback(session.items, decision, preview_index, session.items[0] if not session.items.is_empty() else null):
 		refresh()
 
 func _get_layout_items(session: ZoneDragSession) -> Array[Control]:
@@ -608,11 +615,22 @@ func _get_layout_items(session: ZoneDragSession) -> Array[Control]:
 	for item in _items:
 		if not is_instance_valid(item) or item.is_queued_for_deletion():
 			continue
-		if session != null and item in session.items:
+		if session != null and item in session.items and not item.visible:
 			continue
 		if item.visible:
 			layout_items.append(item)
 	return layout_items
+
+func _should_render_ghost_for_session(session: ZoneDragSession) -> bool:
+	if session == null or session.hover_zone != zone or session.preview_index < 0 or not is_instance_valid(_ghost_instance):
+		return false
+	var items_root = zone.get_items_root()
+	for item in session.items:
+		if not is_instance_valid(item):
+			continue
+		if item.visible and item.get_parent() == items_root:
+			return false
+	return true
 
 func _create_ghost(source_item: Control) -> void:
 	var preview_root = zone.get_preview_root()
@@ -711,7 +729,7 @@ func _reorder_items(items_to_move: Array[Control], target_index: int) -> bool:
 	zone.layout_changed.emit()
 	return true
 
-func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], target_index: int, drop_position: Vector2, source_zone_override: Zone = null) -> bool:
+func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], target_index: int, drop_position = null, source_zone_override: Zone = null) -> bool:
 	if target_zone == null or target_zone.get_items_root() == null:
 		return false
 	var source_zone = source_zone_override if source_zone_override != null else zone
@@ -723,14 +741,16 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], target
 			moving_items.append(item)
 	if moving_items.is_empty():
 		return false
+	var transfer_snapshots = _build_transfer_snapshots(moving_items, drop_position)
 	var selection_changed = false
 	for item in moving_items:
-		selection_changed = _remove_item_from_state(item, false, true) or selection_changed
+		selection_changed = _remove_item_from_state(item, false, false) or selection_changed
+		_clear_item_visual_state(item, false)
 		var from_index = original_indices.get(item, -1)
 		if from_index >= 0:
 			zone.item_removed.emit(item, from_index)
 	var target_runtime = target_zone.get_runtime()
-	target_runtime._insert_transferred_items(moving_items, target_index, drop_position)
+	target_runtime._insert_transferred_items(moving_items, target_index, transfer_snapshots)
 	for item in moving_items:
 		item.visible = true
 	_emit_item_transferred(source_zone, target_zone, moving_items)
@@ -744,7 +764,7 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], target
 		target_zone.refresh()
 	return true
 
-func _insert_transferred_items(moving_items: Array[Control], target_index: int, drop_position: Vector2) -> void:
+func _insert_transferred_items(moving_items: Array[Control], target_index: int, transfer_snapshots: Dictionary) -> void:
 	var items_root = zone.get_items_root()
 	target_index = clampi(target_index, 0, _items.size())
 	for offset in range(moving_items.size()):
@@ -753,12 +773,11 @@ func _insert_transferred_items(moving_items: Array[Control], target_index: int, 
 			_erase_item_reference(item)
 		if item.get_parent() != items_root:
 			if item.get_parent() != null:
-				item.reparent(items_root, false)
+				item.reparent(items_root, true)
 			else:
 				items_root.add_child(item)
+		_apply_transfer_snapshot(item, transfer_snapshots.get(item, {}))
 		item.visible = true
-		if drop_position != Vector2.ZERO:
-			item.global_position = drop_position
 		_register_item(item)
 		_items.insert(target_index + offset, item)
 		zone.item_added.emit(item, target_index + offset)
@@ -870,6 +889,45 @@ func _clear_item_visual_state(item, reset_transform: bool) -> void:
 		item.scale = Vector2.ONE
 		item.rotation = 0.0
 		item.z_index = 0
+
+func _build_transfer_snapshots(moving_items: Array[Control], drop_position = null) -> Dictionary:
+	var snapshots: Dictionary = {}
+	if moving_items.is_empty():
+		return snapshots
+	for item in moving_items:
+		if is_instance_valid(item):
+			snapshots[item] = _snapshot_item_visual_state(item)
+	if drop_position is not Vector2:
+		return snapshots
+	var resolved_drop_position: Vector2 = drop_position
+	var primary_item = moving_items[0]
+	var primary_snapshot: Dictionary = snapshots.get(primary_item, {})
+	var primary_global: Vector2 = primary_snapshot.get("global_position", resolved_drop_position)
+	for item in moving_items:
+		var snapshot: Dictionary = snapshots.get(item, {}).duplicate(true)
+		var source_global: Vector2 = snapshot.get("global_position", resolved_drop_position)
+		snapshot["global_position"] = resolved_drop_position + (source_global - primary_global)
+		snapshots[item] = snapshot
+	return snapshots
+
+func _snapshot_item_visual_state(item: Control) -> Dictionary:
+	if not is_instance_valid(item):
+		return {}
+	return {
+		"global_position": item.global_position,
+		"rotation": item.rotation,
+		"scale": item.scale
+	}
+
+func _apply_transfer_snapshot(item: Control, snapshot: Dictionary) -> void:
+	if not is_instance_valid(item) or snapshot.is_empty():
+		return
+	if snapshot.has("global_position"):
+		item.global_position = snapshot["global_position"]
+	if snapshot.has("rotation"):
+		item.rotation = snapshot["rotation"]
+	if snapshot.has("scale"):
+		item.scale = snapshot["scale"]
 
 func _clear_hover_for_items(items: Array[Control], emit_signal: bool) -> void:
 	var hovered_item = selection_state.hovered_item
@@ -996,12 +1054,17 @@ func _find_item_at_global_position(global_position: Vector2) -> Control:
 	return null
 
 func _clear_preview_for_session(session: ZoneDragSession) -> void:
-	var should_emit = is_instance_valid(_ghost_instance)
+	var items = session.items if session != null else []
+	var should_emit_preview_clear = _hover_preview_index != -1
 	if session != null and session.hover_zone == zone and session.preview_index != -1:
-		should_emit = true
-	if should_emit:
-		zone.drop_preview_changed.emit(session.items if session != null else [], zone, -1)
-	_clear_preview_internal()
+		should_emit_preview_clear = true
+	if should_emit_preview_clear and _hover_preview_index == -1:
+		zone.drop_preview_changed.emit(items, zone, -1)
+	if is_instance_valid(_ghost_instance):
+		_clear_preview_internal()
+	if _hover_active:
+		zone.drop_hover_state_changed.emit(items, zone, _make_clear_hover_decision())
+	_reset_hover_feedback_tracking()
 
 func _evaluate_drop_request(request: ZoneDropRequest) -> ZoneDropDecision:
 	var decision = ZoneDropDecision.new(true, "", request.requested_index)
@@ -1011,3 +1074,67 @@ func _evaluate_drop_request(request: ZoneDropRequest) -> ZoneDropDecision:
 	if decision == null:
 		return ZoneDropDecision.new(true, "", request.requested_index)
 	return decision
+
+func _make_drop_request(target_zone: Zone, source_zone: Node, items: Array[Control], requested_index: int, global_position: Vector2) -> ZoneDropRequest:
+	return ZoneDropRequest.new(target_zone, source_zone, items, requested_index, global_position)
+
+func _resolve_drop_decision(request: ZoneDropRequest) -> ZoneDropDecision:
+	var decision = _evaluate_drop_request(request)
+	if decision == null:
+		decision = ZoneDropDecision.new(true, "", request.requested_index)
+	if decision.target_index < 0 and request.requested_index >= 0:
+		return ZoneDropDecision.new(decision.allowed, decision.reason, request.requested_index)
+	return decision
+
+func _apply_hover_feedback(items: Array[Control], decision: ZoneDropDecision, preview_index: int, preview_source: Control) -> bool:
+	var refresh_needed = false
+	if preview_index >= 0:
+		if not is_instance_valid(_ghost_instance) and is_instance_valid(preview_source):
+			_create_ghost(preview_source)
+			refresh_needed = true
+	elif is_instance_valid(_ghost_instance):
+		_clear_preview_internal()
+		refresh_needed = true
+	if _hover_preview_index != preview_index:
+		zone.drop_preview_changed.emit(items, zone, preview_index)
+		refresh_needed = true
+	if _has_hover_state_changed(true, decision):
+		zone.drop_hover_state_changed.emit(items, zone, decision)
+	_hover_active = true
+	_hover_allowed = decision.allowed
+	_hover_reason = decision.reason
+	_hover_target_index = decision.target_index
+	_hover_preview_index = preview_index
+	return refresh_needed
+
+func _clear_hover_feedback(items: Array[Control]) -> bool:
+	var refresh_needed = false
+	if _hover_preview_index != -1:
+		zone.drop_preview_changed.emit(items, zone, -1)
+		refresh_needed = true
+	if is_instance_valid(_ghost_instance):
+		_clear_preview_internal()
+		refresh_needed = true
+	if _hover_active:
+		zone.drop_hover_state_changed.emit(items, zone, _make_clear_hover_decision())
+	_reset_hover_feedback_tracking()
+	return refresh_needed
+
+func _has_hover_state_changed(active: bool, decision: ZoneDropDecision) -> bool:
+	if _hover_active != active:
+		return true
+	if not active:
+		return false
+	return _hover_allowed != decision.allowed \
+		or _hover_reason != decision.reason \
+		or _hover_target_index != decision.target_index
+
+func _make_clear_hover_decision() -> ZoneDropDecision:
+	return ZoneDropDecision.new(false, "", -1)
+
+func _reset_hover_feedback_tracking() -> void:
+	_hover_active = false
+	_hover_allowed = false
+	_hover_reason = ""
+	_hover_target_index = -1
+	_hover_preview_index = -1
