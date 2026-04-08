@@ -6,6 +6,8 @@ func _init() -> void:
 func _run_suite() -> void:
 	await _test_hover_and_selection_visuals()
 	await _reset_root()
+	await _test_drag_proxy_uses_pointer_position_and_stays_on_top()
+	await _reset_root()
 	await _test_long_press_signal()
 	await _reset_root()
 	await _test_freed_item_during_long_press()
@@ -45,6 +47,34 @@ func _test_hover_and_selection_visuals() -> void:
 	_emit_left_click(beta, true)
 	await _settle_frames(1)
 	_check(zone.get_runtime().selection_state.is_selected(alpha) and zone.get_runtime().selection_state.is_selected(beta), "ctrl-click should multi-select cards")
+
+func _test_drag_proxy_uses_pointer_position_and_stays_on_top() -> void:
+	var panel = _make_panel("PileDragPanel", Vector2(24, 24), Vector2(420, 320))
+	var pile_layout := ZonePileLayout.new()
+	pile_layout.overlap_x = 22.0
+	var zone = ExampleSupport.make_zone(panel, "PileDragZone", pile_layout)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], false)
+	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], false)
+	zone.add_item(alpha)
+	zone.add_item(beta)
+	await _settle_frames(2)
+	var pointer_drag = alpha.global_position + Vector2(62, 46)
+	_emit_mouse_button(alpha, MOUSE_BUTTON_LEFT, true)
+	_emit_mouse_motion(alpha, pointer_drag)
+	var coordinator = zone.get_drag_coordinator(false)
+	var session = coordinator.get_session() if coordinator != null else null
+	_check(session != null, "pointer-driven pile drag should create an active session")
+	if session == null:
+		return
+	_check(session.drag_offset.distance_to(pointer_drag - alpha.global_position) <= 0.1, "drag session should use the live mouse motion position when the drag begins")
+	_check(session.cursor_proxy != null, "pile drag should create a visible cursor proxy")
+	if session.cursor_proxy == null:
+		return
+	_check(session.cursor_proxy.top_level, "drag cursor proxy should render as a top-level control")
+	_check(not session.cursor_proxy.z_as_relative, "drag cursor proxy should use absolute z ordering")
+	_check(session.cursor_proxy.z_index >= ZoneDragCoordinator.CURSOR_PROXY_Z_INDEX, "drag cursor proxy should stay above stacked pile cards")
+	zone.get_runtime().cancel_drag()
+	await _settle_frames(2)
 
 func _test_long_press_signal() -> void:
 	var panel = _make_panel("LongPressPanel", Vector2(24, 24), Vector2(620, 300))

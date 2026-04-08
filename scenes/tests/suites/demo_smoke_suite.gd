@@ -10,6 +10,7 @@ func _init() -> void:
 	_suite_name = "demo-smoke"
 
 func _run_suite() -> void:
+	_test_demo_scene_resource_naming()
 	_test_static_demo_scene_configuration()
 	await _test_demo_hub_summary_panels()
 	await _reset_root()
@@ -17,9 +18,31 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_permission_lab_rule_cards_and_reject_feedback()
 	await _reset_root()
+	await _test_permission_lab_deck_drag_paths()
+	await _reset_root()
 	await _test_layout_gallery_mode_and_captions()
 	await _reset_root()
+	await _test_layout_gallery_pile_drag_proxy_layering()
+	await _reset_root()
 	await _test_zone_recipes_copy_hint_and_reset()
+
+func _test_demo_scene_resource_naming() -> void:
+	var transfer_text = FileAccess.get_file_as_string("res://scenes/examples/transfer_playground.tscn")
+	_check(transfer_text.contains("id=\"TransferBoardCapacityPermission\""), "transfer playground should prefix scene-local permission resources with Transfer")
+	_check(transfer_text.contains("id=\"TransferDeckCardSpark\""), "transfer playground should prefix scene-local card resources with Transfer")
+	_check(transfer_text.contains("id=\"TransferDeckZonePanel\""), "transfer playground should prefix scene-local panel styles with Transfer")
+	var permission_text = FileAccess.get_file_as_string("res://scenes/examples/permission_lab.tscn")
+	_check(permission_text.contains("id=\"PermissionSanctumCompositePermission\""), "permission lab should prefix scene-local composite permissions with Permission")
+	_check(permission_text.contains("id=\"PermissionDeckCardRune\""), "permission lab should prefix scene-local card resources with Permission")
+	_check(permission_text.contains("id=\"PermissionSanctumZonePanel\""), "permission lab should prefix scene-local panel styles with Permission")
+	var layout_text = FileAccess.get_file_as_string("res://scenes/examples/layout_gallery.tscn")
+	_check(layout_text.contains("id=\"LayoutRowLayout\""), "layout gallery should prefix scene-local layouts with Layout")
+	_check(layout_text.contains("id=\"LayoutCardPulse\""), "layout gallery should prefix scene-local card resources with Layout")
+	_check(layout_text.contains("id=\"LayoutHandZonePanel\""), "layout gallery should prefix scene-local panel styles with Layout")
+	var recipes_text = FileAccess.get_file_as_string("res://scenes/examples/zone_recipes.tscn")
+	_check(recipes_text.contains("id=\"RecipeBoardCapacityPermission\""), "zone recipes should prefix scene-local permissions with Recipe")
+	_check(recipes_text.contains("id=\"RecipeDeckCardSpark\""), "zone recipes should prefix scene-local card resources with Recipe")
+	_check(recipes_text.contains("id=\"RecipeDeckZonePanel\""), "zone recipes should prefix scene-local panel styles with Recipe")
 
 func _test_static_demo_scene_configuration() -> void:
 	var demo = DEMO_SCENE.instantiate()
@@ -179,6 +202,59 @@ func _test_permission_lab_rule_cards_and_reject_feedback() -> void:
 	_check(board_capacity_label.text.contains("2 / 2"), "permission lab board capacity label should refresh to the full state")
 	_check(status.text.contains("rejected") or status.text.contains("拒绝"), "permission lab status should surface the rejection feedback")
 
+func _test_permission_lab_deck_drag_paths() -> void:
+	var scene = PERMISSION_SCENE.instantiate()
+	add_child(scene)
+	await _settle_frames(3)
+	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
+	var deck_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/DeckColumn/DeckZone") as Zone
+	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
+	var sanctum_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone") as Zone
+	_check(deck_zone != null and board_zone != null and sanctum_zone != null, "permission lab deck drag smoke should keep all target zones accessible")
+	if deck_zone == null or board_zone == null or sanctum_zone == null:
+		return
+	var moved_card = deck_zone.get_items()[0]
+	var initial_deck_count = deck_zone.get_item_count()
+	deck_zone.start_drag([moved_card])
+	var coordinator = deck_zone.get_drag_coordinator(false)
+	var session = coordinator.get_session() if coordinator != null else null
+	_check(session != null, "permission lab deck-to-board drag should create a drag session")
+	if session == null:
+		return
+	if is_instance_valid(session.cursor_proxy):
+		session.cursor_proxy.global_position = board_zone.global_position + Vector2(24, 24)
+	session.hover_zone = board_zone
+	session.requested_index = board_zone.get_item_count()
+	session.preview_index = board_zone.get_item_count()
+	board_zone.get_runtime().perform_drop(session)
+	await _settle_frames(3)
+	if DisplayServer.get_name() != "headless":
+		await get_tree().create_timer(0.25).timeout
+		await _settle_frames(1)
+	_check(board_zone.has_item(moved_card), "permission lab deck-to-board drag should insert the dragged deck card into board")
+	_check(moved_card.visible, "permission lab deck-to-board drag should leave the moved card visible")
+	_check(moved_card is ZoneCard and (moved_card as ZoneCard).face_up, "permission lab deck-to-board drag should reveal the moved deck card")
+	_check(deck_zone.get_item_count() == initial_deck_count - 1, "permission lab deck-to-board drag should remove one card from deck")
+	var rejected_card = deck_zone.get_items()[0]
+	deck_zone.start_drag([rejected_card])
+	coordinator = deck_zone.get_drag_coordinator(false)
+	session = coordinator.get_session() if coordinator != null else null
+	_check(session != null, "permission lab deck-to-sanctum drag should create a drag session")
+	if session == null:
+		return
+	if is_instance_valid(session.cursor_proxy):
+		session.cursor_proxy.global_position = sanctum_zone.global_position + Vector2(24, 24)
+	session.hover_zone = sanctum_zone
+	session.requested_index = sanctum_zone.get_item_count()
+	session.preview_index = -1
+	sanctum_zone.get_runtime().perform_drop(session)
+	await _settle_frames(3)
+	_check(deck_zone.has_item(rejected_card), "permission lab sanctum rejection should keep the dragged deck card in deck")
+	_check(not sanctum_zone.has_item(rejected_card), "permission lab sanctum rejection should not insert the dragged deck card into sanctum")
+	_check(rejected_card.visible, "permission lab sanctum rejection should restore the dragged deck card visibility")
+	if status != null:
+		_check(status.text.contains("rejected") or status.text.contains("拒绝"), "permission lab sanctum rejection should update the status feedback")
+
 func _test_layout_gallery_mode_and_captions() -> void:
 	var scene = LAYOUT_SCENE.instantiate()
 	add_child(scene)
@@ -201,6 +277,28 @@ func _test_layout_gallery_mode_and_captions() -> void:
 	scene.call("_toggle_row_sort")
 	await _settle_frames(2)
 	_check(sort_mode_label != null and sort_mode_label.text.contains("descending"), "layout gallery sort mode label should update after toggling the row sort")
+
+func _test_layout_gallery_pile_drag_proxy_layering() -> void:
+	var scene = LAYOUT_SCENE.instantiate()
+	add_child(scene)
+	await _settle_frames(3)
+	var pile_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/PileColumn/PileZone") as Zone
+	_check(pile_zone != null, "layout gallery pile drag smoke should keep the pile zone accessible")
+	if pile_zone == null:
+		return
+	var pile_item = pile_zone.get_items()[pile_zone.get_item_count() - 1]
+	pile_zone.start_drag([pile_item])
+	var coordinator = pile_zone.get_drag_coordinator(false)
+	var session = coordinator.get_session() if coordinator != null else null
+	_check(session != null, "layout gallery pile drag should create a drag session")
+	if session == null:
+		return
+	_check(session.cursor_proxy != null and session.cursor_proxy.top_level, "layout gallery pile drag should use a top-level cursor proxy")
+	if session.cursor_proxy != null:
+		_check(not session.cursor_proxy.z_as_relative, "layout gallery pile drag proxy should use absolute z ordering")
+		_check(session.cursor_proxy.z_index >= ZoneDragCoordinator.CURSOR_PROXY_Z_INDEX, "layout gallery pile drag proxy should render above the stacked pile cards")
+	pile_zone.get_runtime().cancel_drag()
+	await _settle_frames(2)
 
 func _test_zone_recipes_copy_hint_and_reset() -> void:
 	var scene = RECIPES_SCENE.instantiate()

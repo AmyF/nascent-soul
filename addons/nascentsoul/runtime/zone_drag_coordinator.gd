@@ -1,6 +1,7 @@
 class_name ZoneDragCoordinator extends Node
 
 const COORDINATOR_NAME := "__NascentSoulDragCoordinator"
+const CURSOR_PROXY_Z_INDEX := 2048
 
 var active_session: ZoneDragSession = null
 
@@ -41,12 +42,16 @@ func start_drag(source_zone: Node, items: Array[Control], drag_offset: Vector2, 
 	set_process(true)
 	if is_instance_valid(cursor_proxy):
 		cursor_proxy.top_level = true
+		cursor_proxy.z_as_relative = false
+		cursor_proxy.z_index = CURSOR_PROXY_Z_INDEX
+		cursor_proxy.visible = true
 		cursor_proxy.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if cursor_proxy.get_parent() != self:
 			if cursor_proxy.get_parent() != null:
 				cursor_proxy.reparent(self, false)
 			else:
 				add_child(cursor_proxy)
+		move_child(cursor_proxy, get_child_count() - 1)
 	return active_session
 
 func clear_session() -> void:

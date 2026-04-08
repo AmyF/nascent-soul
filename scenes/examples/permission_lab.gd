@@ -5,6 +5,7 @@ const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd"
 const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 
+@export_group("Sample Cards")
 @export var deck_cards: Array[ExampleCardSpec] = []
 @export var hand_cards: Array[ExampleCardSpec] = []
 
@@ -27,8 +28,8 @@ func _ready() -> void:
 	_schedule_headless_quit_if_root()
 
 func _populate_cards() -> void:
-	_add_cards_from_specs(_deck_zone, deck_cards, false)
-	_add_cards_from_specs(_hand_zone, hand_cards, true)
+	ExampleSupport.add_cards_from_specs(_deck_zone, deck_cards, false)
+	ExampleSupport.add_cards_from_specs(_hand_zone, hand_cards, true)
 
 func _wire_actions() -> void:
 	_deck_zone.item_double_clicked.connect(_draw_to_hand)
@@ -110,9 +111,3 @@ func _schedule_headless_quit_if_root() -> void:
 	if get_tree().current_scene != self:
 		return
 	get_tree().create_timer(0.5).timeout.connect(get_tree().quit)
-
-func _add_cards_from_specs(zone: Zone, specs: Array[ExampleCardSpec], face_up: bool = true, highlighted: bool = false) -> void:
-	for spec in specs:
-		if spec == null:
-			continue
-		zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, face_up, highlighted))

@@ -1,6 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scenes/examples/transfer_playground.gd" id="1_scene"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="9_theme"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="10_card_spec"]
 [ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="3_pile"]
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="4_hand"]
@@ -8,10 +10,8 @@
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="7_capacity"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_factory"]
-[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="9_theme"]
-[ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="10_card_spec"]
 
-[sub_resource type="Resource" id="BoardCapacityPermission"]
+[sub_resource type="Resource" id="TransferBoardCapacityPermission"]
 script = ExtResource("7_capacity")
 max_items = 5
 reject_reason = "Board 已满。先把一张牌丢进 Discard 再试。\nBoard is full. Discard a card first, then try again."
@@ -25,85 +25,85 @@ proxy_mode = 0
 proxy_modulate = Color(1, 1, 1, 0.88)
 proxy_scale = Vector2(1.04, 1.04)
 
-[sub_resource type="Resource" id="DeckCardSpark"]
+[sub_resource type="Resource" id="TransferDeckCardSpark"]
 script = ExtResource("10_card_spec")
 title = "Spark"
 cost = 1
 tags = PackedStringArray("attack")
 
-[sub_resource type="Resource" id="DeckCardShell"]
+[sub_resource type="Resource" id="TransferDeckCardShell"]
 script = ExtResource("10_card_spec")
 title = "Shell"
 cost = 1
 tags = PackedStringArray("skill")
 
-[sub_resource type="Resource" id="DeckCardFocus"]
+[sub_resource type="Resource" id="TransferDeckCardFocus"]
 script = ExtResource("10_card_spec")
 title = "Focus"
 cost = 2
 tags = PackedStringArray("power")
 
-[sub_resource type="Resource" id="DeckCardGale"]
+[sub_resource type="Resource" id="TransferDeckCardGale"]
 script = ExtResource("10_card_spec")
 title = "Gale"
 cost = 1
 tags = PackedStringArray("attack")
 
-[sub_resource type="Resource" id="DeckCardEcho"]
+[sub_resource type="Resource" id="TransferDeckCardEcho"]
 script = ExtResource("10_card_spec")
 title = "Echo"
 cost = 2
 tags = PackedStringArray("skill")
 
-[sub_resource type="Resource" id="DeckCardNova"]
+[sub_resource type="Resource" id="TransferDeckCardNova"]
 script = ExtResource("10_card_spec")
 title = "Nova"
 cost = 3
 tags = PackedStringArray("attack")
 
-[sub_resource type="Resource" id="HandCardTether"]
+[sub_resource type="Resource" id="TransferHandCardTether"]
 script = ExtResource("10_card_spec")
 title = "Tether"
 cost = 1
 tags = PackedStringArray("skill")
 
-[sub_resource type="Resource" id="HandCardBloom"]
+[sub_resource type="Resource" id="TransferHandCardBloom"]
 script = ExtResource("10_card_spec")
 title = "Bloom"
 cost = 2
 tags = PackedStringArray("power")
 
-[sub_resource type="Resource" id="HandCardStrike"]
+[sub_resource type="Resource" id="TransferHandCardStrike"]
 script = ExtResource("10_card_spec")
 title = "Strike"
 cost = 1
 tags = PackedStringArray("attack")
 
-[sub_resource type="Resource" id="HandCardWard"]
+[sub_resource type="Resource" id="TransferHandCardWard"]
 script = ExtResource("10_card_spec")
 title = "Ward"
 cost = 1
 tags = PackedStringArray("skill")
 
-[sub_resource type="Resource" id="HandCardOrbit"]
+[sub_resource type="Resource" id="TransferHandCardOrbit"]
 script = ExtResource("10_card_spec")
 title = "Orbit"
 cost = 2
 tags = PackedStringArray("attack")
 
-[sub_resource type="Resource" id="BoardCardSentinel"]
+[sub_resource type="Resource" id="TransferBoardCardSentinel"]
 script = ExtResource("10_card_spec")
 title = "Sentinel"
 cost = 3
 tags = PackedStringArray("power")
 
-[sub_resource type="Resource" id="BoardCardPulse"]
+[sub_resource type="Resource" id="TransferBoardCardPulse"]
 script = ExtResource("10_card_spec")
 title = "Pulse"
 cost = 2
 tags = PackedStringArray("attack")
 
-[sub_resource type="StyleBoxFlat" id="DeckZonePanel"]
+[sub_resource type="StyleBoxFlat" id="TransferDeckZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -115,7 +115,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[sub_resource type="StyleBoxFlat" id="BoardZonePanel"]
+[sub_resource type="StyleBoxFlat" id="TransferBoardZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -127,7 +127,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[sub_resource type="StyleBoxFlat" id="DiscardZonePanel"]
+[sub_resource type="StyleBoxFlat" id="TransferDiscardZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -139,7 +139,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[sub_resource type="StyleBoxFlat" id="HandZonePanel"]
+[sub_resource type="StyleBoxFlat" id="TransferHandZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -160,9 +160,9 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("9_theme")
-deck_cards = [SubResource("DeckCardSpark"), SubResource("DeckCardShell"), SubResource("DeckCardFocus"), SubResource("DeckCardGale"), SubResource("DeckCardEcho"), SubResource("DeckCardNova")]
-hand_cards = [SubResource("HandCardTether"), SubResource("HandCardBloom"), SubResource("HandCardStrike"), SubResource("HandCardWard"), SubResource("HandCardOrbit")]
-board_cards = [SubResource("BoardCardSentinel"), SubResource("BoardCardPulse")]
+deck_cards = [SubResource("TransferDeckCardSpark"), SubResource("TransferDeckCardShell"), SubResource("TransferDeckCardFocus"), SubResource("TransferDeckCardGale"), SubResource("TransferDeckCardEcho"), SubResource("TransferDeckCardNova")]
+hand_cards = [SubResource("TransferHandCardTether"), SubResource("TransferHandCardBloom"), SubResource("TransferHandCardStrike"), SubResource("TransferHandCardWard"), SubResource("TransferHandCardOrbit")]
+board_cards = [SubResource("TransferBoardCardSentinel"), SubResource("TransferBoardCardPulse")]
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -196,7 +196,7 @@ text = "牌库 / Deck"
 custom_minimum_size = Vector2(200, 240)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("DeckZonePanel")
+theme_override_styles/panel = SubResource("TransferDeckZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("3_pile")
 drag_visual_factory = SubResource("TransferDragVisualFactory")
@@ -228,10 +228,10 @@ custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("BoardZonePanel")
+theme_override_styles/panel = SubResource("TransferBoardZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("5_board")
-permission_policy = SubResource("BoardCapacityPermission")
+permission_policy = SubResource("TransferBoardCapacityPermission")
 drag_visual_factory = SubResource("TransferDragVisualFactory")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
@@ -248,7 +248,7 @@ text = "弃牌堆 / Discard"
 custom_minimum_size = Vector2(200, 240)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("DiscardZonePanel")
+theme_override_styles/panel = SubResource("TransferDiscardZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("6_discard")
 drag_visual_factory = SubResource("TransferDragVisualFactory")
@@ -262,7 +262,7 @@ text = "手牌 / Hand"
 custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("HandZonePanel")
+theme_override_styles/panel = SubResource("TransferHandZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("4_hand")
 drag_visual_factory = SubResource("TransferDragVisualFactory")

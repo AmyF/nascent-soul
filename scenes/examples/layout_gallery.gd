@@ -2,6 +2,7 @@ extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 
+@export_group("Sample Cards")
 @export var gallery_cards: Array[ExampleCardSpec] = []
 
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
@@ -23,13 +24,10 @@ func _ready() -> void:
 	_schedule_headless_quit_if_root()
 
 func _populate_cards() -> void:
-	for spec in gallery_cards:
-		if spec == null:
-			continue
-		_hand_zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, true))
-		_row_zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, true))
-		_list_zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, true))
-		_pile_zone.add_item(ExampleSupport.make_card(spec.title, spec.cost, spec.tags, false))
+	ExampleSupport.add_cards_from_specs(_hand_zone, gallery_cards, true)
+	ExampleSupport.add_cards_from_specs(_row_zone, gallery_cards, true)
+	ExampleSupport.add_cards_from_specs(_list_zone, gallery_cards, true)
+	ExampleSupport.add_cards_from_specs(_pile_zone, gallery_cards, false)
 
 func _toggle_row_sort() -> void:
 	_row_sort.descending = not _row_sort.descending

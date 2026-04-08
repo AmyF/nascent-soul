@@ -215,6 +215,9 @@ func select_item(item: Control, additive: bool = false) -> void:
 		refresh()
 
 func start_drag(items: Array[Control]) -> void:
+	_start_drag_internal(items)
+
+func _start_drag_internal(items: Array[Control], pointer_global_position = null) -> void:
 	if zone.get_items_root() == null or items.is_empty():
 		return
 	var valid_items: Array[Control] = []
@@ -228,7 +231,10 @@ func start_drag(items: Array[Control]) -> void:
 	var coordinator = zone.get_drag_coordinator()
 	if coordinator == null:
 		return
-	var drag_offset = primary_item.get_global_mouse_position() - primary_item.global_position
+	var pointer_position = primary_item.get_global_mouse_position()
+	if pointer_global_position is Vector2:
+		pointer_position = pointer_global_position as Vector2
+	var drag_offset = pointer_position - primary_item.global_position
 	var cursor_proxy = _create_cursor_proxy(primary_item)
 	coordinator.start_drag(zone, valid_items, drag_offset, cursor_proxy)
 	for item in valid_items:
@@ -509,7 +515,7 @@ func _handle_mouse_motion(event: InputEventMouseMotion, item: Control) -> void:
 	_is_pressed = false
 	_stop_long_press_timer()
 	var drag_items = _resolve_drag_items(item)
-	start_drag(drag_items)
+	_start_drag_internal(drag_items, event.global_position)
 
 func _apply_click_selection(item: Control, event: InputEventMouseButton) -> void:
 	var interaction = zone.get_interaction_config()

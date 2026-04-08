@@ -91,6 +91,12 @@ func _emit_mouse_button(item: Control, button_index: MouseButton, pressed: bool,
 	event.global_position = item.global_position + event.position
 	item.gui_input.emit(event)
 
+func _emit_mouse_motion(item: Control, global_position: Vector2) -> void:
+	var event := InputEventMouseMotion.new()
+	event.position = global_position - item.global_position
+	event.global_position = global_position
+	item.gui_input.emit(event)
+
 func _emit_background_left_click(container: Control, global_position: Vector2 = Vector2(-1, -1)) -> void:
 	var target = _resolve_interaction_target(container)
 	var click_position = global_position

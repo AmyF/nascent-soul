@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://lx5kwklh25li"]
 
 [ext_resource type="Script" uid="uid://ckym6xo6gjtu" path="res://scenes/demo.gd" id="1_demo"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="6_theme"]
 [ext_resource type="PackedScene" path="res://scenes/examples/transfer_playground.tscn" id="2_transfer"]
 [ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="3_layouts"]
 [ext_resource type="PackedScene" path="res://scenes/examples/permission_lab.tscn" id="4_rules"]
 [ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="5_recipes"]
-[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="6_theme"]
 
 [node name="DemoHub" type="Control" unique_id=1823012048]
 layout_mode = 3
