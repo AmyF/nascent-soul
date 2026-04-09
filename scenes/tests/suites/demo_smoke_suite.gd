@@ -5,6 +5,9 @@ const TRANSFER_SCENE = preload("res://scenes/examples/transfer_playground.tscn")
 const PERMISSION_SCENE = preload("res://scenes/examples/permission_lab.tscn")
 const LAYOUT_SCENE = preload("res://scenes/examples/layout_gallery.tscn")
 const RECIPES_SCENE = preload("res://scenes/examples/zone_recipes.tscn")
+const BATTLEFIELD_SQUARE_SCENE = preload("res://scenes/examples/battlefield_square_lab.tscn")
+const BATTLEFIELD_HEX_SCENE = preload("res://scenes/examples/battlefield_hex_lab.tscn")
+const BATTLEFIELD_MODES_SCENE = preload("res://scenes/examples/battlefield_transfer_modes.tscn")
 
 func _init() -> void:
 	_suite_name = "demo-smoke"
@@ -25,6 +28,8 @@ func _run_suite() -> void:
 	await _test_layout_gallery_pile_drag_proxy_layering()
 	await _reset_root()
 	await _test_zone_recipes_copy_hint_and_reset()
+	await _reset_root()
+	await _test_battlefield_examples_load()
 
 func _test_demo_scene_resource_naming() -> void:
 	var transfer_text = FileAccess.get_file_as_string("res://scenes/examples/transfer_playground.tscn")
@@ -54,7 +59,7 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(demo_title != null and demo_title.theme_type_variation == &"DemoHubTitle", "demo hub title should use the shared title theme variation")
 	_check(demo_margin != null and demo_margin.theme_type_variation == &"DemoHubMargin", "demo hub margin container should use the shared hub margin variation")
 	if tab_container != null:
-		_check(tab_container.get_child_count() == 4, "demo hub should keep four static example tabs")
+		_check(tab_container.get_child_count() == 7, "demo hub should keep seven static example tabs")
 		for tab in tab_container.get_children():
 			_check(tab.get_node_or_null("Content") != null, "demo hub tabs should statically embed their example scenes")
 	var transfer = TRANSFER_SCENE.instantiate()
@@ -317,6 +322,22 @@ func _test_zone_recipes_copy_hint_and_reset() -> void:
 	scene.call("_reset_recipe")
 	await _settle_frames(3)
 	_check(status.text.contains("reset") or status.text.contains("重置"), "zone recipes status should explain what reset did")
+
+func _test_battlefield_examples_load() -> void:
+	for packed_scene in [BATTLEFIELD_SQUARE_SCENE, BATTLEFIELD_HEX_SCENE, BATTLEFIELD_MODES_SCENE]:
+		var scene = packed_scene.instantiate()
+		add_child(scene)
+		await _settle_frames(2)
+		_check(scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") is Label, "%s should include a status label" % scene.name)
+		_check(scene.get_node_or_null("RootMargin/RootVBox/ContentRow") is HBoxContainer, "%s should include the main content row" % scene.name)
+		var found_battlefield_zone = false
+		for node in scene.find_children("*", "BattlefieldZone", true, false):
+			if node is Zone:
+				found_battlefield_zone = true
+				break
+		_check(found_battlefield_zone, "%s should expose at least one battlefield zone" % scene.name)
+		scene.queue_free()
+		await _settle_frames(1)
 
 func _assert_tab_content_stays_below_tab_bar(tab_container: TabContainer, tab_index: int, node_path: String, message: String) -> void:
 	tab_container.current_tab = tab_index

@@ -6,9 +6,9 @@ const PREVIEW_ROOT_NAME := "PreviewRoot"
 
 # Drag lifecycle contract:
 # `drag_started` fires on the source zone.
-# `drop_preview_changed(..., index)` fires on the hovered target zone, and `index = -1` means the preview was cleared.
+# `drop_preview_changed(..., target)` fires on the hovered target zone, and an invalid target means the preview was cleared.
 # `drop_hover_state_changed(..., decision)` reports whether the current hovered zone would accept the drop.
-# A hover clear is represented by `decision.target_index = -1`; rejected hovers keep their computed index but do not show a preview slot.
+# A hover clear is represented by `decision.resolved_target` being invalid; rejected hovers keep their computed target but do not show a preview slot.
 # Successful drops emit `item_reordered` for same-zone moves or `item_transferred` on the target first and then the source.
 # Rejected drops emit `drop_rejected` on the target and mirrored source zone.
 signal item_clicked(item: Control)
@@ -19,32 +19,34 @@ signal item_hover_entered(item: Control)
 signal item_hover_exited(item: Control)
 signal selection_changed(items: Array)
 signal drag_started(items: Array, source_zone: Zone)
-signal drop_preview_changed(items: Array, target_zone: Zone, target_index: int)
-signal drop_hover_state_changed(items: Array, target_zone: Zone, decision: ZoneDropDecision)
+signal drop_preview_changed(items: Array, target_zone: Zone, target)
+signal drop_hover_state_changed(items: Array, target_zone: Zone, decision)
 signal item_added(item: Control, index: int)
 signal item_removed(item: Control, from_index: int)
 signal item_reordered(item: Control, from_index: int, to_index: int)
-signal item_transferred(item: Control, source_zone: Zone, target_zone: Zone, to_index: int)
+signal item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target)
 signal drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reason: String)
 signal layout_changed()
 
 var _preset: ZonePreset = null
+var _space_model: ZoneSpaceModel = null
 var _layout_policy: ZoneLayoutPolicy = null
 var _display_style: ZoneDisplayStyle = null
 var _interaction: ZoneInteraction = null
 var _sort_policy: ZoneSortPolicy = null
-var _permission_policy: ZonePermissionPolicy = null
+var _transfer_policy: ZoneTransferPolicy = null
 var _drag_visual_factory: ZoneDragVisualFactory = null
 
 var _runtime: ZoneRuntime
 var _items_root: Control = null
 var _preview_root: Control = null
 
+var _default_space_model: ZoneSpaceModel = null
 var _default_layout_policy: ZoneLayoutPolicy = null
 var _default_display_style: ZoneDisplayStyle = null
 var _default_interaction: ZoneInteraction = null
 var _default_sort_policy: ZoneSortPolicy = null
-var _default_permission_policy: ZonePermissionPolicy = null
+var _default_transfer_policy: ZoneTransferPolicy = null
 var _default_drag_visual_factory: ZoneDragVisualFactory = null
 
 @export_group("Preset")
@@ -58,6 +60,15 @@ var _default_drag_visual_factory: ZoneDragVisualFactory = null
 		_handle_configuration_changed()
 
 @export_group("Advanced Overrides")
+@export var space_model: ZoneSpaceModel:
+	get:
+		return _space_model
+	set(value):
+		if _space_model == value:
+			return
+		_space_model = value
+		_handle_configuration_changed()
+
 @export var layout_policy: ZoneLayoutPolicy:
 	get:
 		return _layout_policy
@@ -94,14 +105,20 @@ var _default_drag_visual_factory: ZoneDragVisualFactory = null
 		_sort_policy = value
 		_handle_configuration_changed()
 
-@export var permission_policy: ZonePermissionPolicy:
+@export var transfer_policy: ZoneTransferPolicy:
 	get:
-		return _permission_policy
+		return _transfer_policy
 	set(value):
-		if _permission_policy == value:
+		if _transfer_policy == value:
 			return
-		_permission_policy = value
+		_transfer_policy = value
 		_handle_configuration_changed()
+
+@export var permission_policy: ZoneTransferPolicy:
+	get:
+		return _transfer_policy
+	set(value):
+		transfer_policy = value
 
 @export var drag_visual_factory: ZoneDragVisualFactory:
 	get:
@@ -194,6 +211,14 @@ func get_selected_items() -> Array[Control]:
 	_ensure_runtime()
 	return _runtime.selection_state.get_selected_items()
 
+func get_item_target(item: Control) -> ZonePlacementTarget:
+	_ensure_runtime()
+	return _runtime.get_item_target(item)
+
+func get_items_at_target(target: ZonePlacementTarget) -> Array[Control]:
+	_ensure_runtime()
+	return _runtime.get_items_at_target(target)
+
 func is_selected(item: Control) -> bool:
 	_ensure_runtime()
 	return _runtime.selection_state.is_selected(item)
@@ -202,29 +227,32 @@ func has_item(item: Control) -> bool:
 	_ensure_runtime()
 	return _runtime != null and _runtime.has_item(item)
 
-func add_item(item: Control) -> bool:
+func add_item(item: Control, placement_target = null) -> bool:
 	_ensure_runtime()
-	return _runtime.add_item(item)
+	return _runtime.add_item(item, _coerce_placement_target(placement_target))
 
 func insert_item(item: Control, index: int) -> bool:
 	_ensure_runtime()
 	return _runtime.insert_item(item, index)
 
+func place_item(item: Control, placement_target: ZonePlacementTarget) -> bool:
+	return add_item(item, placement_target)
+
 func remove_item(item: Control) -> bool:
 	_ensure_runtime()
 	return _runtime.remove_item(item)
 
-func move_item_to(item: Control, target_zone: Zone, index: int = -1) -> bool:
+func move_item_to(item: Control, target_zone: Zone, placement_target = null) -> bool:
 	_ensure_runtime()
-	return _runtime.move_item_to(item, target_zone, index)
+	return _runtime.move_item_to(item, target_zone, _coerce_placement_target(placement_target))
 
-func transfer_items(items: Array[Control], target_zone: Zone, index: int = -1) -> bool:
+func transfer_items(items: Array[Control], target_zone: Zone, placement_target = null) -> bool:
 	_ensure_runtime()
-	return _runtime.transfer_items(items, target_zone, index)
+	return _runtime.transfer_items(items, target_zone, _coerce_placement_target(placement_target))
 
-func reorder_item(item: Control, index: int) -> bool:
+func reorder_item(item: Control, placement_target = null) -> bool:
 	_ensure_runtime()
-	return _runtime.reorder_item(item, index)
+	return _runtime.reorder_item(item, _coerce_placement_target(placement_target))
 
 func clear_selection() -> void:
 	_ensure_runtime()
@@ -244,6 +272,14 @@ func start_drag(items: Array[Control]) -> void:
 func get_runtime() -> ZoneRuntime:
 	_ensure_runtime()
 	return _runtime
+
+func get_space_model_resource() -> ZoneSpaceModel:
+	_ensure_default_resources()
+	if _space_model != null:
+		return _space_model
+	if _preset != null:
+		return _preset.resolve_space_model(_default_space_model)
+	return _default_space_model
 
 func get_layout_policy_resource() -> ZoneLayoutPolicy:
 	_ensure_default_resources()
@@ -277,13 +313,16 @@ func get_sort_policy_resource() -> ZoneSortPolicy:
 		return _preset.resolve_sort_policy(_default_sort_policy)
 	return _default_sort_policy
 
-func get_permission_policy_resource() -> ZonePermissionPolicy:
+func get_transfer_policy_resource() -> ZoneTransferPolicy:
 	_ensure_default_resources()
-	if _permission_policy != null:
-		return _permission_policy
+	if _transfer_policy != null:
+		return _transfer_policy
 	if _preset != null:
-		return _preset.resolve_permission_policy(_default_permission_policy)
-	return _default_permission_policy
+		return _preset.resolve_transfer_policy(_default_transfer_policy)
+	return _default_transfer_policy
+
+func get_permission_policy_resource() -> ZoneTransferPolicy:
+	return get_transfer_policy_resource()
 
 func get_drag_visual_factory_resource() -> ZoneDragVisualFactory:
 	_ensure_default_resources()
@@ -311,6 +350,8 @@ func _ensure_runtime() -> void:
 		_runtime = ZoneRuntime.new(self)
 
 func _ensure_default_resources() -> void:
+	if _default_space_model == null:
+		_default_space_model = ZoneLinearSpaceModel.new()
 	if _default_layout_policy == null:
 		var layout := ZoneHBoxLayout.new()
 		layout.item_spacing = 14.0
@@ -323,8 +364,8 @@ func _ensure_default_resources() -> void:
 		_default_interaction = ZoneInteraction.new()
 	if _default_sort_policy == null:
 		_default_sort_policy = ZoneManualSort.new()
-	if _default_permission_policy == null:
-		_default_permission_policy = ZoneAllowAllPermission.new()
+	if _default_transfer_policy == null:
+		_default_transfer_policy = ZoneAllowAllPermission.new()
 	if _default_drag_visual_factory == null:
 		_default_drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
 
@@ -380,3 +421,12 @@ func _handle_configuration_changed() -> void:
 func _on_zone_resized() -> void:
 	refresh()
 	layout_changed.emit()
+
+func _coerce_placement_target(value):
+	if value == null:
+		return null
+	if value is ZonePlacementTarget:
+		return (value as ZonePlacementTarget).duplicate_target()
+	if value is int:
+		return ZonePlacementTarget.linear(value as int)
+	return null

@@ -1,84 +1,126 @@
 # NascentSoul
 
-NascentSoul is a Godot 4.6 card-zone plugin built around one idea: a zone should feel like a real UI component, while its behavior stays modular. `Zone` is the actual `Control` you place in the scene, and layout, display, drag/drop permissions, sorting, interaction rules, and drag visuals are all composed from resources instead of being hardwired into one monolith.
+NascentSoul is a Godot 4.6 zone toolkit for both card games and battlefield tactics. It keeps one shared `Zone` core for selection, drag/drop, display, preview, and runtime state, then lets each family swap in the right spatial model:
+
+- `CardZone` for ordered, linear card containers such as hand, deck, discard, shop, and board rows
+- `BattlefieldZone` for square and hex grids with cell occupancy, piece movement, and card-to-board transfer rules
+
+`Zone` stays inspector-friendly through presets and composable resources. Layout, display, interaction, transfer rules, space resolution, sorting, and drag visuals are all resources instead of hardcoded branches.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Zone["Zone (Control)"] --> Items["ItemsRoot"]
+    Zone["Zone (Control Core)"] --> Runtime["ZoneRuntime"]
+    Zone --> Items["ItemsRoot"]
     Zone --> Preview["PreviewRoot"]
-    Zone --> Runtime["ZoneRuntime"]
     Zone --> Preset["ZonePreset"]
+    Preset --> Space["ZoneSpaceModel"]
     Preset --> Layout["ZoneLayoutPolicy"]
     Preset --> Display["ZoneDisplayStyle"]
     Preset --> Interaction["ZoneInteraction"]
     Preset --> Sort["ZoneSortPolicy"]
-    Preset --> Permission["ZonePermissionPolicy"]
+    Preset --> Transfer["ZoneTransferPolicy"]
     Preset --> DragVisual["ZoneDragVisualFactory"]
-    Runtime --> Coordinator["ZoneDragCoordinator"]
-    Runtime --> Layout
-    Runtime --> Display
-    Runtime --> Interaction
-    Runtime --> Sort
-    Runtime --> Permission
-    Runtime --> DragVisual
+    Runtime --> Placement["ZonePlacementTarget"]
+    Runtime --> Request["ZoneTransferRequest"]
+    Runtime --> Decision["ZoneTransferDecision"]
+    Zone --> CardFamily["CardZone"]
+    Zone --> BattleFamily["BattlefieldZone"]
 ```
 
-- `Zone` is the UI surface. It owns input, sizing, theme, `ItemsRoot`, and `PreviewRoot`.
-- `ZoneRuntime` owns live state. Selection, drag sessions, hover feedback, display caches, and transfer handoff data live here instead of inside shared `Resource` instances.
-- `ZonePreset` is the inspector-friendly entry point. It bundles common combinations of `ZoneLayoutPolicy`, `ZoneDisplayStyle`, `ZoneInteraction`, `ZoneSortPolicy`, `ZonePermissionPolicy`, and `ZoneDragVisualFactory`.
-- `ItemsRoot` is the only source of managed items. `PreviewRoot` is reserved for ghost and preview visuals and never participates in logical item order.
-- `ZoneDragCoordinator` handles scene-level drag orchestration so cross-zone movement stays predictable without pushing runtime state into globals.
+The important split in `2.0.0` is:
+
+- `ZoneSpaceModel` decides where a drop lands
+- `ZoneLayoutPolicy` decides how managed items render
+- `ZoneTransferPolicy` decides whether a move is allowed and whether it directly places the item or spawns a piece
 
 ## Why This Shape Works
 
-- It matches how card games are actually authored in Godot: zones are visible controls, not invisible coordinators hanging off another node.
-- Behavior stays composable. A hand, board, pile, discard, or custom area is mostly a different combination of policies and styles, not a different subsystem.
-- Runtime state stays local and safe. You can reuse presets and policy resources without leaking selection state, tween caches, or drag state across zones.
-- The same core pipeline covers inspector-authored scenes, scripted setup, drag/drop, keyboard navigation, and demo recipes.
+- Card zones and battlefield zones share the same drag/drop and preview core without pretending they are the same data model.
+- Linear index insertion and spatial cell placement both travel through a single `ZonePlacementTarget` protocol.
+- A card can move into a battlefield as a card or resolve into a `ZonePiece`, depending on the target zone's transfer rules.
+- Square and hex battlefields stay in one family. Geometry is a `ZoneSpaceModel`, not a new subsystem.
 
 ## Quick Start
 
-```gdscript
-var zone := Zone.new()
-zone.custom_minimum_size = Vector2(320, 220)
-zone.size = zone.custom_minimum_size
-zone.preset = load("res://addons/nascentsoul/presets/hand_zone_preset.tres")
-add_child(zone)
+### Card Zone
 
-var data := CardData.new()
-data.title = "Spark"
+```gdscript
+var hand := CardZone.new()
+hand.custom_minimum_size = Vector2(360, 220)
+hand.size = hand.custom_minimum_size
+hand.preset = load("res://addons/nascentsoul/presets/hand_zone_preset.tres")
+add_child(hand)
 
 var card := ZoneCard.new()
-card.data = data
+card.data = CardData.new()
+card.data.title = "Spark"
 card.face_up = true
 
-zone.add_item(card)
+hand.add_item(card)
 ```
 
-Configuration precedence is always:
+### Battlefield Zone
 
-`override > ZonePreset > built-in default`
+```gdscript
+var field := BattlefieldZone.new()
+field.custom_minimum_size = Vector2(560, 420)
+field.size = field.custom_minimum_size
+field.preset = load("res://addons/nascentsoul/presets/battlefield_square_zone_preset.tres")
+add_child(field)
 
-The authored shape is simple:
+var card := ZoneCard.new()
+card.data = CardData.new()
+card.data.title = "Aegis"
+card.face_up = true
 
-- Put managed items under `ItemsRoot`.
-- Let `PreviewRoot` stay runtime-only.
-- Treat `Zone` itself as the area, not as a helper attached to some external container.
+field.add_item(card, ZonePlacementTarget.square(1, 1))
+```
 
-## Learn by Opening the Repo
+### Card To Battlefield
 
-- [`scenes/demo.tscn`](scenes/demo.tscn): example hub and the fastest way to inspect the plugin in context.
-- [`scenes/examples/transfer_playground.tscn`](scenes/examples/transfer_playground.tscn): end-to-end card flow from deck to hand, board, and discard.
-- [`scenes/examples/layout_gallery.tscn`](scenes/examples/layout_gallery.tscn): compare hand, row, grouped-list, and pile layouts side by side.
-- [`scenes/examples/permission_lab.tscn`](scenes/examples/permission_lab.tscn): inspect capacity and source-based drop rules.
-- [`scenes/examples/zone_recipes.tscn`](scenes/examples/zone_recipes.tscn): copyable starter setup for deck, hand, board, and discard zones.
+```gdscript
+var target := ZonePlacementTarget.hex(2, 1)
+hand.move_item_to(card, field, target)
+```
 
-The editor plugin exposes this entry point directly:
+If the target battlefield uses a `ZoneTransferPolicy` that returns `SPAWN_PIECE`, the source card is consumed and the battlefield inserts a `ZonePiece` instead.
 
-- `Create Zone From Preset`
+## Built-In Families
+
+- Linear space: `ZoneLinearSpaceModel`
+- Square grid space: `ZoneSquareGridSpaceModel`
+- Hex grid space: `ZoneHexGridSpaceModel`
+- Card layouts: hand, hbox, vbox, pile
+- Battlefield layout: `ZoneBattlefieldLayout`
+- Transfer rules: allow-all, capacity, source, occupancy, composite, rule-table
+- Example items: `ZoneCard + CardData`, `ZonePiece + PieceData`
+
+## Learn By Opening The Repo
+
+- [`scenes/examples/transfer_playground.tscn`](scenes/examples/transfer_playground.tscn): end-to-end card flow across deck, hand, board, and discard
+- [`scenes/examples/permission_lab.tscn`](scenes/examples/permission_lab.tscn): source and capacity rules
+- [`scenes/examples/layout_gallery.tscn`](scenes/examples/layout_gallery.tscn): linear layout comparison
+- [`scenes/examples/zone_recipes.tscn`](scenes/examples/zone_recipes.tscn): copyable card-zone starter setups
+- [`scenes/examples/battlefield_square_lab.tscn`](scenes/examples/battlefield_square_lab.tscn): square battlefield with direct card placement
+- [`scenes/examples/battlefield_hex_lab.tscn`](scenes/examples/battlefield_hex_lab.tscn): hex battlefield with spatial placement
+- [`scenes/examples/battlefield_transfer_modes.tscn`](scenes/examples/battlefield_transfer_modes.tscn): direct-place-card vs spawn-piece transfer rules
+
+The editor plugin now exposes:
+
+- `Create Card Zone`
+- `Create Square Battlefield Zone`
+- `Create Hex Battlefield Zone`
+
+## Validation
+
+Current repository validation on Godot 4.6.1:
+
+- Headless regression suite passes with `318` checks
+- Card-only demos still pass their previous smoke and regression coverage
+- Battlefield coverage now includes square and hex placement, occupancy rejection, spawn-piece transfer, and same-zone piece movement
 
 ## Project Status
 
-NascentSoul `1.0.0` marks the current public shape: `Zone extends Control`, inspector-driven presets, modular runtime behavior, and scene-authored examples as the canonical source of usage. The architecture is intended to be the stable foundation of the plugin going forward.
+NascentSoul `2.0.0` is the first release that treats card zones and battlefield zones as first-class siblings on the same runtime core. The public drop protocol is now `ZonePlacementTarget`-based, and the repository examples cover both direct card placement and piece spawning on tactical boards.

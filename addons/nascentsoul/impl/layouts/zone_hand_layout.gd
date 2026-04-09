@@ -6,8 +6,9 @@ class_name ZoneHandLayout extends ZoneLayoutPolicy
 @export var card_spacing_angle: float = 5.0
 @export var center_offset_y: float = 0.0
 
-func calculate(items: Array[Control], container_size: Vector2, ghost_item: Control = null, ghost_index: int = -1) -> Array[ZonePlacement]:
+func calculate(items: Array[Control], container_size: Vector2, ghost_item: Control = null, ghost_hint = null, runtime = null) -> Array[ZonePlacement]:
 	var render_items: Array[Control] = items.duplicate()
+	var ghost_index = ghost_hint as int if ghost_hint is int else -1
 	if is_instance_valid(ghost_item) and ghost_index >= 0:
 		render_items.insert(clampi(ghost_index, 0, render_items.size()), ghost_item)
 	if render_items.is_empty():

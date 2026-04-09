@@ -103,8 +103,8 @@ func _test_drag_transfer_and_selection_prune() -> void:
 	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
 	var ward = ExampleSupport.make_card("Ward", 1, ["skill"], true)
 	var transfer_events: Array[String] = []
-	target_zone.item_transferred.connect(func(item: Control, source_zone_ref: Zone, target_zone_ref: Zone, to_index: int) -> void:
-		transfer_events.append("%s:%s->%s@%d" % [item.name, source_zone_ref.name, target_zone_ref.name, to_index])
+	target_zone.item_transferred.connect(func(item: Control, source_zone_ref: Zone, target_zone_ref: Zone, target) -> void:
+		transfer_events.append("%s:%s->%s@%d" % [item.name, source_zone_ref.name, target_zone_ref.name, _target_index_from_value(target)])
 	)
 	source_zone.add_item(alpha)
 	source_zone.add_item(beta)
@@ -173,6 +173,13 @@ func _test_transfer_snapshots_preserve_animation_origins() -> void:
 	_check(beta_baseline.get("global_position", Vector2.ZERO).distance_to(beta_origin) <= 0.01, "baseline transfer snapshot should preserve the secondary card global position")
 	_check(is_equal_approx(alpha_baseline.get("rotation", 0.0), alpha_rotation), "baseline transfer snapshot should preserve the primary card rotation")
 	_check(is_equal_approx(beta_baseline.get("rotation", 0.0), beta_rotation), "baseline transfer snapshot should preserve the secondary card rotation")
+	var programmatic_origin = runtime._resolve_programmatic_transfer_global_position([alpha, beta])
+	_check(programmatic_origin is Vector2 and (programmatic_origin as Vector2).distance_to(alpha_origin) <= 0.01, "programmatic transfer APIs should use the primary card's current global position as their animation origin")
+	var programmatic_snapshots = runtime._build_transfer_snapshots([alpha, beta], programmatic_origin)
+	var alpha_programmatic: Dictionary = programmatic_snapshots.get(alpha, {})
+	var beta_programmatic: Dictionary = programmatic_snapshots.get(beta, {})
+	_check(alpha_programmatic.get("global_position", Vector2.ZERO).distance_to(alpha_origin) <= 0.01, "programmatic transfer snapshots should leave the primary card anchored at its current position")
+	_check(beta_programmatic.get("global_position", Vector2.ZERO).distance_to(beta_origin) <= 0.01, "programmatic transfer snapshots should preserve secondary card positions when no drag cursor offset exists")
 	var drop_position = Vector2(540, 180)
 	var dragged_snapshots = runtime._build_transfer_snapshots([alpha, beta], drop_position)
 	var alpha_dragged: Dictionary = dragged_snapshots.get(alpha, {})
@@ -253,17 +260,17 @@ func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	var hover_states: Array[Dictionary] = []
 	var preview_indices: Array[int] = []
 	var reject_events: Array[String] = []
-	target_zone.drop_hover_state_changed.connect(func(items: Array, _target_zone_ref: Zone, decision: ZoneDropDecision) -> void:
+	target_zone.drop_hover_state_changed.connect(func(items: Array, _target_zone_ref: Zone, decision) -> void:
 		var item_name = str(items[0].name) if not items.is_empty() and items[0] is Control else "Selection"
 		hover_states.append({
 			"item": item_name,
 			"allowed": decision.allowed,
-			"target_index": decision.target_index,
+			"target_index": _target_index_from_value(decision),
 			"reason": decision.reason
 		})
 	)
-	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target_index: int) -> void:
-		preview_indices.append(target_index)
+	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target) -> void:
+		preview_indices.append(_target_index_from_value(target))
 	)
 	target_zone.drop_rejected.connect(func(items: Array, source_zone_ref: Zone, target_zone_ref: Zone, reason: String) -> void:
 		reject_events.append("%s:%s->%s:%s" % [items[0].name, source_zone_ref.name, target_zone_ref.name, reason])

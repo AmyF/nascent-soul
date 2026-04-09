@@ -177,3 +177,13 @@ func _resolve_child_zone(control: Control) -> Zone:
 		if child is Zone:
 			return child as Zone
 	return null
+
+func _target_index_from_value(target) -> int:
+	if target is ZonePlacementTarget:
+		var placement_target = target as ZonePlacementTarget
+		return placement_target.slot if placement_target.is_linear() else -1
+	if target is ZoneTransferDecision:
+		return (target as ZoneTransferDecision).target_index
+	if target is int:
+		return target
+	return -1

@@ -60,7 +60,7 @@ func _discard_card(item: Control) -> void:
 			zone.move_item_to(item, _discard_zone, _discard_zone.get_item_count())
 			return
 
-func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, to_index: int, emitter_zone: Zone) -> void:
+func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:
 		return
 	if item is ZoneCard:
@@ -68,9 +68,10 @@ func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, t
 		card.highlighted = target_zone == _sanctum_zone
 		card.flip(target_zone != _deck_zone, false)
 	_refresh_guidance()
+	var target_text = ExampleSupport.describe_target(target)
 	_set_status(ExampleSupport.compact_bilingual(
-		"%s: %s -> %s @ %d" % [item.name, source_zone.name, target_zone.name, to_index],
-		"%s: %s -> %s @ %d" % [item.name, source_zone.name, target_zone.name, to_index]
+		"%s: %s -> %s @ %s" % [item.name, source_zone.name, target_zone.name, target_text],
+		"%s: %s -> %s @ %s" % [item.name, source_zone.name, target_zone.name, target_text]
 	))
 
 func _on_drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reason: String, emitter_zone: Zone) -> void:

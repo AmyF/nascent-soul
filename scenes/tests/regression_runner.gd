@@ -1,6 +1,7 @@
 extends Control
 
 const SUITE_SCENES := [
+	preload("res://scenes/tests/suites/battlefield_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/core_state_suite.tscn"),
 	preload("res://scenes/tests/suites/demo_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/interaction_smoke_suite.tscn"),

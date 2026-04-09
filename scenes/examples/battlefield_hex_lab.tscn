@@ -1,0 +1,68 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/examples/battlefield_hex_lab.gd" id="1_script"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+
+[node name="BattlefieldHexLab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+theme = ExtResource("2_theme")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"DemoHubMargin"
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_type_variation = &"DemoRootVBox"
+
+[node name="TitleLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoHubTitle"
+text = "Hex Battlefield / 六边形战场"
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoStatusLabel"
+autowrap_mode = 3
+
+[node name="ContentRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"DemoWideHBox"
+
+[node name="SourceColumn" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SourceLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/SourceColumn"]
+layout_mode = 2
+text = "Cards"
+
+[node name="SourcePanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/SourceColumn"]
+custom_minimum_size = Vector2(360, 220)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BattlefieldColumn" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BattlefieldLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BattlefieldColumn"]
+layout_mode = 2
+text = "Hex Field"
+
+[node name="BattlefieldPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/BattlefieldColumn"]
+custom_minimum_size = Vector2(560, 420)
+layout_mode = 2
+size_flags_vertical = 3

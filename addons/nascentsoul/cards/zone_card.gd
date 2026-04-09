@@ -118,6 +118,22 @@ func create_drag_proxy() -> Control:
 	fallback.size = _resolved_card_size()
 	return fallback
 
+func create_zone_piece() -> Control:
+	var piece := ZonePiece.new()
+	piece.name = "%sPiece" % (data.title if data != null and data.title != "" else name)
+	piece.custom_minimum_size = Vector2(92, 92)
+	piece.size = piece.custom_minimum_size
+	var piece_data := PieceData.new()
+	if data != null:
+		piece_data.id = data.id
+		piece_data.title = data.title
+		piece_data.texture = data.front_texture
+		piece_data.attack = data.cost
+		piece_data.defense = max(1, data.tags.size())
+		piece_data.custom_data = data.custom_data.duplicate(true)
+	piece.data = piece_data
+	return piece
+
 func _ensure_nodes() -> void:
 	if _visual_root == null or not is_instance_valid(_visual_root):
 		_visual_root = Control.new()

@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="ZonePreset" format=3]
+
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="1_display"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_factory"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_interaction"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd" id="4_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_occupancy_permission.gd" id="5_transfer"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_preset"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_hex_grid_space_model.gd" id="7_space"]
+
+[sub_resource type="Resource" id="BattlefieldHexDisplay"]
+script = ExtResource("1_display")
+
+[sub_resource type="Resource" id="BattlefieldHexFactory"]
+script = ExtResource("2_factory")
+
+[sub_resource type="Resource" id="BattlefieldHexInteraction"]
+script = ExtResource("3_interaction")
+
+[sub_resource type="Resource" id="BattlefieldHexLayout"]
+script = ExtResource("4_layout")
+
+[sub_resource type="Resource" id="BattlefieldHexTransfer"]
+script = ExtResource("5_transfer")
+
+[sub_resource type="Resource" id="BattlefieldHexSpace"]
+script = ExtResource("7_space")
+columns = 5
+rows = 4
+cell_size = Vector2(116, 100)
+cell_spacing_x = 10.0
+row_spacing = 12.0
+padding = Vector2(24, 24)
+
+[resource]
+script = ExtResource("6_preset")
+space_model = SubResource("BattlefieldHexSpace")
+layout_policy = SubResource("BattlefieldHexLayout")
+display_style = SubResource("BattlefieldHexDisplay")
+interaction = SubResource("BattlefieldHexInteraction")
+transfer_policy = SubResource("BattlefieldHexTransfer")
+drag_visual_factory = SubResource("BattlefieldHexFactory")

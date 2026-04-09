@@ -55,14 +55,15 @@ func _on_card_discard_requested(item: Control) -> void:
 	elif _board_zone.has_item(item):
 		_board_zone.move_item_to(item, _discard_zone, _discard_zone.get_item_count())
 
-func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, to_index: int, emitter_zone: Zone) -> void:
+func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:
 		return
 	_apply_zone_visual_state(item, target_zone)
 	_refresh_guidance()
+	var target_text = ExampleSupport.describe_target(target)
 	_set_status(ExampleSupport.compact_bilingual(
-		"%s: %s -> %s @ %d" % [item.name, source_zone.name, target_zone.name, to_index],
-		"%s: %s -> %s @ %d" % [item.name, source_zone.name, target_zone.name, to_index]
+		"%s: %s -> %s @ %s" % [item.name, source_zone.name, target_zone.name, target_text],
+		"%s: %s -> %s @ %s" % [item.name, source_zone.name, target_zone.name, target_text]
 	))
 
 func _on_item_reordered(item: Control, from_index: int, to_index: int, emitter_zone: Zone) -> void:

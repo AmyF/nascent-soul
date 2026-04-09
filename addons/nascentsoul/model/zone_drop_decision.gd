@@ -1,10 +1,9 @@
-class_name ZoneDropDecision extends RefCounted
+class_name ZoneDropDecision extends ZoneTransferDecision
 
-var allowed: bool = true
-var reason: String = ""
-var target_index: int = -1
-
-func _init(p_allowed: bool = true, p_reason: String = "", p_target_index: int = -1) -> void:
-	allowed = p_allowed
-	reason = p_reason
-	target_index = p_target_index
+func _init(
+	p_allowed: bool = true,
+	p_reason: String = "",
+	p_target_index: int = -1
+) -> void:
+	var target = ZonePlacementTarget.linear(p_target_index) if p_target_index >= 0 else ZonePlacementTarget.invalid()
+	super(p_allowed, p_reason, target)

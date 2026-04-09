@@ -6,6 +6,9 @@
 [ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="3_layouts"]
 [ext_resource type="PackedScene" path="res://scenes/examples/permission_lab.tscn" id="4_rules"]
 [ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="5_recipes"]
+[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_square_lab.tscn" id="7_square"]
+[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_hex_lab.tscn" id="8_hex"]
+[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_transfer_modes.tscn" id="9_modes"]
 
 [node name="DemoHub" type="Control" unique_id=1823012048]
 layout_mode = 3
@@ -69,4 +72,28 @@ layout_mode = 2
 metadata/_tab_index = 3
 
 [node name="Content" parent="RootMargin/RootVBox/TabContainer/Recipes模板" instance=ExtResource("5_recipes")]
+layout_mode = 2
+
+[node name="Square战场" type="Control" parent="RootMargin/RootVBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 4
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Square战场" instance=ExtResource("7_square")]
+layout_mode = 2
+
+[node name="Hex战场" type="Control" parent="RootMargin/RootVBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 5
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Hex战场" instance=ExtResource("8_hex")]
+layout_mode = 2
+
+[node name="Modes模式" type="Control" parent="RootMargin/RootVBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 6
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Modes模式" instance=ExtResource("9_modes")]
 layout_mode = 2

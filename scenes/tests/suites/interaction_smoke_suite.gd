@@ -222,8 +222,8 @@ func _test_drop_preview_clear_signal() -> void:
 	var target_zone = _make_test_zone(target_panel, "PreviewTargetZone")
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var preview_indices: Array[int] = []
-	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target_index: int) -> void:
-		preview_indices.append(target_index)
+	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target) -> void:
+		preview_indices.append(_target_index_from_value(target))
 	)
 	source_zone.add_item(alpha)
 	await _settle_frames(2)
@@ -234,7 +234,7 @@ func _test_drop_preview_clear_signal() -> void:
 	if session == null:
 		return
 	target_zone.get_runtime()._create_ghost(alpha)
-	target_zone.drop_preview_changed.emit(session.items, target_zone, 0)
+	target_zone.drop_preview_changed.emit(session.items, target_zone, ZonePlacementTarget.linear(0))
 	session.hover_zone = target_zone
 	session.preview_index = 0
 	source_zone.get_runtime().cancel_drag(session)
