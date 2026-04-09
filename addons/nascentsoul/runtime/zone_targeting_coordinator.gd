@@ -161,7 +161,9 @@ func _clear_overlay() -> void:
 		return
 	if _overlay.has_method("clear_state"):
 		_overlay.call("clear_state")
-	_overlay.queue_free()
+	if _overlay.get_parent() != null:
+		_overlay.get_parent().remove_child(_overlay)
+	_overlay.free()
 	_overlay = null
 	_clear_overlay_layer()
 
@@ -180,7 +182,7 @@ func _clear_overlay_layer() -> void:
 	if _overlay_layer == null or not is_instance_valid(_overlay_layer):
 		_overlay_layer = null
 		return
-	if _overlay_layer.get_child_count() > 0:
-		return
-	_overlay_layer.queue_free()
+	if _overlay_layer.get_parent() != null:
+		_overlay_layer.get_parent().remove_child(_overlay_layer)
+	_overlay_layer.free()
 	_overlay_layer = null

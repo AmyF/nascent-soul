@@ -13,6 +13,7 @@ func run_suite() -> Dictionary:
 	_failures.clear()
 	await _run_suite()
 	await _reset_root()
+	await _cleanup_viewport_helpers()
 	ExampleSupport.clear_card_texture_cache()
 	return {
 		"name": _suite_name,
@@ -74,6 +75,19 @@ func _reset_root() -> void:
 	for child in children:
 		if is_instance_valid(child):
 			child.free()
+	await _settle_frames(1)
+
+func _cleanup_viewport_helpers() -> void:
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var helpers := viewport.find_children("__NascentSoul*", "", true, false)
+	for helper in helpers:
+		if not is_instance_valid(helper):
+			continue
+		if helper.has_method("clear_session"):
+			helper.call("clear_session")
+		helper.free()
 	await _settle_frames(1)
 
 func _emit_left_click(item: Control, ctrl_pressed: bool = false, shift_pressed: bool = false) -> void:

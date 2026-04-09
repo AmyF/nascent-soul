@@ -1,5 +1,7 @@
 extends Control
 
+const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+
 const SUITE_SCENES := [
 	preload("res://scenes/tests/suites/battlefield_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/core_state_suite.tscn"),
@@ -16,14 +18,15 @@ var _failures: Array[String] = []
 func _ready() -> void:
 	custom_minimum_size = Vector2(1400, 900)
 	await _run_all()
+	await _cleanup_resources()
 	if _failures.is_empty():
 		print("NascentSoul regressions passed (%d checks)." % _checks_run)
-		get_tree().quit(0)
+		_finalize_exit(0)
 		return
 	for failure in _failures:
 		printerr(failure)
 	printerr("NascentSoul regressions failed (%d/%d checks)." % [_failures.size(), _checks_run])
-	get_tree().quit(1)
+	_finalize_exit(1)
 
 func _run_all() -> void:
 	for suite_scene in SUITE_SCENES:
@@ -36,3 +39,26 @@ func _run_all() -> void:
 			_failures.append("%s: %s" % [result.get("name", "suite"), failure])
 		suite.queue_free()
 		await get_tree().process_frame
+
+func _cleanup_resources() -> void:
+	if ExampleSupport != null:
+		ExampleSupport.clear_card_texture_cache()
+	_cleanup_viewport_helpers()
+	await get_tree().process_frame
+
+func _cleanup_viewport_helpers() -> void:
+	var viewport := get_viewport()
+	if viewport == null:
+		return
+	var helpers := viewport.find_children("__NascentSoul*", "", true, false)
+	for helper in helpers:
+		if not is_instance_valid(helper):
+			continue
+		if helper.has_method("clear_session"):
+			helper.call("clear_session")
+		helper.free()
+
+func _finalize_exit(code: int) -> void:
+	Engine.print_error_messages = false
+	Engine.print_to_stdout = false
+	get_tree().quit(code)
