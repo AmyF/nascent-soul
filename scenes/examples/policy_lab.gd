@@ -17,14 +17,14 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 @onready var _board_zone: Zone = $RootMargin/RootVBox/Grid/BoardColumn/BoardZone
 @onready var _sanctum_zone: Zone = $RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone
 @onready var _discard_zone: Zone = $RootMargin/RootVBox/Grid/DiscardColumn/DiscardZone
-@onready var _board_capacity: ZoneCapacityPermission = _board_zone.permission_policy as ZoneCapacityPermission
-@onready var _sanctum_rules: ZoneCompositePermission = _sanctum_zone.permission_policy as ZoneCompositePermission
+@onready var _board_capacity: ZoneCapacityPermission = _board_zone.transfer_policy as ZoneCapacityPermission
+@onready var _sanctum_rules: ZoneCompositePermission = _sanctum_zone.transfer_policy as ZoneCompositePermission
 
 func _ready() -> void:
 	_populate_cards()
 	_wire_actions()
 	_refresh_guidance()
-	_set_status(ExampleSupport.compact_bilingual("权限实验室已就绪", "Permission lab is ready"))
+	_set_status(ExampleSupport.compact_bilingual("规则实验室已就绪", "Policy lab is ready"))
 	_schedule_headless_quit_if_root()
 
 func _populate_cards() -> void:
@@ -44,20 +44,20 @@ func _wire_actions() -> void:
 
 func _draw_to_hand(item: Control) -> void:
 	if _deck_zone.has_item(item):
-		_deck_zone.move_item_to(item, _hand_zone, _hand_zone.get_item_count())
+		_deck_zone.move_item_to(item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
 
 func _send_hand_to_sanctum(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _sanctum_zone, _sanctum_zone.get_item_count())
+		_hand_zone.move_item_to(item, _sanctum_zone, ZonePlacementTarget.linear(_sanctum_zone.get_item_count()))
 
 func _send_hand_to_board(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _board_zone, _board_zone.get_item_count())
+		_hand_zone.move_item_to(item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
 
 func _discard_card(item: Control) -> void:
 	for zone in [_board_zone, _sanctum_zone]:
 		if zone.has_item(item):
-			zone.move_item_to(item, _discard_zone, _discard_zone.get_item_count())
+			zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 			return
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:

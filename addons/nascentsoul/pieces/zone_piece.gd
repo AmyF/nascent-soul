@@ -24,6 +24,8 @@ var _highlighted: bool = false
 
 var _hovered_visual: bool = false
 var _selected_visual: bool = false
+var _target_candidate_active: bool = false
+var _target_candidate_allowed: bool = false
 var _panel: Panel = null
 var _icon: TextureRect = null
 var _title_label: Label = null
@@ -65,6 +67,19 @@ func apply_transfer_source(source_item: Control, _source_zone: Zone, _target_zon
 		else:
 			next_data.title = source_card.name
 		data = next_data
+
+func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -> ZoneTargetingIntent:
+	return null
+
+func get_zone_target_anchor_global() -> Vector2:
+	return global_position + size * 0.5
+
+func set_target_candidate_visual(active: bool, allowed: bool) -> void:
+	if _target_candidate_active == active and _target_candidate_allowed == allowed:
+		return
+	_target_candidate_active = active
+	_target_candidate_allowed = allowed
+	_refresh_visuals()
 
 func _ensure_nodes() -> void:
 	if _panel == null or not is_instance_valid(_panel):
@@ -139,5 +154,8 @@ func _refresh_visuals() -> void:
 	style.corner_radius_bottom_left = 14
 	style.corner_radius_bottom_right = 14
 	_panel.add_theme_stylebox_override("panel", style)
-	_overlay.color = Color(1.0, 0.86, 0.4, 0.22) if highlighted or _hovered_visual else Color(0.2, 0.5, 1.0, 0.18) if _selected_visual else Color(0, 0, 0, 0)
+	var overlay_color = Color(1.0, 0.86, 0.4, 0.22) if highlighted or _hovered_visual else Color(0.2, 0.5, 1.0, 0.18) if _selected_visual else Color(0, 0, 0, 0)
+	if _target_candidate_active:
+		overlay_color = Color(0.44, 0.92, 0.62, 0.28) if _target_candidate_allowed else Color(1.0, 0.42, 0.42, 0.28)
+	_overlay.color = overlay_color
 	_overlay.visible = _overlay.color.a > 0.0

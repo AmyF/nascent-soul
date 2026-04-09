@@ -8,18 +8,6 @@ var hover_zone: Node = null
 var requested_target: ZonePlacementTarget = ZonePlacementTarget.invalid()
 var preview_target: ZonePlacementTarget = ZonePlacementTarget.invalid()
 
-var requested_index: int:
-	get:
-		return requested_target.slot if requested_target != null and requested_target.is_linear() else -1
-	set(value):
-		requested_target = ZonePlacementTarget.linear(value) if value >= 0 else ZonePlacementTarget.invalid()
-
-var preview_index: int:
-	get:
-		return preview_target.slot if preview_target != null and preview_target.is_linear() else -1
-	set(value):
-		preview_target = ZonePlacementTarget.linear(value) if value >= 0 else ZonePlacementTarget.invalid()
-
 func _init(p_source_zone: Node = null, p_items: Array[Control] = [], p_drag_offset: Vector2 = Vector2.ZERO, p_cursor_proxy: Control = null) -> void:
 	source_zone = p_source_zone
 	items = p_items.duplicate()

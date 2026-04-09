@@ -1,5 +1,5 @@
 @tool
-class_name ZoneRuleTablePermission extends ZonePermissionPolicy
+class_name ZoneRuleTablePermission extends ZoneTransferPolicy
 
 @export var rules: Array[ZoneTransferRule] = []
 

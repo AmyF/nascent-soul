@@ -25,6 +25,13 @@ func resolve_item_position(_zone: Node, _runtime, _target: ZonePlacementTarget, 
 func resolve_target_size(_zone: Node, _runtime, _target: ZonePlacementTarget) -> Vector2:
 	return Vector2.ZERO
 
+func resolve_target_anchor(zone: Node, _runtime, target: ZonePlacementTarget) -> Vector2:
+	if zone is Control:
+		return (zone as Control).global_position + (zone as Control).size * 0.5
+	if target != null:
+		return target.global_position
+	return Vector2.ZERO
+
 func is_target_valid(_zone: Node, _runtime, target: ZonePlacementTarget) -> bool:
 	return target != null and target.is_valid()
 

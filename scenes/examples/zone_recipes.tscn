@@ -257,7 +257,7 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("RecipeBoardZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("5_board")
-permission_policy = SubResource("RecipeBoardCapacityPermission")
+transfer_policy = SubResource("RecipeBoardCapacityPermission")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2

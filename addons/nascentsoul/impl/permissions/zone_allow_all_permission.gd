@@ -1,5 +1,5 @@
 @tool
-class_name ZoneAllowAllPermission extends ZonePermissionPolicy
+class_name ZoneAllowAllPermission extends ZoneTransferPolicy
 
 func evaluate_transfer(request: ZoneTransferRequest) -> ZoneTransferDecision:
 	var target = request.placement_target.duplicate_target() if request.placement_target != null else ZonePlacementTarget.invalid()

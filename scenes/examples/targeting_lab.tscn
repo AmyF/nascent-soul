@@ -1,0 +1,95 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/examples/targeting_lab.gd" id="1_script"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+
+[node name="TargetingLab" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+theme = ExtResource("2_theme")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"DemoHubMargin"
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_type_variation = &"DemoRootVBox"
+
+[node name="TitleLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoHubTitle"
+text = "Targeting / 动态箭头选目标"
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoStatusLabel"
+autowrap_mode = 3
+
+[node name="ContentRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"DemoWideHBox"
+
+[node name="SpellColumn" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SpellLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
+layout_mode = 2
+text = "Spell Targeting"
+
+[node name="SpellHint" type="Label" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Drag the spell card to an enemy piece. Friendly pieces will show an invalid arrow state."
+
+[node name="SpellHandPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
+custom_minimum_size = Vector2(360, 220)
+layout_mode = 2
+
+[node name="SpellTargetPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
+custom_minimum_size = Vector2(360, 340)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AbilityColumn" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AbilityLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/AbilityColumn"]
+layout_mode = 2
+text = "Piece Ability"
+
+[node name="AbilityHint" type="Label" parent="RootMargin/RootVBox/ContentRow/AbilityColumn"]
+layout_mode = 2
+autowrap_mode = 3
+text = "Use explicit begin_targeting() to aim a piece ability at empty or occupied square cells."
+
+[node name="AbilityToolbar" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/AbilityColumn"]
+layout_mode = 2
+
+[node name="AimAbilityButton" type="Button" parent="RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityToolbar"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Aim Ability"
+
+[node name="CancelTargetingButton" type="Button" parent="RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityToolbar"]
+layout_mode = 2
+theme_type_variation = &"DemoDangerActionButton"
+text = "Cancel"
+
+[node name="AbilityPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/AbilityColumn"]
+custom_minimum_size = Vector2(360, 400)
+layout_mode = 2
+size_flags_vertical = 3

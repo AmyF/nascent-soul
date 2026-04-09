@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.1.0 - 2026-04-09
+
+NascentSoul 2.1.0 adds a dedicated targeting system on top of the 2.0 card/battlefield runtime. Drag/drop transfer is still responsible for moving objects between zones, but zones and items can now also enter a separate arrow-driven targeting flow for spell cards, abilities, and cell picking.
+
+### Highlights
+
+- Added `ZoneTargetingIntent`, `ZoneTargetCandidate`, `ZoneTargetRequest`, `ZoneTargetDecision`, and `ZoneTargetingSession`.
+- Added `ZoneTargetingPolicy`, `ZoneTargetAllowAllPolicy`, `ZoneTargetCompositePolicy`, and `ZoneTargetRuleTablePolicy`.
+- Added `ZoneTargetingStyle`, `ZoneArrowTargetingStyle`, `ZoneArrowTargetingOverlay`, and `ZoneTargetingCoordinator` for dynamic arrow/ring targeting visuals.
+- Added target anchors on `ZoneSpaceModel`, plus default target highlight behavior on `ZoneCard` and `ZonePiece`.
+- Added `begin_targeting()`, targeting signals, and drag-threshold intent branching on `Zone`.
+- Added `scenes/examples/targeting_lab.tscn` to demonstrate drag-to-target spells and explicit piece ability targeting.
+- Added targeting smoke coverage for drag entry, explicit entry, candidate resolution, policy merge behavior, overlay state transitions, and cleanup.
+
+### Validation
+
+- Headless regression suite passes on Godot 4.6.1 with 383 checks.
+- Existing transfer, battlefield, and layout suites remain green after introducing the targeting coordinator.
+
 ## 2.0.0 - 2026-04-09
 
 NascentSoul 2.0.0 expands the library from a card-zone toolkit into a unified card and battlefield zone system. The runtime still centers on `Zone`, but drop resolution now flows through `ZonePlacementTarget`, `ZoneTransferRequest`, `ZoneTransferDecision`, and pluggable `ZoneSpaceModel` resources so linear card containers and square/hex battlefields can share one drag/drop core.
@@ -16,13 +35,13 @@ NascentSoul 2.0.0 expands the library from a card-zone toolkit into a unified ca
 
 ### Validation
 
-- Headless regression suite passes on Godot 4.6.1 with 318 checks.
+- Headless regression suite passes on Godot 4.6.1 with 334 checks.
 - Existing card-zone demos and regression suites remain green after the protocol migration.
 - Battlefield smoke coverage now validates square/hex placement, occupancy rejection, spawn-piece transfers, and same-zone piece movement.
 
 ## 1.0.0 - 2026-04-09
 
-NascentSoul 1.0.0 establishes the current public shape of the plugin: `Zone` is now a real `Control`, runtime state is owned by `ZoneRuntime`, and presets/resources are the primary way to compose layout, interaction, sorting, permissions, and drag visuals.
+NascentSoul 1.0.0 establishes the current public shape of the plugin: `Zone` is now a real `Control`, runtime state is owned by `ZoneRuntime`, and presets/resources are the primary way to compose layout, interaction, sorting, transfer policies, and drag visuals.
 
 ### Highlights
 

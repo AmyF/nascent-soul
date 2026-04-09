@@ -231,7 +231,7 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("TransferBoardZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("5_board")
-permission_policy = SubResource("TransferBoardCapacityPermission")
+transfer_policy = SubResource("TransferBoardCapacityPermission")
 drag_visual_factory = SubResource("TransferDragVisualFactory")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]

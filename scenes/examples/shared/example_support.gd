@@ -5,7 +5,7 @@ const CARD_SIZE := Vector2(120, 180)
 static var _front_texture: Texture2D = null
 static var _back_texture: Texture2D = null
 
-static func make_zone(host: Control, zone_name: String, layout_policy: ZoneLayoutPolicy, display_style: ZoneDisplayStyle = null, permission_policy: ZoneTransferPolicy = null, sort_policy: ZoneSortPolicy = null, interaction: ZoneInteraction = null, drag_visual_factory: ZoneDragVisualFactory = null, preset: ZonePreset = null) -> Zone:
+static func make_zone(host: Control, zone_name: String, layout_policy: ZoneLayoutPolicy, display_style: ZoneDisplayStyle = null, transfer_policy: ZoneTransferPolicy = null, sort_policy: ZoneSortPolicy = null, interaction: ZoneInteraction = null, drag_visual_factory: ZoneDragVisualFactory = null, preset: ZonePreset = null) -> Zone:
 	var zone := CardZone.new()
 	zone.name = zone_name
 	zone.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -17,7 +17,7 @@ static func make_zone(host: Control, zone_name: String, layout_policy: ZoneLayou
 	zone.preset = preset
 	zone.layout_policy = layout_policy
 	zone.display_style = display_style
-	zone.permission_policy = permission_policy
+	zone.transfer_policy = transfer_policy
 	zone.sort_policy = sort_policy
 	zone.interaction = interaction
 	zone.drag_visual_factory = drag_visual_factory

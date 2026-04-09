@@ -3,6 +3,7 @@ class_name Zone extends Control
 
 const ITEMS_ROOT_NAME := "ItemsRoot"
 const PREVIEW_ROOT_NAME := "PreviewRoot"
+const TARGETING_ZONE_GROUP := "__NascentSoulZones"
 
 # Drag lifecycle contract:
 # `drag_started` fires on the source zone.
@@ -26,6 +27,11 @@ signal item_removed(item: Control, from_index: int)
 signal item_reordered(item: Control, from_index: int, to_index: int)
 signal item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target)
 signal drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reason: String)
+signal targeting_started(source_item: Control, source_zone: Zone, intent: ZoneTargetingIntent)
+signal target_preview_changed(source_item: Control, target_zone: Zone, candidate)
+signal target_hover_state_changed(source_item: Control, target_zone: Zone, decision)
+signal targeting_resolved(source_item: Control, source_zone: Zone, candidate, decision)
+signal targeting_cancelled(source_item: Control, source_zone: Zone)
 signal layout_changed()
 
 var _preset: ZonePreset = null
@@ -36,6 +42,8 @@ var _interaction: ZoneInteraction = null
 var _sort_policy: ZoneSortPolicy = null
 var _transfer_policy: ZoneTransferPolicy = null
 var _drag_visual_factory: ZoneDragVisualFactory = null
+var _targeting_style: ZoneTargetingStyle = null
+var _targeting_policy: ZoneTargetingPolicy = null
 
 var _runtime: ZoneRuntime
 var _items_root: Control = null
@@ -48,6 +56,8 @@ var _default_interaction: ZoneInteraction = null
 var _default_sort_policy: ZoneSortPolicy = null
 var _default_transfer_policy: ZoneTransferPolicy = null
 var _default_drag_visual_factory: ZoneDragVisualFactory = null
+var _default_targeting_style: ZoneTargetingStyle = null
+var _default_targeting_policy: ZoneTargetingPolicy = null
 
 @export_group("Preset")
 @export var preset: ZonePreset:
@@ -114,12 +124,6 @@ var _default_drag_visual_factory: ZoneDragVisualFactory = null
 		_transfer_policy = value
 		_handle_configuration_changed()
 
-@export var permission_policy: ZoneTransferPolicy:
-	get:
-		return _transfer_policy
-	set(value):
-		transfer_policy = value
-
 @export var drag_visual_factory: ZoneDragVisualFactory:
 	get:
 		return _drag_visual_factory
@@ -129,10 +133,30 @@ var _default_drag_visual_factory: ZoneDragVisualFactory = null
 		_drag_visual_factory = value
 		_handle_configuration_changed()
 
+@export_group("Targeting")
+@export var targeting_style: ZoneTargetingStyle:
+	get:
+		return _targeting_style
+	set(value):
+		if _targeting_style == value:
+			return
+		_targeting_style = value
+		_handle_configuration_changed()
+
+@export var targeting_policy: ZoneTargetingPolicy:
+	get:
+		return _targeting_policy
+	set(value):
+		if _targeting_policy == value:
+			return
+		_targeting_policy = value
+		_handle_configuration_changed()
+
 func _ready() -> void:
 	focus_mode = Control.FOCUS_ALL
 	if mouse_filter == Control.MOUSE_FILTER_IGNORE:
 		mouse_filter = Control.MOUSE_FILTER_STOP
+	add_to_group(TARGETING_ZONE_GROUP)
 	_ensure_internal_nodes()
 	update_configuration_warnings()
 	queue_redraw()
@@ -145,8 +169,14 @@ func _ready() -> void:
 	set_process(not Engine.is_editor_hint())
 
 func _exit_tree() -> void:
+	var targeting_coordinator = get_targeting_coordinator(false)
+	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
+		var session = targeting_coordinator.get_session()
+		if session.source_zone == self or session.candidate.target_zone == self:
+			targeting_coordinator.clear_session()
 	if _runtime != null:
 		_runtime.unbind()
+	remove_from_group(TARGETING_ZONE_GROUP)
 
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
@@ -269,6 +299,32 @@ func start_drag(items: Array[Control]) -> void:
 	if _runtime != null:
 		_runtime.start_drag(items)
 
+func begin_targeting(item: Control, intent: ZoneTargetingIntent = null) -> bool:
+	_ensure_runtime()
+	return _runtime.begin_targeting(item, intent) if _runtime != null else false
+
+func cancel_targeting() -> void:
+	_ensure_runtime()
+	if _runtime != null:
+		_runtime.cancel_targeting()
+
+func is_targeting() -> bool:
+	var session = get_targeting_session()
+	return session != null
+
+func get_targeting_session() -> ZoneTargetingSession:
+	var coordinator = get_targeting_coordinator(false)
+	if coordinator == null:
+		return null
+	var session = coordinator.get_session()
+	if session != null and session.source_zone == self:
+		return session
+	return null
+
+func get_item_at_global_position(global_position: Vector2) -> Control:
+	_ensure_runtime()
+	return _runtime.get_item_at_global_position(global_position) if _runtime != null else null
+
 func get_runtime() -> ZoneRuntime:
 	_ensure_runtime()
 	return _runtime
@@ -321,8 +377,6 @@ func get_transfer_policy_resource() -> ZoneTransferPolicy:
 		return _preset.resolve_transfer_policy(_default_transfer_policy)
 	return _default_transfer_policy
 
-func get_permission_policy_resource() -> ZoneTransferPolicy:
-	return get_transfer_policy_resource()
 
 func get_drag_visual_factory_resource() -> ZoneDragVisualFactory:
 	_ensure_default_resources()
@@ -331,6 +385,22 @@ func get_drag_visual_factory_resource() -> ZoneDragVisualFactory:
 	if _preset != null:
 		return _preset.resolve_drag_visual_factory(_default_drag_visual_factory)
 	return _default_drag_visual_factory
+
+func get_targeting_style_resource() -> ZoneTargetingStyle:
+	_ensure_default_resources()
+	if _targeting_style != null:
+		return _targeting_style
+	if _preset != null:
+		return _preset.resolve_targeting_style(_default_targeting_style)
+	return _default_targeting_style
+
+func get_targeting_policy_resource() -> ZoneTargetingPolicy:
+	_ensure_default_resources()
+	if _targeting_policy != null:
+		return _targeting_policy
+	if _preset != null:
+		return _preset.resolve_targeting_policy(_default_targeting_policy)
+	return _default_targeting_policy
 
 func get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator:
 	if not is_inside_tree():
@@ -343,6 +413,19 @@ func get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator
 	var existing = viewport.get_node_or_null(ZoneDragCoordinator.COORDINATOR_NAME)
 	if existing is ZoneDragCoordinator:
 		return existing as ZoneDragCoordinator
+	return null
+
+func get_targeting_coordinator(create_if_missing: bool = true) -> ZoneTargetingCoordinator:
+	if not is_inside_tree():
+		return null
+	if create_if_missing:
+		return ZoneTargetingCoordinator.ensure_for(self)
+	var viewport = get_viewport()
+	if viewport == null:
+		return null
+	var existing = viewport.get_node_or_null(ZoneTargetingCoordinator.COORDINATOR_NAME)
+	if existing is ZoneTargetingCoordinator:
+		return existing as ZoneTargetingCoordinator
 	return null
 
 func _ensure_runtime() -> void:
@@ -368,6 +451,10 @@ func _ensure_default_resources() -> void:
 		_default_transfer_policy = ZoneAllowAllPermission.new()
 	if _default_drag_visual_factory == null:
 		_default_drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
+	if _default_targeting_style == null:
+		_default_targeting_style = ZoneArrowTargetingStyle.new()
+	if _default_targeting_policy == null:
+		_default_targeting_policy = ZoneTargetAllowAllPolicy.new()
 
 func _ensure_internal_nodes() -> void:
 	_items_root = _ensure_internal_root(_items_root, ITEMS_ROOT_NAME)
@@ -427,6 +514,4 @@ func _coerce_placement_target(value):
 		return null
 	if value is ZonePlacementTarget:
 		return (value as ZonePlacementTarget).duplicate_target()
-	if value is int:
-		return ZonePlacementTarget.linear(value as int)
 	return null

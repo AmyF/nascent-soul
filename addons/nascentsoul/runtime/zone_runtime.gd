@@ -1,87 +1,82 @@
 class_name ZoneRuntime extends RefCounted
 
 var zone: Zone
-var selection_state := ZoneSelectionState.new()
+var item_state: ZoneItemState
+var display_runtime: ZoneDisplayRuntime
+var interaction_runtime: ZoneInteractionRuntime
+var targeting_runtime: ZoneTargetingRuntime
 
-var _items: Array[Control] = []
-var _item_targets: Dictionary = {}
-var _ghost_instance: Control = null
-var _item_bindings: Dictionary = {}
-var _display_state: Dictionary = {}
-var _transfer_handoffs: Dictionary = {}
-var _pressed_item: Control = null
-var _pressed_position: Vector2 = Vector2.ZERO
-var _is_pressed: bool = false
-var _has_dragged: bool = false
-var _long_press_item: Control = null
-var _long_press_timer: Timer = null
-var _bound_items_root: Control = null
-var _hover_active: bool = false
-var _hover_allowed: bool = false
-var _hover_reason: String = ""
-var _hover_target: ZonePlacementTarget = null
-var _hover_preview_target: ZonePlacementTarget = null
+var selection_state: ZoneSelectionState:
+	get:
+		return interaction_runtime.selection_state
+	set(value):
+		interaction_runtime.selection_state = value
 
 func _init(p_zone: Zone) -> void:
 	zone = p_zone
+	item_state = ZoneItemState.new(self)
+	display_runtime = ZoneDisplayRuntime.new(self)
+	interaction_runtime = ZoneInteractionRuntime.new(self)
+	targeting_runtime = ZoneTargetingRuntime.new(self)
 
 func bind() -> void:
 	var items_root = zone.get_items_root()
 	if items_root == null:
-		_disconnect_items_root(_bound_items_root)
+		_disconnect_items_root(item_state.bound_items_root)
 		_disconnect_zone_input()
-		_bound_items_root = null
-		_clear_runtime_items(false)
-		_clear_preview_internal()
-		_clear_transfer_handoffs()
-		_reset_hover_feedback_tracking()
+		item_state.bound_items_root = null
+		item_state.clear_runtime_items(false)
+		display_runtime.clear_preview_internal()
+		item_state.clear_transfer_handoffs()
+		display_runtime.reset_hover_feedback_tracking()
+		targeting_runtime.clear_targeting_feedback(false)
 		return
-	if _bound_items_root != null and _bound_items_root != items_root:
-		_disconnect_items_root(_bound_items_root)
-	_clear_preview_internal()
-	_reset_hover_feedback_tracking()
-	_ensure_long_press_timer()
-	if _bound_items_root != items_root:
+	if item_state.bound_items_root != null and item_state.bound_items_root != items_root:
+		_disconnect_items_root(item_state.bound_items_root)
+	display_runtime.clear_preview_internal()
+	display_runtime.reset_hover_feedback_tracking()
+	targeting_runtime.clear_targeting_feedback(false)
+	interaction_runtime.ensure_long_press_timer()
+	if item_state.bound_items_root != items_root:
 		var entered_callable = Callable(self, "_on_items_root_child_entered")
 		if not items_root.child_entered_tree.is_connected(entered_callable):
 			items_root.child_entered_tree.connect(entered_callable)
 		var exiting_callable = Callable(self, "_on_items_root_child_exiting")
 		if not items_root.child_exiting_tree.is_connected(exiting_callable):
 			items_root.child_exiting_tree.connect(exiting_callable)
-		_bound_items_root = items_root
+		item_state.bound_items_root = items_root
 	var gui_input_callable = Callable(self, "_on_zone_gui_input")
 	if not zone.gui_input.is_connected(gui_input_callable):
 		zone.gui_input.connect(gui_input_callable)
-	_rebuild_items_from_root()
+	item_state.rebuild_items_from_root()
 
 func unbind() -> void:
-	_disconnect_items_root(_bound_items_root)
+	_disconnect_items_root(item_state.bound_items_root)
 	_disconnect_zone_input()
-	_bound_items_root = null
-	_clear_runtime_items(false)
+	item_state.bound_items_root = null
+	item_state.clear_runtime_items(false)
 	clear_display_state()
-	_clear_preview_internal()
-	_clear_transfer_handoffs()
-	_reset_hover_feedback_tracking()
-	if is_instance_valid(_long_press_timer):
-		_long_press_timer.queue_free()
-	_long_press_timer = null
+	display_runtime.clear_preview_internal()
+	item_state.clear_transfer_handoffs()
+	display_runtime.reset_hover_feedback_tracking()
+	targeting_runtime.clear_targeting_feedback(false)
+	interaction_runtime.cleanup()
 
 func process(_delta: float) -> void:
-	if _bound_items_root != zone.get_items_root():
+	if item_state.bound_items_root != zone.get_items_root():
 		bind()
 	if zone.get_items_root() == null:
 		return
-	_prune_display_state()
+	display_runtime.prune_display_state()
 	var coordinator = zone.get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
 	if session == null:
 		var should_refresh = false
-		if _container_order_needs_sync():
-			_sync_container_order()
+		if item_state.container_order_needs_sync():
+			item_state.sync_container_order()
 			should_refresh = true
 			zone.layout_changed.emit()
-		if _clear_hover_feedback([]):
+		if display_runtime.clear_hover_feedback([]):
 			should_refresh = true
 		if should_refresh:
 			refresh()
@@ -89,55 +84,28 @@ func process(_delta: float) -> void:
 	if session.prune_invalid_items() and session.items.is_empty():
 		_cleanup_drag_session(session, true, true)
 		return
-	_update_hover_preview(session)
+	display_runtime.update_hover_preview(session)
 
 func refresh() -> void:
-	var layout_policy = zone.get_layout_policy_resource()
-	var display_style = zone.get_display_style_resource()
-	if zone.get_items_root() == null or layout_policy == null or display_style == null:
-		return
-	var coordinator = zone.get_drag_coordinator(false)
-	var session = coordinator.get_session() if coordinator != null else null
-	var layout_items := _get_layout_items(session)
-	var sort_policy = zone.get_sort_policy_resource()
-	if sort_policy != null and session == null and zone.get_space_model_resource() is ZoneLinearSpaceModel:
-		layout_items = sort_policy.sort_items(layout_items)
-	var ghost_hint = null
-	if _should_render_ghost_for_session(session):
-		ghost_hint = zone.get_space_model_resource().resolve_layout_hint(session.preview_target)
-	var placements = layout_policy.calculate(layout_items, zone.size, _ghost_instance, ghost_hint, self)
-	display_style.apply(zone, self, placements)
+	display_runtime.refresh()
 
 func get_items() -> Array[Control]:
-	return _items.duplicate()
+	return item_state.get_items()
 
 func get_item_count() -> int:
-	return _items.size()
+	return item_state.get_item_count()
 
 func has_item(item: Control) -> bool:
-	return _contains_item_reference(item)
+	return item_state.has_item(item)
 
 func get_item_target(item: Control) -> ZonePlacementTarget:
-	if not is_instance_valid(item):
-		return ZonePlacementTarget.invalid()
-	if _item_targets.has(item):
-		var existing = _item_targets[item]
-		if existing is ZonePlacementTarget:
-			return (existing as ZonePlacementTarget).duplicate_target()
-	var fallback_index = _find_item_index(item)
-	return zone.get_space_model_resource().resolve_render_target(zone, self, item, fallback_index)
+	return item_state.get_item_target(item)
 
 func get_items_at_target(target: ZonePlacementTarget) -> Array[Control]:
-	var matched: Array[Control] = []
-	if target == null or not target.is_valid():
-		return matched
-	for item in _items:
-		if not is_instance_valid(item):
-			continue
-		var item_target = get_item_target(item)
-		if item_target.matches(target):
-			matched.append(item)
-	return matched
+	return item_state.get_items_at_target(target)
+
+func get_item_at_global_position(global_position: Vector2) -> Control:
+	return item_state.get_item_at_global_position(global_position)
 
 func resolve_target_position(target: ZonePlacementTarget, container_size: Vector2, item_size: Vector2) -> Vector2:
 	var space_model = zone.get_space_model_resource()
@@ -151,25 +119,26 @@ func resolve_target_size(target: ZonePlacementTarget) -> Vector2:
 		return Vector2.ZERO
 	return space_model.resolve_target_size(zone, self, target)
 
+func resolve_target_anchor(target: ZonePlacementTarget) -> Vector2:
+	var space_model = zone.get_space_model_resource()
+	if space_model == null:
+		return zone.global_position + zone.size * 0.5
+	return space_model.resolve_target_anchor(zone, self, target)
+
+func begin_targeting(item: Control, intent: ZoneTargetingIntent = null) -> bool:
+	return targeting_runtime.begin_targeting(item, intent)
+
+func cancel_targeting() -> void:
+	targeting_runtime.cancel_targeting()
+
 func _set_item_target(item: Control, target: ZonePlacementTarget) -> void:
-	if not is_instance_valid(item) or target == null:
-		return
-	_item_targets[item] = target.duplicate_target()
-	item.set_meta("zone_placement_target", target.duplicate_target())
+	item_state.set_item_target(item, target)
 
 func _clear_item_target(item) -> void:
-	if item == null:
-		return
-	_item_targets.erase(item)
-	if is_instance_valid(item) and item.has_meta("zone_placement_target"):
-		item.remove_meta("zone_placement_target")
+	item_state.clear_item_target(item)
 
 func _targets_match(a: ZonePlacementTarget, b: ZonePlacementTarget) -> bool:
-	if a == null and b == null:
-		return true
-	if a == null or b == null:
-		return false
-	return a.matches(b)
+	return item_state.targets_match(a, b)
 
 func _resolve_transfer_target_for_api(items: Array[Control], placement_target: ZonePlacementTarget) -> ZonePlacementTarget:
 	var space_model = zone.get_space_model_resource()
@@ -194,9 +163,9 @@ func _resolve_insert_target(item: Control, placement_target: ZonePlacementTarget
 func _resolve_linear_insert_index(index_hint: int, target: ZonePlacementTarget) -> int:
 	if zone.get_space_model_resource() is ZoneLinearSpaceModel:
 		if target != null and target.is_linear():
-			return clampi(target.slot, 0, _items.size())
-		return clampi(index_hint, 0, _items.size())
-	return clampi(index_hint, 0, _items.size())
+			return clampi(target.slot, 0, item_state.items.size())
+		return clampi(index_hint, 0, item_state.items.size())
+	return clampi(index_hint, 0, item_state.items.size())
 
 func _resolve_reordered_target(base_target: ZonePlacementTarget, linear_index: int) -> ZonePlacementTarget:
 	if zone.get_space_model_resource() is ZoneLinearSpaceModel:
@@ -234,7 +203,7 @@ func _instantiate_spawn_item(source_item: Control, decision: ZoneTransferDecisio
 	return null
 
 func add_item(item: Control, placement_target: ZonePlacementTarget = null) -> bool:
-	return insert_item(item, _items.size(), placement_target)
+	return insert_item(item, item_state.items.size(), placement_target)
 
 func insert_item(item: Control, index: int, placement_target: ZonePlacementTarget = null) -> bool:
 	var items_root = zone.get_items_root()
@@ -254,8 +223,8 @@ func insert_item(item: Control, index: int, placement_target: ZonePlacementTarge
 	var target_index = _resolve_linear_insert_index(index, resolved_target)
 	if _contains_item_reference(item):
 		_erase_item_reference(item)
-		target_index = clampi(target_index, 0, _items.size())
-	_items.insert(target_index, item)
+		target_index = clampi(target_index, 0, item_state.items.size())
+	item_state.items.insert(target_index, item)
 	_set_item_target(item, resolved_target)
 	item.visible = true
 	_sync_container_order()
@@ -299,7 +268,7 @@ func transfer_items(items: Array[Control], target_zone: Zone, placement_target: 
 	if target_zone == null or items.is_empty():
 		return false
 	var moving_items: Array[Control] = []
-	for item in _items:
+	for item in item_state.items:
 		if _array_contains_valid_control(items, item):
 			moving_items.append(item)
 	if moving_items.is_empty():
@@ -321,22 +290,10 @@ func reorder_item(item: Control, placement_target: ZonePlacementTarget = null) -
 	return _reorder_items(moving_items, _resolve_transfer_target_for_api(moving_items, placement_target))
 
 func clear_selection() -> void:
-	if selection_state.clear_selection():
-		zone.selection_changed.emit(selection_state.get_selected_items())
-		refresh()
+	interaction_runtime.clear_selection()
 
 func select_item(item: Control, additive: bool = false) -> void:
-	if not has_item(item):
-		return
-	var changed = false
-	var interaction = zone.get_interaction_config()
-	if additive and interaction != null and interaction.multi_select_enabled:
-		changed = selection_state.toggle_item(item)
-	else:
-		changed = selection_state.select_single(item)
-	if changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
-		refresh()
+	interaction_runtime.select_item(item, additive)
 
 func start_drag(items: Array[Control]) -> void:
 	_start_drag_internal(items)
@@ -345,7 +302,7 @@ func _start_drag_internal(items: Array[Control], pointer_global_position = null)
 	if zone.get_items_root() == null or items.is_empty():
 		return
 	var valid_items: Array[Control] = []
-	for item in _items:
+	for item in item_state.items:
 		if item in items and is_instance_valid(item):
 			valid_items.append(item)
 	if valid_items.is_empty():
@@ -402,6 +359,8 @@ func perform_drop(session: ZoneDragSession) -> bool:
 		success = source_zone.get_runtime()._transfer_items_to(zone, session.items, decision.resolved_target, request.global_position, source_zone, decision)
 	if success:
 		_cleanup_drag_session(session, true, false)
+	else:
+		_cleanup_drag_session(session, true, true)
 	return success
 
 func cancel_drag(session: ZoneDragSession = null) -> void:
@@ -415,142 +374,34 @@ func cancel_drag(session: ZoneDragSession = null) -> void:
 	_cleanup_drag_session(active_session, true, true)
 
 func clear_preview() -> void:
-	if _clear_hover_feedback([]):
-		refresh()
+	display_runtime.clear_preview()
 
 func clear_display_state() -> void:
-	for state in _display_state.values():
-		var active_tweens: Dictionary = state.get("active_tweens", {})
-		for item in active_tweens.keys():
-			if active_tweens[item] != null:
-				active_tweens[item].kill()
-	_display_state.clear()
-	_clear_transfer_handoffs()
+	display_runtime.clear_display_state()
 
 func get_display_state(style: Resource) -> Dictionary:
-	var key = style.get_instance_id()
-	if not _display_state.has(key):
-		_display_state[key] = {
-			"active_tweens": {},
-			"target_cache": {}
-		}
-	return _display_state[key]
+	return display_runtime.get_display_state(style)
 
 func consume_transfer_handoff(item: Control) -> Dictionary:
-	if not is_instance_valid(item) or not _transfer_handoffs.has(item):
-		return {}
-	var handoff: Dictionary = _transfer_handoffs[item]
-	_transfer_handoffs.erase(item)
-	return handoff.duplicate(true)
+	return item_state.consume_transfer_handoff(item)
 
 func resolve_item_size(item: Control) -> Vector2:
-	var layout_policy = zone.get_layout_policy_resource()
-	if layout_policy != null:
-		return layout_policy.resolve_item_size(item)
-	if not is_instance_valid(item):
-		return Vector2.ZERO
-	if item.size != Vector2.ZERO:
-		return item.size
-	if item.custom_minimum_size != Vector2.ZERO:
-		return item.custom_minimum_size
-	return Vector2(100, 150)
+	return display_runtime.resolve_item_size(item)
 
 func _prune_display_state() -> void:
-	for state in _display_state.values():
-		var active_tweens: Dictionary = state.get("active_tweens", {})
-		var target_cache: Dictionary = state.get("target_cache", {})
-		var stale_items: Array = []
-		for item in active_tweens.keys():
-			var tween = active_tweens[item]
-			if not is_instance_valid(item) or tween == null or not tween.is_valid() or not tween.is_running():
-				stale_items.append(item)
-		for item in target_cache.keys():
-			if not is_instance_valid(item) and item not in stale_items:
-				stale_items.append(item)
-		for item in stale_items:
-			active_tweens.erase(item)
-			if not is_instance_valid(item):
-				target_cache.erase(item)
+	display_runtime.prune_display_state()
 
 func _ensure_long_press_timer() -> void:
-	if is_instance_valid(_long_press_timer):
-		return
-	_long_press_timer = Timer.new()
-	_long_press_timer.name = "__NascentSoulLongPressTimer"
-	_long_press_timer.one_shot = true
-	zone.add_child(_long_press_timer)
-	var timeout_callable = Callable(self, "_on_long_press_timeout")
-	if not _long_press_timer.timeout.is_connected(timeout_callable):
-		_long_press_timer.timeout.connect(timeout_callable)
+	interaction_runtime.ensure_long_press_timer()
 
 func _rebuild_items_from_root() -> void:
-	var items_root = zone.get_items_root()
-	if items_root == null:
-		_clear_runtime_items(true)
-		return
-	var container_items: Array[Control] = []
-	for child in items_root.get_children():
-		if child is Control and child != _ghost_instance:
-			container_items.append(child as Control)
-	var selection_changed = false
-	var existing_items := _items.duplicate()
-	for item in existing_items:
-		if not is_instance_valid(item) or item.get_parent() != items_root or item not in container_items:
-			selection_changed = _remove_item_from_state(item, false, true) or selection_changed
-	for i in range(container_items.size()):
-		var item = container_items[i]
-		_register_item(item)
-		var restored_target = item.get_meta("zone_placement_target") if item.has_meta("zone_placement_target") else null
-		if restored_target != null and restored_target is ZonePlacementTarget:
-			_set_item_target(item, zone.get_space_model_resource().normalize_target(zone, self, restored_target as ZonePlacementTarget, [item]))
-		elif not _item_targets.has(item):
-			_set_item_target(item, zone.get_space_model_resource().resolve_add_target(zone, self, item, i))
-		if _contains_item_reference(item):
-			continue
-		var insert_at = min(i, _items.size())
-		_items.insert(insert_at, item)
-	for item in _item_bindings.keys():
-		if item not in _items:
-			_unregister_item(item)
-	if selection_state.prune(_items):
-		selection_changed = true
-	if selection_changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
-	_sync_container_order()
+	item_state.rebuild_items_from_root()
 
 func _register_item(item: Control) -> void:
-	if _item_bindings.has(item):
-		return
-	if item.mouse_filter == Control.MOUSE_FILTER_IGNORE:
-		item.mouse_filter = Control.MOUSE_FILTER_PASS
-	var gui_input_callable = Callable(self, "_on_item_gui_input").bind(item)
-	var mouse_entered_callable = Callable(self, "_on_item_mouse_entered").bind(item)
-	var mouse_exited_callable = Callable(self, "_on_item_mouse_exited").bind(item)
-	if not item.gui_input.is_connected(gui_input_callable):
-		item.gui_input.connect(gui_input_callable)
-	if not item.mouse_entered.is_connected(mouse_entered_callable):
-		item.mouse_entered.connect(mouse_entered_callable)
-	if not item.mouse_exited.is_connected(mouse_exited_callable):
-		item.mouse_exited.connect(mouse_exited_callable)
-	_item_bindings[item] = {
-		"gui_input": gui_input_callable,
-		"mouse_entered": mouse_entered_callable,
-		"mouse_exited": mouse_exited_callable
-	}
+	item_state.register_item(item)
 
 func _unregister_item(item) -> void:
-	if not _item_bindings.has(item):
-		return
-	var bindings: Dictionary = _item_bindings[item]
-	_reset_press_state_for_item(item)
-	if is_instance_valid(item):
-		if item.gui_input.is_connected(bindings["gui_input"]):
-			item.gui_input.disconnect(bindings["gui_input"])
-		if item.mouse_entered.is_connected(bindings["mouse_entered"]):
-			item.mouse_entered.disconnect(bindings["mouse_entered"])
-		if item.mouse_exited.is_connected(bindings["mouse_exited"]):
-			item.mouse_exited.disconnect(bindings["mouse_exited"])
-	_item_bindings.erase(item)
+	item_state.unregister_item(item)
 
 func _on_items_root_child_entered(_node: Node) -> void:
 	call_deferred("_handle_items_root_structure_changed")
@@ -559,284 +410,121 @@ func _on_items_root_child_exiting(_node: Node) -> void:
 	call_deferred("_handle_items_root_structure_changed")
 
 func _on_item_gui_input(event: InputEvent, item: Control) -> void:
-	if zone.get_interaction_config() == null:
-		return
-	if event is InputEventMouseButton:
-		_handle_mouse_button(event as InputEventMouseButton, item)
-	elif event is InputEventMouseMotion:
-		_handle_mouse_motion(event as InputEventMouseMotion, item)
+	interaction_runtime.on_item_gui_input(event, item)
 
 func _on_zone_gui_input(event: InputEvent) -> void:
-	var interaction = zone.get_interaction_config()
-	if interaction == null:
-		return
-	if _handle_keyboard_navigation(event, interaction):
-		return
-	if event is not InputEventMouseButton:
-		return
-	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index != MOUSE_BUTTON_LEFT or mouse_event.pressed:
-		return
-	if not interaction.clear_selection_on_background_click:
-		return
-	var coordinator = zone.get_drag_coordinator(false)
-	if coordinator != null and coordinator.get_session() != null:
-		return
-	if _find_item_at_global_position(mouse_event.global_position) != null:
-		return
-	_clear_background_interaction()
+	interaction_runtime.on_zone_gui_input(event)
 
 func _on_item_mouse_entered(item: Control) -> void:
-	var coordinator = zone.get_drag_coordinator(false)
-	if coordinator != null and coordinator.get_session() != null:
-		return
-	if selection_state.set_hovered(item):
-		zone.item_hover_entered.emit(item)
-		refresh()
+	interaction_runtime.on_item_mouse_entered(item)
 
 func _on_item_mouse_exited(item: Control) -> void:
-	var coordinator = zone.get_drag_coordinator(false)
-	if coordinator != null and coordinator.get_session() != null:
-		return
-	if selection_state.hovered_item == item and selection_state.set_hovered(null):
-		zone.item_hover_exited.emit(item)
-		refresh()
+	interaction_runtime.on_item_mouse_exited(item)
 
 func _handle_mouse_button(event: InputEventMouseButton, item: Control) -> void:
-	var interaction = zone.get_interaction_config()
-	if event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			zone.grab_focus()
-			_is_pressed = true
-			_has_dragged = false
-			_pressed_item = item
-			_pressed_position = event.global_position
-			_long_press_item = item
-			if interaction != null and interaction.long_press_enabled and is_instance_valid(_long_press_timer):
-				_long_press_timer.wait_time = interaction.long_press_time
-				_long_press_timer.start()
-		else:
-			_stop_long_press_timer()
-			var should_activate = _is_pressed and is_instance_valid(_pressed_item) and _pressed_item == item and not _has_dragged
-			_is_pressed = false
-			_pressed_item = null
-			if should_activate:
-				_apply_click_selection(item, event)
-				if event.double_click:
-					zone.item_double_clicked.emit(item)
-				else:
-					zone.item_clicked.emit(item)
-	elif event.button_index == MOUSE_BUTTON_RIGHT and not event.pressed:
-		zone.item_right_clicked.emit(item)
+	interaction_runtime.handle_mouse_button(event, item)
 
 func _handle_mouse_motion(event: InputEventMouseMotion, item: Control) -> void:
-	if not _is_pressed or _has_dragged or not is_instance_valid(_pressed_item) or _pressed_item != item:
-		return
-	var interaction = zone.get_interaction_config()
-	if interaction == null or not interaction.drag_enabled:
-		return
-	if event.global_position.distance_to(_pressed_position) <= interaction.drag_threshold:
-		return
-	_has_dragged = true
-	_is_pressed = false
-	_stop_long_press_timer()
-	var drag_items = _resolve_drag_items(item)
-	_start_drag_internal(drag_items, event.global_position)
+	interaction_runtime.handle_mouse_motion(event, item)
 
 func _apply_click_selection(item: Control, event: InputEventMouseButton) -> void:
-	var interaction = zone.get_interaction_config()
-	if interaction == null or not interaction.select_on_click:
-		return
-	var additive = interaction.multi_select_enabled and interaction.ctrl_toggles_selection and event.ctrl_pressed
-	var changed = false
-	if interaction.multi_select_enabled and interaction.shift_range_select_enabled and event.shift_pressed:
-		changed = selection_state.select_range(_items, item, additive)
-	else:
-		if additive:
-			changed = selection_state.toggle_item(item)
-		else:
-			changed = selection_state.select_single(item)
-	if changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
-		refresh()
+	interaction_runtime.apply_click_selection(item, event)
 
 func _handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction) -> bool:
-	if not interaction.keyboard_navigation_enabled or not zone.has_focus():
-		return false
-	if _matches_action(event, interaction.next_item_action):
-		_move_keyboard_selection(1, interaction.wrap_navigation)
-		return true
-	if _matches_action(event, interaction.previous_item_action):
-		_move_keyboard_selection(-1, interaction.wrap_navigation)
-		return true
-	if _matches_action(event, interaction.activate_item_action):
-		var active_item = _get_keyboard_active_item()
-		if active_item != null:
-			zone.item_clicked.emit(active_item)
-		return true
-	if _matches_action(event, interaction.clear_selection_action):
-		_clear_background_interaction()
-		return true
-	return false
+	return interaction_runtime.handle_keyboard_navigation(event, interaction)
 
 func _matches_action(event: InputEvent, action_name: StringName) -> bool:
-	if action_name == StringName():
-		return false
-	if event is InputEventAction:
-		var action_event := event as InputEventAction
-		return action_event.action == action_name and action_event.pressed
-	if not InputMap.has_action(action_name):
-		return false
-	return event.is_action_pressed(action_name, false, true)
+	return interaction_runtime.matches_action(event, action_name)
 
 func _move_keyboard_selection(direction: int, wrap_navigation: bool) -> void:
-	if _items.is_empty():
-		return
-	var current_item = _get_keyboard_active_item()
-	var current_index = _find_item_index(current_item) if current_item != null else -1
-	if current_index == -1:
-		current_index = 0 if direction >= 0 else _items.size() - 1
-	else:
-		current_index += direction
-		if wrap_navigation:
-			current_index = wrapi(current_index, 0, _items.size())
-		else:
-			current_index = clampi(current_index, 0, _items.size() - 1)
-	var next_item = _items[current_index]
-	if not is_instance_valid(next_item):
-		return
-	if selection_state.select_single(next_item):
-		zone.selection_changed.emit(selection_state.get_selected_items())
-		refresh()
+	interaction_runtime.move_keyboard_selection(direction, wrap_navigation)
 
 func _get_keyboard_active_item() -> Control:
-	if is_instance_valid(selection_state.anchor_item):
-		return selection_state.anchor_item
-	var selected = selection_state.get_selected_items()
-	if not selected.is_empty():
-		var last_item = selected[selected.size() - 1]
-		if is_instance_valid(last_item):
-			return last_item
-	return selection_state.hovered_item if is_instance_valid(selection_state.hovered_item) else null
+	return interaction_runtime.get_keyboard_active_item()
 
 func _resolve_drag_items(item: Control) -> Array[Control]:
-	if selection_state.is_selected(item) and selection_state.get_selected_items().size() > 1:
-		var ordered_selection: Array[Control] = []
-		for candidate in _items:
-			if selection_state.is_selected(candidate):
-				ordered_selection.append(candidate)
-		return ordered_selection
-	return [item]
+	return interaction_runtime.resolve_drag_items(item)
 
 func _stop_long_press_timer() -> void:
-	if is_instance_valid(_long_press_timer):
-		_long_press_timer.stop()
-	_long_press_item = null
+	interaction_runtime.stop_long_press_timer()
 
 func _on_long_press_timeout() -> void:
-	if not _is_pressed or _has_dragged or not is_instance_valid(_long_press_item):
-		return
-	var item = _long_press_item
-	_is_pressed = false
-	_pressed_item = null
-	_long_press_item = null
-	zone.item_long_pressed.emit(item)
+	interaction_runtime.on_long_press_timeout()
+
+func _handle_targeting_input(event: InputEvent) -> bool:
+	return targeting_runtime.handle_targeting_input(event)
+
+func update_targeting_session(session: ZoneTargetingSession, global_position: Vector2) -> void:
+	targeting_runtime.update_targeting_session(session, global_position)
+
+func finalize_targeting_session(session: ZoneTargetingSession) -> void:
+	targeting_runtime.finalize_targeting_session(session)
+
+func cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) -> void:
+	targeting_runtime.cancel_targeting_session(session, emit_signal)
+
+func _start_targeting_internal(item: Control, intent: ZoneTargetingIntent, entry_mode: StringName, pointer_global_position: Vector2) -> bool:
+	return targeting_runtime.start_targeting_internal(item, intent, entry_mode, pointer_global_position)
+
+func _resolve_targeting_intent(item: Control, entry_mode: StringName) -> ZoneTargetingIntent:
+	return targeting_runtime.resolve_targeting_intent(item, entry_mode)
+
+func _resolve_item_target_anchor_global(item: Control) -> Vector2:
+	return targeting_runtime.resolve_item_target_anchor_global(item)
+
+func _resolve_target_candidate(intent: ZoneTargetingIntent, global_position: Vector2) -> ZoneTargetCandidate:
+	return targeting_runtime.resolve_target_candidate(intent, global_position)
+
+func _resolve_target_decision(source_item: Control, intent: ZoneTargetingIntent, candidate: ZoneTargetCandidate, global_position: Vector2) -> ZoneTargetDecision:
+	return targeting_runtime.resolve_target_decision(source_item, intent, candidate, global_position)
+
+func _resolve_target_candidate_from_decision(decision: ZoneTargetDecision, fallback: ZoneTargetCandidate) -> ZoneTargetCandidate:
+	return targeting_runtime.resolve_target_candidate_from_decision(decision, fallback)
+
+func _collect_targeting_zones() -> Array[Zone]:
+	return targeting_runtime.collect_targeting_zones()
+
+func _build_item_candidate(target_zone: Zone, item: Control, global_position: Vector2) -> ZoneTargetCandidate:
+	return targeting_runtime.build_item_candidate(target_zone, item, global_position)
+
+func _build_placement_candidate(target_zone: Zone, placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTargetCandidate:
+	return targeting_runtime.build_placement_candidate(target_zone, placement_target, global_position)
+
+func _build_candidate_metadata(item: Control, placement_target: ZonePlacementTarget) -> Dictionary:
+	return targeting_runtime.build_candidate_metadata(item, placement_target)
+
+func _extract_node_metadata(node: Object) -> Dictionary:
+	return targeting_runtime.extract_node_metadata(node)
+
+func _apply_targeting_feedback(session: ZoneTargetingSession, candidate: ZoneTargetCandidate, decision: ZoneTargetDecision) -> void:
+	targeting_runtime.apply_targeting_feedback(session, candidate, decision)
+
+func _clear_targeting_feedback(emit_clear_signals: bool, source_item: Control = null) -> void:
+	targeting_runtime.clear_targeting_feedback(emit_clear_signals, source_item)
+
+func _set_target_candidate_visual(item: Control, active: bool, allowed: bool) -> void:
+	targeting_runtime.set_target_candidate_visual(item, active, allowed)
+
+func _target_candidates_match(a: ZoneTargetCandidate, b: ZoneTargetCandidate) -> bool:
+	return targeting_runtime.target_candidates_match(a, b)
+
+func _target_decisions_match(a: ZoneTargetDecision, b: ZoneTargetDecision) -> bool:
+	return targeting_runtime.target_decisions_match(a, b)
 
 func _update_hover_preview(session: ZoneDragSession) -> void:
-	var items_root = zone.get_items_root()
-	if items_root == null:
-		return
-	var global_mouse = zone.get_viewport().get_mouse_position()
-	var is_hovering = zone.get_global_rect().has_point(global_mouse)
-	if not is_hovering:
-		if session.hover_zone == zone:
-			session.hover_zone = null
-			session.requested_target = ZonePlacementTarget.invalid()
-			session.preview_target = ZonePlacementTarget.invalid()
-		if _clear_hover_feedback(session.items):
-			refresh()
-		return
-	var visible_items = _get_layout_items(session)
-	var requested_target = zone.get_space_model_resource().resolve_hover_target(zone, self, visible_items, global_mouse, zone.get_local_mouse_position())
-	requested_target = zone.get_space_model_resource().normalize_target(zone, self, requested_target, session.items)
-	var request = _make_transfer_request(zone, session.source_zone, session.items, requested_target, global_mouse)
-	var decision = _resolve_drop_decision(request)
-	var preview_target = decision.resolved_target if decision.allowed else ZonePlacementTarget.invalid()
-	session.hover_zone = zone
-	session.requested_target = requested_target
-	session.preview_target = preview_target
-	if _apply_hover_feedback(session.items, decision, preview_target, session.items[0] if not session.items.is_empty() else null):
-		refresh()
+	display_runtime.update_hover_preview(session)
 
 func _get_layout_items(session: ZoneDragSession) -> Array[Control]:
-	var layout_items: Array[Control] = []
-	for item in _items:
-		if not is_instance_valid(item) or item.is_queued_for_deletion():
-			continue
-		if session != null and item in session.items and not item.visible:
-			continue
-		if item.visible:
-			layout_items.append(item)
-	return layout_items
+	return display_runtime.get_layout_items(session)
 
 func _should_render_ghost_for_session(session: ZoneDragSession) -> bool:
-	if session == null or session.hover_zone != zone or session.preview_target == null or not session.preview_target.is_valid() or not is_instance_valid(_ghost_instance):
-		return false
-	var items_root = zone.get_items_root()
-	for item in session.items:
-		if not is_instance_valid(item):
-			continue
-		if item.visible and item.get_parent() == items_root:
-			return false
-	return true
+	return display_runtime.should_render_ghost_for_session(session)
 
 func _create_ghost(source_item: Control) -> void:
-	var preview_root = zone.get_preview_root()
-	if preview_root == null or not is_instance_valid(source_item):
-		return
-	var ghost = _create_factory_ghost(source_item)
-	if ghost == null and source_item.has_method("create_zone_ghost"):
-		var created = source_item.call("create_zone_ghost")
-		if created is Control:
-			ghost = created as Control
-	elif ghost == null and source_item.has_meta("zone_ghost_scene"):
-		var ghost_scene = source_item.get_meta("zone_ghost_scene")
-		if ghost_scene is PackedScene:
-			ghost = ghost_scene.instantiate() as Control
-	if ghost == null:
-		var fallback := ColorRect.new()
-		fallback.color = Color(1, 1, 1, 0.18)
-		fallback.custom_minimum_size = resolve_item_size(source_item)
-		fallback.size = resolve_item_size(source_item)
-		ghost = fallback
-	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if ghost.get_parent() != preview_root:
-		if ghost.get_parent() != null:
-			ghost.reparent(preview_root, false)
-		else:
-			preview_root.add_child(ghost)
-	_ghost_instance = ghost
+	display_runtime.create_ghost(source_item)
 
 func _create_cursor_proxy(source_item: Control) -> Control:
-	var factory_proxy = _create_factory_proxy(source_item)
-	if factory_proxy != null:
-		return factory_proxy
-	if source_item.has_method("create_drag_proxy"):
-		var created = source_item.call("create_drag_proxy")
-		if created is Control:
-			return created as Control
-	var proxy = source_item.duplicate(0)
-	if proxy is Control:
-		var control_proxy := proxy as Control
-		control_proxy.modulate.a = 0.9
-		control_proxy.global_position = source_item.global_position
-		return control_proxy
-	var fallback := ColorRect.new()
-	fallback.color = Color(1, 1, 1, 0.7)
-	fallback.custom_minimum_size = resolve_item_size(source_item)
-	fallback.size = resolve_item_size(source_item)
-	fallback.global_position = source_item.global_position
-	return fallback
+	return display_runtime.create_cursor_proxy(source_item)
 
 func _create_factory_ghost(source_item: Control) -> Control:
 	var factory = zone.get_drag_visual_factory_resource()
@@ -857,14 +545,12 @@ func _create_factory_proxy(source_item: Control) -> Control:
 	return null
 
 func _clear_preview_internal() -> void:
-	if is_instance_valid(_ghost_instance):
-		_ghost_instance.queue_free()
-	_ghost_instance = null
+	display_runtime.clear_preview_internal()
 
 func _reorder_items(items_to_move: Array[Control], placement_target: ZonePlacementTarget) -> bool:
 	var moving_items: Array[Control] = []
 	var original_indices: Dictionary = {}
-	for item in _items:
+	for item in item_state.items:
 		if _array_contains_valid_control(items_to_move, item):
 			original_indices[item] = _find_item_index(item)
 			moving_items.append(item)
@@ -876,9 +562,9 @@ func _reorder_items(items_to_move: Array[Control], placement_target: ZonePlaceme
 	var target_index = _resolve_linear_insert_index(_find_item_index(moving_items[0]), resolved_target)
 	for item in moving_items:
 		_erase_item_reference(item)
-	target_index = clampi(target_index, 0, _items.size())
+	target_index = clampi(target_index, 0, item_state.items.size())
 	for offset in range(moving_items.size()):
-		_items.insert(target_index + offset, moving_items[offset])
+		item_state.items.insert(target_index + offset, moving_items[offset])
 	for item in moving_items:
 		_set_item_target(item, _resolve_reordered_target(resolved_target, target_index + moving_items.find(item)))
 		item.visible = true
@@ -898,7 +584,7 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 	var source_zone = source_zone_override if source_zone_override != null else zone
 	var moving_items: Array[Control] = []
 	var original_indices: Dictionary = {}
-	for item in _items:
+	for item in item_state.items:
 		if _array_contains_valid_control(items_to_move, item):
 			original_indices[item] = _find_item_index(item)
 			moving_items.append(item)
@@ -910,6 +596,8 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 	var resolved_decision = decision if decision != null else ZoneTransferDecision.new(true, "", target_runtime._resolve_transfer_target_for_api(moving_items, placement_target))
 	var final_target = target_runtime._resolve_transfer_target_for_api(moving_items, resolved_decision.resolved_target)
 	if final_target == null or not final_target.is_valid():
+		final_target = target_runtime._resolve_transfer_target_for_api(moving_items, null)
+	if final_target == null or not final_target.is_valid():
 		return false
 	for item in moving_items:
 		selection_changed = _remove_item_from_state(item, false, false) or selection_changed
@@ -919,10 +607,28 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 			zone.item_removed.emit(item, from_index)
 	if resolved_decision.transfer_mode == ZoneTransferDecision.TransferMode.SPAWN_PIECE:
 		var spawned_items = _build_spawned_items(moving_items, resolved_decision, final_target, source_zone)
+		if spawned_items.is_empty():
+			for item in moving_items:
+				if is_instance_valid(item):
+					item.visible = true
+			item_state.rebuild_items_from_root()
+			refresh()
+			target_runtime.item_state.rebuild_items_from_root()
+			target_zone.refresh()
+			return false
 		var spawned_snapshots: Dictionary = {}
 		for index in range(min(spawned_items.size(), moving_items.size())):
 			spawned_snapshots[spawned_items[index]] = transfer_snapshots.get(moving_items[index], {})
-		target_runtime._insert_transferred_items(spawned_items, final_target, spawned_snapshots)
+		var spawned_inserted = target_runtime._insert_transferred_items(spawned_items, final_target, spawned_snapshots)
+		if not spawned_inserted:
+			for item in moving_items:
+				if is_instance_valid(item):
+					item.visible = true
+			item_state.rebuild_items_from_root()
+			refresh()
+			target_runtime.item_state.rebuild_items_from_root()
+			target_zone.refresh()
+			return false
 		for source_item in moving_items:
 			if is_instance_valid(source_item):
 				var items_root = zone.get_items_root()
@@ -931,7 +637,27 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 				source_item.queue_free()
 		_emit_item_transferred(source_zone, target_zone, spawned_items)
 	else:
-		target_runtime._insert_transferred_items(moving_items, final_target, transfer_snapshots)
+		var inserted = target_runtime._insert_transferred_items(moving_items, final_target, transfer_snapshots)
+		if inserted:
+			for item in moving_items:
+				if not target_runtime.item_state.contains_item_reference(item):
+					inserted = false
+					break
+		if not inserted:
+			for item in moving_items:
+				if is_instance_valid(item):
+					item.visible = true
+					var source_root = zone.get_items_root()
+					if source_root != null and item.get_parent() != source_root:
+						if item.get_parent() != null:
+							item.reparent(source_root, true)
+						else:
+							source_root.add_child(item)
+			item_state.rebuild_items_from_root()
+			refresh()
+			target_runtime.item_state.rebuild_items_from_root()
+			target_zone.refresh()
+			return false
 		for item in moving_items:
 			item.visible = true
 		_emit_item_transferred(source_zone, target_zone, moving_items)
@@ -945,12 +671,14 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 		target_zone.refresh()
 	return true
 
-func _insert_transferred_items(moving_items: Array[Control], placement_target: ZonePlacementTarget, transfer_snapshots: Dictionary) -> void:
+func _insert_transferred_items(moving_items: Array[Control], placement_target: ZonePlacementTarget, transfer_snapshots: Dictionary) -> bool:
 	var items_root = zone.get_items_root()
+	if items_root == null:
+		return false
 	var resolved_target = _resolve_transfer_target_for_api(moving_items, placement_target)
 	if resolved_target == null or not resolved_target.is_valid():
-		return
-	var target_index = _resolve_linear_insert_index(_items.size(), resolved_target)
+		return false
+	var target_index = _resolve_linear_insert_index(item_state.items.size(), resolved_target)
 	for offset in range(moving_items.size()):
 		var item = moving_items[offset]
 		if _contains_item_reference(item):
@@ -963,20 +691,15 @@ func _insert_transferred_items(moving_items: Array[Control], placement_target: Z
 		_set_transfer_handoff(item, transfer_snapshots.get(item, {}))
 		item.visible = true
 		_register_item(item)
-		_items.insert(target_index + offset, item)
+		item_state.items.insert(target_index + offset, item)
 		_set_item_target(item, _resolve_reordered_target(resolved_target, target_index + offset))
 		zone.item_added.emit(item, target_index + offset)
 	_sync_container_order()
 	refresh()
+	return true
 
 func _sync_container_order() -> void:
-	var items_root = zone.get_items_root()
-	if items_root == null:
-		return
-	for index in range(_items.size()):
-		var item = _items[index]
-		if is_instance_valid(item) and item.get_parent() == items_root:
-			items_root.move_child(item, index)
+	item_state.sync_container_order()
 
 func _emit_item_transferred(source_zone: Zone, target_zone: Zone, moving_items: Array[Control]) -> void:
 	for item in moving_items:
@@ -1038,15 +761,7 @@ func _append_unique_zone(zones: Array[Zone], candidate: Zone) -> void:
 	zones.append(candidate)
 
 func _clear_runtime_items(emit_selection_changed: bool) -> void:
-	var selection_changed = selection_state.clear()
-	var existing_items := _items.duplicate()
-	for item in existing_items:
-		_remove_item_from_state(item, false, true)
-	_items.clear()
-	_item_targets.clear()
-	_clear_transfer_handoffs()
-	if emit_selection_changed and selection_changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
+	item_state.clear_runtime_items(emit_selection_changed)
 
 func _remove_item_from_state(item, remove_from_container: bool, clear_visuals: bool) -> bool:
 	var selection_changed = false
@@ -1056,14 +771,14 @@ func _remove_item_from_state(item, remove_from_container: bool, clear_visuals: b
 	_erase_item_reference(item)
 	_clear_item_target(item)
 	_clear_transfer_handoff(item)
-	if item in _item_bindings:
+	if item in item_state.item_bindings:
 		_unregister_item(item)
 	var items_root = zone.get_items_root()
 	if item_is_valid and remove_from_container and items_root != null and item.get_parent() == items_root:
 		items_root.remove_child(item)
 	if clear_visuals:
 		_clear_item_visual_state(item, true)
-	if selection_state.prune(_items):
+	if selection_state.prune(item_state.items):
 		selection_changed = true
 	return selection_changed
 
@@ -1080,85 +795,28 @@ func _clear_item_visual_state(item, reset_transform: bool) -> void:
 		item.z_index = 0
 
 func _build_transfer_snapshots(moving_items: Array[Control], drop_position = null) -> Dictionary:
-	var snapshots: Dictionary = {}
-	if moving_items.is_empty():
-		return snapshots
-	for item in moving_items:
-		if is_instance_valid(item):
-			snapshots[item] = _snapshot_item_visual_state(item)
-	if drop_position is not Vector2:
-		return snapshots
-	var resolved_drop_position: Vector2 = drop_position
-	var primary_item = moving_items[0]
-	var primary_snapshot: Dictionary = snapshots.get(primary_item, {})
-	var primary_global: Vector2 = primary_snapshot.get("global_position", resolved_drop_position)
-	for item in moving_items:
-		var snapshot: Dictionary = snapshots.get(item, {}).duplicate(true)
-		var source_global: Vector2 = snapshot.get("global_position", resolved_drop_position)
-		snapshot["global_position"] = resolved_drop_position + (source_global - primary_global)
-		snapshots[item] = snapshot
-	return snapshots
+	return item_state.build_transfer_snapshots(moving_items, drop_position)
 
 func _resolve_programmatic_transfer_global_position(moving_items: Array[Control]):
-	for item in moving_items:
-		if is_instance_valid(item):
-			return item.global_position
-	return null
+	return item_state.resolve_programmatic_transfer_global_position(moving_items)
 
 func _snapshot_item_visual_state(item: Control) -> Dictionary:
-	if not is_instance_valid(item):
-		return {}
-	return {
-		"global_position": item.global_position,
-		"rotation": item.rotation,
-		"scale": item.scale
-	}
+	return item_state.snapshot_item_visual_state(item)
 
 func _set_transfer_handoff(item: Control, snapshot: Dictionary) -> void:
-	if not is_instance_valid(item):
-		return
-	if snapshot.is_empty():
-		_transfer_handoffs.erase(item)
-		return
-	_transfer_handoffs[item] = snapshot.duplicate(true)
+	item_state.set_transfer_handoff(item, snapshot)
 
 func _clear_transfer_handoff(item) -> void:
-	if item == null:
-		return
-	_transfer_handoffs.erase(item)
+	item_state.clear_transfer_handoff(item)
 
 func _clear_transfer_handoffs() -> void:
-	_transfer_handoffs.clear()
+	item_state.clear_transfer_handoffs()
 
 func _clear_hover_for_items(items: Array[Control], emit_signal: bool) -> void:
-	var hovered_item = selection_state.hovered_item
-	if hovered_item == null or not is_instance_valid(hovered_item):
-		if hovered_item != null:
-			selection_state.set_hovered(null)
-		return
-	var found = false
-	for item in items:
-		if is_instance_valid(item) and item == hovered_item:
-			found = true
-			break
-	if not found:
-		return
-	if selection_state.set_hovered(null) and emit_signal:
-		zone.item_hover_exited.emit(hovered_item)
+	interaction_runtime.clear_hover_for_items(items, emit_signal)
 
 func _reset_press_state_for_item(item = null) -> void:
-	if item == null:
-		_is_pressed = false
-		_has_dragged = false
-		_pressed_item = null
-		_stop_long_press_timer()
-		return
-	if is_instance_valid(_pressed_item) and is_instance_valid(item) and _pressed_item == item:
-		_is_pressed = false
-		_has_dragged = false
-		_pressed_item = null
-	if _long_press_item == item or (item != null and not is_instance_valid(item) and not is_instance_valid(_long_press_item)):
-		_stop_long_press_timer()
+	interaction_runtime.reset_press_state_for_item(item)
 
 func _get_drop_global_position(session: ZoneDragSession) -> Vector2:
 	if is_instance_valid(session.cursor_proxy):
@@ -1188,89 +846,28 @@ func _handle_items_root_structure_changed() -> void:
 		zone.layout_changed.emit()
 
 func _container_order_needs_sync() -> bool:
-	var items_root = zone.get_items_root()
-	if items_root == null:
-		return false
-	if zone.get_space_model_resource() is not ZoneLinearSpaceModel:
-		return false
-	var control_index = 0
-	for child in items_root.get_children():
-		if child is not Control or child == _ghost_instance:
-			continue
-		if control_index >= _items.size():
-			return true
-		if child != _items[control_index]:
-			return true
-		control_index += 1
-	return control_index != _items.size()
+	return item_state.container_order_needs_sync()
 
 func _erase_item_reference(item) -> void:
-	if is_instance_valid(item):
-		for index in range(_items.size() - 1, -1, -1):
-			var existing_item = _items[index]
-			if is_instance_valid(existing_item) and existing_item == item:
-				_items.remove_at(index)
-				_item_targets.erase(item)
-				return
-	else:
-		for index in range(_items.size() - 1, -1, -1):
-			if not is_instance_valid(_items[index]):
-				_item_targets.erase(_items[index])
-				_items.remove_at(index)
+	item_state.erase_item_reference(item)
 
 func _contains_item_reference(item: Control) -> bool:
-	return _find_item_index(item) != -1
+	return item_state.contains_item_reference(item)
 
 func _find_item_index(item: Control) -> int:
-	if not is_instance_valid(item):
-		return -1
-	for index in range(_items.size()):
-		var existing_item = _items[index]
-		if is_instance_valid(existing_item) and existing_item == item:
-			return index
-	return -1
+	return item_state.find_item_index(item)
 
 func _array_contains_valid_control(items: Array[Control], candidate: Control) -> bool:
-	if not is_instance_valid(candidate):
-		return false
-	for item in items:
-		if is_instance_valid(item) and item == candidate:
-			return true
-	return false
+	return item_state.array_contains_valid_control(items, candidate)
 
 func _clear_background_interaction() -> void:
-	var hovered_item = selection_state.hovered_item
-	var hover_changed = selection_state.clear_hover()
-	var selection_changed = selection_state.clear_selection()
-	if hover_changed and is_instance_valid(hovered_item):
-		zone.item_hover_exited.emit(hovered_item)
-	if selection_changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
-	if hover_changed or selection_changed:
-		refresh()
+	interaction_runtime.clear_background_interaction()
 
 func _find_item_at_global_position(global_position: Vector2) -> Control:
-	for index in range(_items.size() - 1, -1, -1):
-		var item = _items[index]
-		if not is_instance_valid(item) or not item.visible:
-			continue
-		if item.get_global_rect().has_point(global_position):
-			return item
-	return null
+	return item_state.get_item_at_global_position(global_position)
 
 func _clear_preview_for_session(session: ZoneDragSession) -> void:
-	var items = session.items if session != null else []
-	var invalid_target = ZonePlacementTarget.invalid()
-	var should_emit_preview_clear = _hover_preview_target != null and _hover_preview_target.is_valid()
-	if session != null and session.hover_zone == zone and session.preview_target != null and session.preview_target.is_valid():
-		should_emit_preview_clear = true
-	if should_emit_preview_clear and (_hover_preview_target == null or not _hover_preview_target.is_valid()):
-		zone.drop_preview_changed.emit(items, zone, invalid_target)
-	if is_instance_valid(_ghost_instance):
-		_clear_preview_internal()
-	if _hover_active:
-		zone.drop_hover_state_changed.emit(items, zone, _make_clear_hover_decision())
-	_reset_hover_feedback_tracking()
+	display_runtime.clear_preview_for_session(session)
 
 func _evaluate_drop_request(request: ZoneTransferRequest) -> ZoneTransferDecision:
 	var target = request.placement_target.duplicate_target() if request.placement_target != null else ZonePlacementTarget.invalid()
@@ -1287,10 +884,6 @@ func _evaluate_drop_request(request: ZoneTransferRequest) -> ZoneTransferDecisio
 func _make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[Control], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
 	return ZoneTransferRequest.new(target_zone, source_zone, items, placement_target, global_position)
 
-func _make_drop_request(target_zone: Zone, source_zone: Node, items: Array[Control], requested_index: int, global_position: Vector2) -> ZoneTransferRequest:
-	var target = ZonePlacementTarget.linear(requested_index, global_position) if requested_index >= 0 else ZonePlacementTarget.invalid()
-	return _make_transfer_request(target_zone, source_zone, items, target, global_position)
-
 func _resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
 	var decision = _evaluate_drop_request(request)
 	if decision == null:
@@ -1300,58 +893,16 @@ func _resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecisio
 	return decision
 
 func _apply_hover_feedback(items: Array[Control], decision: ZoneTransferDecision, preview_target, preview_source: Control) -> bool:
-	var resolved_preview_target = preview_target
-	if preview_target is int:
-		resolved_preview_target = ZonePlacementTarget.linear(preview_target as int) if preview_target >= 0 else ZonePlacementTarget.invalid()
-	var refresh_needed = false
-	var has_preview = resolved_preview_target != null and resolved_preview_target.is_valid()
-	if has_preview:
-		if not is_instance_valid(_ghost_instance) and is_instance_valid(preview_source):
-			_create_ghost(preview_source)
-			refresh_needed = true
-	elif is_instance_valid(_ghost_instance):
-		_clear_preview_internal()
-		refresh_needed = true
-	if not _targets_match(_hover_preview_target, resolved_preview_target):
-		zone.drop_preview_changed.emit(items, zone, resolved_preview_target if resolved_preview_target != null else ZonePlacementTarget.invalid())
-		refresh_needed = true
-	if _has_hover_state_changed(true, decision):
-		zone.drop_hover_state_changed.emit(items, zone, decision)
-	_hover_active = true
-	_hover_allowed = decision.allowed
-	_hover_reason = decision.reason
-	_hover_target = decision.resolved_target.duplicate_target() if decision.resolved_target != null else ZonePlacementTarget.invalid()
-	_hover_preview_target = resolved_preview_target.duplicate_target() if resolved_preview_target != null else ZonePlacementTarget.invalid()
-	return refresh_needed
+	return display_runtime.apply_hover_feedback(items, decision, preview_target, preview_source)
 
 func _clear_hover_feedback(items: Array[Control]) -> bool:
-	var refresh_needed = false
-	if _hover_preview_target != null and _hover_preview_target.is_valid():
-		zone.drop_preview_changed.emit(items, zone, ZonePlacementTarget.invalid())
-		refresh_needed = true
-	if is_instance_valid(_ghost_instance):
-		_clear_preview_internal()
-		refresh_needed = true
-	if _hover_active:
-		zone.drop_hover_state_changed.emit(items, zone, _make_clear_hover_decision())
-	_reset_hover_feedback_tracking()
-	return refresh_needed
+	return display_runtime.clear_hover_feedback(items)
 
 func _has_hover_state_changed(active: bool, decision: ZoneTransferDecision) -> bool:
-	if _hover_active != active:
-		return true
-	if not active:
-		return false
-	return _hover_allowed != decision.allowed \
-		or _hover_reason != decision.reason \
-		or not _targets_match(_hover_target, decision.resolved_target)
+	return display_runtime.has_hover_state_changed(active, decision)
 
 func _make_clear_hover_decision() -> ZoneTransferDecision:
-	return ZoneTransferDecision.new(false, "", ZonePlacementTarget.invalid())
+	return display_runtime.make_clear_hover_decision()
 
 func _reset_hover_feedback_tracking() -> void:
-	_hover_active = false
-	_hover_allowed = false
-	_hover_reason = ""
-	_hover_target = ZonePlacementTarget.invalid()
-	_hover_preview_target = ZonePlacementTarget.invalid()
+	display_runtime.reset_hover_feedback_tracking()

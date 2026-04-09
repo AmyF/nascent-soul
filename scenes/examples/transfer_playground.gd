@@ -16,7 +16,7 @@ const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 @onready var _board_zone: Zone = $RootMargin/RootVBox/TopRow/BoardColumn/BoardZone
 @onready var _discard_zone: Zone = $RootMargin/RootVBox/TopRow/DiscardColumn/DiscardZone
 @onready var _hand_zone: Zone = $RootMargin/RootVBox/HandZone
-@onready var _board_capacity: ZoneCapacityPermission = _board_zone.permission_policy as ZoneCapacityPermission
+@onready var _board_capacity: ZoneCapacityPermission = _board_zone.transfer_policy as ZoneCapacityPermission
 
 func _ready() -> void:
 	_populate_cards()
@@ -43,17 +43,17 @@ func _wire_demo_actions() -> void:
 
 func _on_deck_card_double_clicked(item: Control) -> void:
 	if _deck_zone.has_item(item):
-		_deck_zone.move_item_to(item, _hand_zone, _hand_zone.get_item_count())
+		_deck_zone.move_item_to(item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
 
 func _on_hand_card_double_clicked(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _board_zone, _board_zone.get_item_count())
+		_hand_zone.move_item_to(item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
 
 func _on_card_discard_requested(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _discard_zone, _discard_zone.get_item_count())
+		_hand_zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 	elif _board_zone.has_item(item):
-		_board_zone.move_item_to(item, _discard_zone, _discard_zone.get_item_count())
+		_board_zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:

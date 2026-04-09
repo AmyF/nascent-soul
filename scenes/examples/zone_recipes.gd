@@ -17,7 +17,7 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 @onready var _hand_zone: Zone = $RootMargin/RootVBox/RecipesGrid/HandColumn/HandZone
 @onready var _board_zone: Zone = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone
 @onready var _discard_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DiscardColumn/DiscardZone
-@onready var _board_capacity: ZoneCapacityPermission = _board_zone.permission_policy as ZoneCapacityPermission
+@onready var _board_capacity: ZoneCapacityPermission = _board_zone.transfer_policy as ZoneCapacityPermission
 
 func _ready() -> void:
 	_populate_cards()
@@ -55,19 +55,19 @@ func _reset_recipe() -> void:
 
 func _draw_to_hand(item: Control) -> void:
 	if _deck_zone.has_item(item):
-		_deck_zone.move_item_to(item, _hand_zone, _hand_zone.get_item_count())
+		_deck_zone.move_item_to(item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
 
 func _play_to_board(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _board_zone, _board_zone.get_item_count())
+		_hand_zone.move_item_to(item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
 
 func _discard_from_hand(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _discard_zone, _discard_zone.get_item_count())
+		_hand_zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 
 func _discard_from_board(item: Control) -> void:
 	if _board_zone.has_item(item):
-		_board_zone.move_item_to(item, _discard_zone, _discard_zone.get_item_count())
+		_board_zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:

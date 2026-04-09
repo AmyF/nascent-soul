@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/examples/permission_lab.gd" id="1_scene"]
+[ext_resource type="Script" path="res://scenes/examples/policy_lab.gd" id="1_scene"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="12_theme"]
 [ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="13_card_spec"]
 [ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
@@ -144,7 +144,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[node name="PermissionLab" type="Control"]
+[node name="PolicyLab" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -241,7 +241,7 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("PermissionBoardZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("5_board")
-permission_policy = SubResource("PermissionBoardCapacityPermission")
+transfer_policy = SubResource("PermissionBoardCapacityPermission")
 
 [node name="SanctumColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -272,7 +272,7 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("PermissionSanctumZonePanel")
 script = ExtResource("2_zone")
 layout_policy = SubResource("PermissionSanctumLayout")
-permission_policy = SubResource("PermissionSanctumCompositePermission")
+transfer_policy = SubResource("PermissionSanctumCompositePermission")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -296,4 +296,4 @@ preset = ExtResource("6_discard")
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoStatusLabel"
-text = "最近 / Latest: Loading permission lab..."
+text = "最近 / Latest: Loading policy lab..."

@@ -50,6 +50,12 @@ func resolve_item_position(_zone: Node, _runtime, target: ZonePlacementTarget, _
 func resolve_target_size(_zone: Node, _runtime, _target: ZonePlacementTarget) -> Vector2:
 	return cell_size
 
+func resolve_target_anchor(_zone: Node, _runtime, target: ZonePlacementTarget) -> Vector2:
+	if target == null or not target.is_valid():
+		return Vector2.ZERO
+	var global_offset = (_zone as Control).global_position if _zone is Control else Vector2.ZERO
+	return global_offset + _cell_origin(target.coordinates.x, target.coordinates.y) + cell_size * 0.5
+
 func is_target_valid(zone: Node, runtime, target: ZonePlacementTarget) -> bool:
 	return normalize_target(zone, runtime, target, []).is_valid()
 

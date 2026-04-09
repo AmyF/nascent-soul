@@ -22,7 +22,7 @@ var _summon_space: ZoneSquareGridSpaceModel
 
 func _ready() -> void:
 	_source_zone = ExampleSupport.make_zone(source_panel, "ModeSourceZone", ZoneHBoxLayout.new())
-	_source_zone.permission_policy = _make_cards_only_rule_table(ExampleSupport.compact_bilingual("Cards 只接受卡牌，不能接收已生成的棋子", "Cards only accept cards, not spawned pieces"))
+	_source_zone.transfer_policy = _make_cards_only_rule_table(ExampleSupport.compact_bilingual("Cards 只接受卡牌，不能接收已生成的棋子", "Cards only accept cards, not spawned pieces"))
 	_direct_space = ZoneSquareGridSpaceModel.new()
 	_direct_space.columns = 3
 	_direct_space.rows = 2

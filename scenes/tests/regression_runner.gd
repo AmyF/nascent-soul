@@ -6,7 +6,8 @@ const SUITE_SCENES := [
 	preload("res://scenes/tests/suites/demo_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/interaction_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/layout_visual_contract_suite.tscn"),
-	preload("res://scenes/tests/suites/performance_smoke_suite.tscn")
+	preload("res://scenes/tests/suites/performance_smoke_suite.tscn"),
+	preload("res://scenes/tests/suites/targeting_smoke_suite.tscn")
 ]
 
 var _checks_run: int = 0

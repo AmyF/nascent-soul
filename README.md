@@ -4,6 +4,7 @@ NascentSoul is a Godot 4.6 zone toolkit for both card games and battlefield tact
 
 - `CardZone` for ordered, linear card containers such as hand, deck, discard, shop, and board rows
 - `BattlefieldZone` for square and hex grids with cell occupancy, piece movement, and card-to-board transfer rules
+- Built-in targeting for arrow-driven spell and ability selection across items and board cells
 
 `Zone` stays inspector-friendly through presets and composable resources. Layout, display, interaction, transfer rules, space resolution, sorting, and drag visuals are all resources instead of hardcoded branches.
 
@@ -22,11 +23,16 @@ flowchart LR
     Preset --> Sort["ZoneSortPolicy"]
     Preset --> Transfer["ZoneTransferPolicy"]
     Preset --> DragVisual["ZoneDragVisualFactory"]
+    Preset --> TargetStyle["ZoneTargetingStyle"]
+    Preset --> TargetPolicy["ZoneTargetingPolicy"]
     Runtime --> Placement["ZonePlacementTarget"]
     Runtime --> Request["ZoneTransferRequest"]
     Runtime --> Decision["ZoneTransferDecision"]
+    Runtime --> TargetRequest["ZoneTargetRequest"]
+    Runtime --> TargetDecision["ZoneTargetDecision"]
     Zone --> CardFamily["CardZone"]
     Zone --> BattleFamily["BattlefieldZone"]
+    Zone --> Targeting["ZoneTargetingCoordinator"]
 ```
 
 The important split in `2.0.0` is:
@@ -34,6 +40,7 @@ The important split in `2.0.0` is:
 - `ZoneSpaceModel` decides where a drop lands
 - `ZoneLayoutPolicy` decides how managed items render
 - `ZoneTransferPolicy` decides whether a move is allowed and whether it directly places the item or spawns a piece
+- `ZoneTargetingPolicy` decides whether a dragged or explicit targeting session can lock onto an item or a placement target
 
 ## Why This Shape Works
 
@@ -87,6 +94,35 @@ hand.move_item_to(card, field, target)
 
 If the target battlefield uses a `ZoneTransferPolicy` that returns `SPAWN_PIECE`, the source card is consumed and the battlefield inserts a `ZonePiece` instead.
 
+### Targeting
+
+```gdscript
+extends ZoneCard
+class_name MeteorCard
+
+func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -> ZoneTargetingIntent:
+	var intent := ZoneTargetingIntent.new()
+	intent.allowed_candidate_kinds = PackedInt32Array([ZoneTargetCandidate.CandidateKind.ITEM])
+	intent.policy = ZoneTargetAllowAllPolicy.new()
+	return intent
+```
+
+```gdscript
+var piece_intent := ZoneTargetingIntent.new()
+piece_intent.allowed_candidate_kinds = PackedInt32Array([ZoneTargetCandidate.CandidateKind.PLACEMENT])
+
+battlefield.begin_targeting(piece, piece_intent)
+```
+
+`targeting_resolved` reports what the player chose, but it does not automatically consume the source card, cast the effect, or move the piece. Gameplay scripts stay in control of resolution.
+
+## Transfer vs Targeting
+
+- Use transfer when the source object should move or spawn into another zone.
+- Use targeting when the source object should stay where it is and only choose an entity or a cell.
+- A drag gesture can now branch into either system: items with `create_zone_targeting_intent()` enter arrow targeting, and everything else stays on normal drag/drop.
+- `begin_targeting()` is the explicit path for skills, buttons, long-press actions, and scripted abilities.
+
 ## Built-In Families
 
 - Linear space: `ZoneLinearSpaceModel`
@@ -95,17 +131,19 @@ If the target battlefield uses a `ZoneTransferPolicy` that returns `SPAWN_PIECE`
 - Card layouts: hand, hbox, vbox, pile
 - Battlefield layout: `ZoneBattlefieldLayout`
 - Transfer rules: allow-all, capacity, source, occupancy, composite, rule-table
+- Targeting rules: allow-all, composite, rule-table
 - Example items: `ZoneCard + CardData`, `ZonePiece + PieceData`
 
 ## Learn By Opening The Repo
 
 - [`scenes/examples/transfer_playground.tscn`](scenes/examples/transfer_playground.tscn): end-to-end card flow across deck, hand, board, and discard
-- [`scenes/examples/permission_lab.tscn`](scenes/examples/permission_lab.tscn): source and capacity rules
+- [`scenes/examples/policy_lab.tscn`](scenes/examples/policy_lab.tscn): source and capacity rules
 - [`scenes/examples/layout_gallery.tscn`](scenes/examples/layout_gallery.tscn): linear layout comparison
 - [`scenes/examples/zone_recipes.tscn`](scenes/examples/zone_recipes.tscn): copyable card-zone starter setups
 - [`scenes/examples/battlefield_square_lab.tscn`](scenes/examples/battlefield_square_lab.tscn): square battlefield with direct card placement
 - [`scenes/examples/battlefield_hex_lab.tscn`](scenes/examples/battlefield_hex_lab.tscn): hex battlefield with spatial placement
 - [`scenes/examples/battlefield_transfer_modes.tscn`](scenes/examples/battlefield_transfer_modes.tscn): direct-place-card vs spawn-piece transfer rules
+- [`scenes/examples/targeting_lab.tscn`](scenes/examples/targeting_lab.tscn): drag-to-target spell flow and explicit piece ability targeting
 
 The editor plugin now exposes:
 
@@ -117,10 +155,11 @@ The editor plugin now exposes:
 
 Current repository validation on Godot 4.6.1:
 
-- Headless regression suite passes with `318` checks
+- Headless regression suite passes with `383` checks
 - Card-only demos still pass their previous smoke and regression coverage
 - Battlefield coverage now includes square and hex placement, occupancy rejection, spawn-piece transfer, and same-zone piece movement
+- Targeting coverage now includes drag-started targeting, explicit `begin_targeting()`, item-vs-cell resolution, policy merging, overlay state changes, and cleanup
 
 ## Project Status
 
-NascentSoul `2.0.0` is the first release that treats card zones and battlefield zones as first-class siblings on the same runtime core. The public drop protocol is now `ZonePlacementTarget`-based, and the repository examples cover both direct card placement and piece spawning on tactical boards.
+NascentSoul `2.1.0` keeps the `2.0` card/battlefield runtime and adds a dedicated targeting layer on top of it. The public drop protocol is still `ZonePlacementTarget`-based, and the repository examples now cover direct transfers, piece spawning, and arrow-driven targeting for spells and unit abilities.

@@ -32,6 +32,8 @@ var _highlighted: bool = false
 
 var _hovered_visual: bool = false
 var _selected_visual: bool = false
+var _target_candidate_active: bool = false
+var _target_candidate_allowed: bool = false
 var _flip_tween: Tween = null
 var _visual_root: Control
 var _background_panel: Panel
@@ -117,6 +119,19 @@ func create_drag_proxy() -> Control:
 	fallback.custom_minimum_size = _resolved_card_size()
 	fallback.size = _resolved_card_size()
 	return fallback
+
+func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -> ZoneTargetingIntent:
+	return null
+
+func get_zone_target_anchor_global() -> Vector2:
+	return global_position + size * 0.5
+
+func set_target_candidate_visual(active: bool, allowed: bool) -> void:
+	if _target_candidate_active == active and _target_candidate_allowed == allowed:
+		return
+	_target_candidate_active = active
+	_target_candidate_allowed = allowed
+	_refresh_visuals()
 
 func create_zone_piece() -> Control:
 	var piece := ZonePiece.new()
@@ -246,13 +261,17 @@ func _refresh_visuals() -> void:
 	_back_texture.visible = not face_up
 	_back_label.visible = not face_up
 	var overlay_alpha = 0.0
+	var overlay_color = Color(0.92, 0.86, 0.52, 1.0)
+	if _target_candidate_active:
+		overlay_alpha = max(overlay_alpha, 0.30)
+		overlay_color = Color(0.44, 0.92, 0.62, 1.0) if _target_candidate_allowed else Color(1.0, 0.40, 0.40, 1.0)
 	if highlighted:
 		overlay_alpha = max(overlay_alpha, 0.16)
 	if _selected_visual:
 		overlay_alpha = max(overlay_alpha, 0.26)
 	if _hovered_visual:
 		overlay_alpha = max(overlay_alpha, 0.20)
-	_highlight_overlay.color = Color(0.92, 0.86, 0.52, overlay_alpha)
+	_highlight_overlay.color = Color(overlay_color.r, overlay_color.g, overlay_color.b, overlay_alpha)
 	_highlight_overlay.visible = overlay_alpha > 0.0
 
 func _apply_card_style() -> void:

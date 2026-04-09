@@ -205,11 +205,11 @@ func _test_animated_transfer_handoff_path() -> void:
 	source_zone.add_item(alpha)
 	await _settle_frames(2)
 	var source_origin = alpha.global_position
-	_check(source_zone.move_item_to(alpha, target_zone, 0), "animated transfer smoke should move the card into the target zone")
+	_check(source_zone.move_item_to(alpha, target_zone, ZonePlacementTarget.linear(0)), "animated transfer smoke should move the card into the target zone")
 	var target_state = target_zone.get_runtime().get_display_state(target_display)
 	_check(target_state["active_tweens"].has(alpha), "animated transfer should create a live tween in GUI mode")
 	_check(alpha.global_position.distance_to(source_origin) <= 0.5, "animated transfer should start from the source card position before tweening")
-	_check(not target_zone.get_runtime()._transfer_handoffs.has(alpha), "animated transfer should consume handoff data on first apply")
+	_check(not target_zone.get_runtime().item_state.transfer_handoffs.has(alpha), "animated transfer should consume handoff data on first apply")
 	await get_tree().create_timer(target_display.duration + 0.08).timeout
 	await _settle_frames(1)
 	_check(not target_state["active_tweens"].has(alpha), "animated transfer should clear its tween after finishing")
@@ -223,7 +223,8 @@ func _test_drop_preview_clear_signal() -> void:
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
 	var preview_indices: Array[int] = []
 	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target) -> void:
-		preview_indices.append(_target_index_from_value(target))
+		var preview_target: ZonePlacementTarget = target if target is ZonePlacementTarget else ZonePlacementTarget.invalid()
+		preview_indices.append(preview_target.slot if preview_target.is_linear() else -1)
 	)
 	source_zone.add_item(alpha)
 	await _settle_frames(2)
@@ -236,7 +237,7 @@ func _test_drop_preview_clear_signal() -> void:
 	target_zone.get_runtime()._create_ghost(alpha)
 	target_zone.drop_preview_changed.emit(session.items, target_zone, ZonePlacementTarget.linear(0))
 	session.hover_zone = target_zone
-	session.preview_index = 0
+	session.preview_target = ZonePlacementTarget.linear(0)
 	source_zone.get_runtime().cancel_drag(session)
 	await _settle_frames(2)
 	var last_preview_index = preview_indices[preview_indices.size() - 1] if not preview_indices.is_empty() else 0

@@ -4,11 +4,12 @@
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="6_theme"]
 [ext_resource type="PackedScene" path="res://scenes/examples/transfer_playground.tscn" id="2_transfer"]
 [ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="3_layouts"]
-[ext_resource type="PackedScene" path="res://scenes/examples/permission_lab.tscn" id="4_rules"]
+[ext_resource type="PackedScene" path="res://scenes/examples/policy_lab.tscn" id="4_rules"]
 [ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="5_recipes"]
 [ext_resource type="PackedScene" path="res://scenes/examples/battlefield_square_lab.tscn" id="7_square"]
 [ext_resource type="PackedScene" path="res://scenes/examples/battlefield_hex_lab.tscn" id="8_hex"]
 [ext_resource type="PackedScene" path="res://scenes/examples/battlefield_transfer_modes.tscn" id="9_modes"]
+[ext_resource type="PackedScene" path="res://scenes/examples/targeting_lab.tscn" id="10_targeting"]
 
 [node name="DemoHub" type="Control" unique_id=1823012048]
 layout_mode = 3
@@ -96,4 +97,12 @@ layout_mode = 2
 metadata/_tab_index = 6
 
 [node name="Content" parent="RootMargin/RootVBox/TabContainer/Modes模式" instance=ExtResource("9_modes")]
+layout_mode = 2
+
+[node name="Targeting选目标" type="Control" parent="RootMargin/RootVBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 7
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Targeting选目标" instance=ExtResource("10_targeting")]
 layout_mode = 2

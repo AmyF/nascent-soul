@@ -75,7 +75,7 @@ func _test_pile_preview_stays_inside_panel() -> void:
 		return
 	pile_zone.get_runtime()._create_ghost(alpha)
 	session.hover_zone = pile_zone
-	session.preview_index = 1
+	session.preview_target = ZonePlacementTarget.linear(1)
 	pile_zone.refresh()
 	var ghost = _find_unmanaged_control(pile_zone)
 	_check(ghost != null, "pile preview should create a ghost control")

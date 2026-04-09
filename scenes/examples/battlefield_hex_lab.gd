@@ -40,7 +40,7 @@ func _on_source_card_double_clicked(item: Control) -> void:
 
 func _on_battlefield_item_right_clicked(item: Control) -> void:
 	if _battlefield_zone.has_item(item):
-		_battlefield_zone.move_item_to(item, _source_zone, _source_zone.get_item_count())
+		_battlefield_zone.move_item_to(item, _source_zone, ZonePlacementTarget.linear(_source_zone.get_item_count()))
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:

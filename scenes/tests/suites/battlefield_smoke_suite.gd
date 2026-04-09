@@ -164,7 +164,7 @@ func _test_modes_restrict_piece_backflow() -> void:
 	var direct_panel = _make_panel("BattlefieldModesDirect", Vector2(24, 280), Vector2(420, 420))
 	var summon_panel = _make_panel("BattlefieldModesSummon", Vector2(476, 280), Vector2(420, 420))
 	var source_zone = ExampleSupport.make_zone(source_panel, "ModesSourceZone", ZoneHBoxLayout.new())
-	source_zone.permission_policy = _make_cards_only_rule_table("cards only zone")
+	source_zone.transfer_policy = _make_cards_only_rule_table("cards only zone")
 	var direct_space = ZoneSquareGridSpaceModel.new()
 	direct_space.columns = 3
 	direct_space.rows = 2

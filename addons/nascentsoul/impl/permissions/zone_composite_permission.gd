@@ -1,5 +1,5 @@
 @tool
-class_name ZoneCompositePermission extends ZonePermissionPolicy
+class_name ZoneCompositePermission extends ZoneTransferPolicy
 
 enum CombineMode {
 	ALL,

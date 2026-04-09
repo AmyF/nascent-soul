@@ -8,13 +8,8 @@ class_name ZonePreset extends Resource
 @export var interaction: ZoneInteraction
 @export var sort_policy: ZoneSortPolicy
 @export var transfer_policy: ZoneTransferPolicy
-
-@export_group("Compatibility")
-@export var permission_policy: ZoneTransferPolicy:
-	get:
-		return transfer_policy
-	set(value):
-		transfer_policy = value
+@export var targeting_style: ZoneTargetingStyle
+@export var targeting_policy: ZoneTargetingPolicy
 
 @export_group("Drag Visuals")
 @export var drag_visual_factory: ZoneDragVisualFactory
@@ -37,8 +32,11 @@ func resolve_sort_policy(default_value: ZoneSortPolicy = null) -> ZoneSortPolicy
 func resolve_transfer_policy(default_value: ZoneTransferPolicy = null) -> ZoneTransferPolicy:
 	return transfer_policy if transfer_policy != null else default_value
 
-func resolve_permission_policy(default_value: ZoneTransferPolicy = null) -> ZoneTransferPolicy:
-	return resolve_transfer_policy(default_value)
+func resolve_targeting_style(default_value: ZoneTargetingStyle = null) -> ZoneTargetingStyle:
+	return targeting_style if targeting_style != null else default_value
+
+func resolve_targeting_policy(default_value: ZoneTargetingPolicy = null) -> ZoneTargetingPolicy:
+	return targeting_policy if targeting_policy != null else default_value
 
 func resolve_drag_visual_factory(default_value: ZoneDragVisualFactory = null) -> ZoneDragVisualFactory:
 	return drag_visual_factory if drag_visual_factory != null else default_value

@@ -2,12 +2,13 @@ extends "res://scenes/tests/shared/test_harness.gd"
 
 const DEMO_SCENE = preload("res://scenes/demo.tscn")
 const TRANSFER_SCENE = preload("res://scenes/examples/transfer_playground.tscn")
-const PERMISSION_SCENE = preload("res://scenes/examples/permission_lab.tscn")
+const POLICY_SCENE = preload("res://scenes/examples/policy_lab.tscn")
 const LAYOUT_SCENE = preload("res://scenes/examples/layout_gallery.tscn")
 const RECIPES_SCENE = preload("res://scenes/examples/zone_recipes.tscn")
 const BATTLEFIELD_SQUARE_SCENE = preload("res://scenes/examples/battlefield_square_lab.tscn")
 const BATTLEFIELD_HEX_SCENE = preload("res://scenes/examples/battlefield_hex_lab.tscn")
 const BATTLEFIELD_MODES_SCENE = preload("res://scenes/examples/battlefield_transfer_modes.tscn")
+const TARGETING_SCENE = preload("res://scenes/examples/targeting_lab.tscn")
 
 func _init() -> void:
 	_suite_name = "demo-smoke"
@@ -19,9 +20,9 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_transfer_playground_guidance()
 	await _reset_root()
-	await _test_permission_lab_rule_cards_and_reject_feedback()
+	await _test_policy_lab_rule_cards_and_reject_feedback()
 	await _reset_root()
-	await _test_permission_lab_deck_drag_paths()
+	await _test_policy_lab_deck_drag_paths()
 	await _reset_root()
 	await _test_layout_gallery_mode_and_captions()
 	await _reset_root()
@@ -30,16 +31,18 @@ func _run_suite() -> void:
 	await _test_zone_recipes_copy_hint_and_reset()
 	await _reset_root()
 	await _test_battlefield_examples_load()
+	await _reset_root()
+	await _test_targeting_example_load()
 
 func _test_demo_scene_resource_naming() -> void:
 	var transfer_text = FileAccess.get_file_as_string("res://scenes/examples/transfer_playground.tscn")
 	_check(transfer_text.contains("id=\"TransferBoardCapacityPermission\""), "transfer playground should prefix scene-local permission resources with Transfer")
 	_check(transfer_text.contains("id=\"TransferDeckCardSpark\""), "transfer playground should prefix scene-local card resources with Transfer")
 	_check(transfer_text.contains("id=\"TransferDeckZonePanel\""), "transfer playground should prefix scene-local panel styles with Transfer")
-	var permission_text = FileAccess.get_file_as_string("res://scenes/examples/permission_lab.tscn")
-	_check(permission_text.contains("id=\"PermissionSanctumCompositePermission\""), "permission lab should prefix scene-local composite permissions with Permission")
-	_check(permission_text.contains("id=\"PermissionDeckCardRune\""), "permission lab should prefix scene-local card resources with Permission")
-	_check(permission_text.contains("id=\"PermissionSanctumZonePanel\""), "permission lab should prefix scene-local panel styles with Permission")
+	var policy_text = FileAccess.get_file_as_string("res://scenes/examples/policy_lab.tscn")
+	_check(policy_text.contains("id=\"PermissionSanctumCompositePermission\""), "policy lab should prefix scene-local composite permissions with Permission")
+	_check(policy_text.contains("id=\"PermissionDeckCardRune\""), "policy lab should prefix scene-local card resources with Permission")
+	_check(policy_text.contains("id=\"PermissionSanctumZonePanel\""), "policy lab should prefix scene-local panel styles with Permission")
 	var layout_text = FileAccess.get_file_as_string("res://scenes/examples/layout_gallery.tscn")
 	_check(layout_text.contains("id=\"LayoutRowLayout\""), "layout gallery should prefix scene-local layouts with Layout")
 	_check(layout_text.contains("id=\"LayoutCardPulse\""), "layout gallery should prefix scene-local card resources with Layout")
@@ -59,7 +62,7 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(demo_title != null and demo_title.theme_type_variation == &"DemoHubTitle", "demo hub title should use the shared title theme variation")
 	_check(demo_margin != null and demo_margin.theme_type_variation == &"DemoHubMargin", "demo hub margin container should use the shared hub margin variation")
 	if tab_container != null:
-		_check(tab_container.get_child_count() == 7, "demo hub should keep seven static example tabs")
+		_check(tab_container.get_child_count() == 8, "demo hub should keep eight static example tabs")
 		for tab in tab_container.get_children():
 			_check(tab.get_node_or_null("Content") != null, "demo hub tabs should statically embed their example scenes")
 	var transfer = TRANSFER_SCENE.instantiate()
@@ -78,25 +81,25 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(transfer_hand_cards.size() == 5, "transfer playground should serialize five hand sample cards")
 	_check(transfer_board_cards.size() == 2, "transfer playground should serialize two board sample cards")
 	_check(transfer_board != null and transfer_board.preset != null, "transfer playground board zone should serialize its preset")
-	_check(transfer_board != null and transfer_board.permission_policy is ZoneCapacityPermission, "transfer playground board zone should serialize its capacity policy")
+	_check(transfer_board != null and transfer_board.transfer_policy is ZoneCapacityPermission, "transfer playground board zone should serialize its capacity policy")
 	_check(transfer_board != null and transfer_board.drag_visual_factory is ZoneConfigurableDragVisualFactory, "transfer playground board zone should serialize its drag visual factory")
-	var permission = PERMISSION_SCENE.instantiate()
-	var permission_board = permission.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
-	var sanctum_zone = permission.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone") as Zone
-	var sanctum_label = permission.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumLabel") as Label
-	var permission_grid = permission.get_node_or_null("RootMargin/RootVBox/Grid") as GridContainer
-	var permission_deck_cards = permission.get("deck_cards") as Array
-	var permission_hand_cards = permission.get("hand_cards") as Array
-	_check(permission.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardCapacityLabel") != null, "permission lab should serialize the board capacity label")
-	_check(permission.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumCapacityLabel") != null, "permission lab should serialize the sanctum capacity label")
-	_check(permission.theme != null, "permission lab should serialize the shared demo theme")
-	_check(sanctum_label != null and sanctum_label.theme_type_variation == &"DemoVioletHeading", "permission lab sanctum label should use the shared heading theme variation")
-	_check(permission_grid != null and permission_grid.theme_type_variation == &"DemoPermissionGrid", "permission lab grid should use the shared permission grid variation")
-	_check(permission_deck_cards.size() == 4, "permission lab should serialize four deck sample cards")
-	_check(permission_hand_cards.size() == 3, "permission lab should serialize three hand sample cards")
-	_check(permission_board != null and permission_board.permission_policy is ZoneCapacityPermission, "permission lab board zone should serialize its capacity policy")
-	_check(sanctum_zone != null and sanctum_zone.layout_policy is ZoneVBoxLayout, "permission lab sanctum zone should serialize its layout policy")
-	_check(sanctum_zone != null and sanctum_zone.permission_policy is ZoneCompositePermission, "permission lab sanctum zone should serialize its composite permission")
+	var policy = POLICY_SCENE.instantiate()
+	var policy_board = policy.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
+	var sanctum_zone = policy.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone") as Zone
+	var sanctum_label = policy.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumLabel") as Label
+	var policy_grid = policy.get_node_or_null("RootMargin/RootVBox/Grid") as GridContainer
+	var policy_deck_cards = policy.get("deck_cards") as Array
+	var policy_hand_cards = policy.get("hand_cards") as Array
+	_check(policy.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardCapacityLabel") != null, "policy lab should serialize the board capacity label")
+	_check(policy.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumCapacityLabel") != null, "policy lab should serialize the sanctum capacity label")
+	_check(policy.theme != null, "policy lab should serialize the shared demo theme")
+	_check(sanctum_label != null and sanctum_label.theme_type_variation == &"DemoVioletHeading", "policy lab sanctum label should use the shared heading theme variation")
+	_check(policy_grid != null and policy_grid.theme_type_variation == &"DemoPermissionGrid", "policy lab grid should use the shared permission grid variation")
+	_check(policy_deck_cards.size() == 4, "policy lab should serialize four deck sample cards")
+	_check(policy_hand_cards.size() == 3, "policy lab should serialize three hand sample cards")
+	_check(policy_board != null and policy_board.transfer_policy is ZoneCapacityPermission, "policy lab board zone should serialize its capacity policy")
+	_check(sanctum_zone != null and sanctum_zone.layout_policy is ZoneVBoxLayout, "policy lab sanctum zone should serialize its layout policy")
+	_check(sanctum_zone != null and sanctum_zone.transfer_policy is ZoneCompositePermission, "policy lab sanctum zone should serialize its composite permission")
 	var layouts = LAYOUT_SCENE.instantiate()
 	var row_zone = layouts.get_node_or_null("RootMargin/RootVBox/Grid/RowColumn/RowZone") as Zone
 	var list_zone = layouts.get_node_or_null("RootMargin/RootVBox/Grid/ListColumn/ListZone") as Zone
@@ -131,10 +134,10 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(recipes_hand_cards.size() == 4, "zone recipes should serialize four hand sample cards")
 	_check(recipes_board_cards.size() == 2, "zone recipes should serialize two board sample cards")
 	_check(recipes_board != null and recipes_board.preset != null, "zone recipes board zone should serialize its preset")
-	_check(recipes_board != null and recipes_board.permission_policy is ZoneCapacityPermission, "zone recipes board zone should serialize its capacity policy")
+	_check(recipes_board != null and recipes_board.transfer_policy is ZoneCapacityPermission, "zone recipes board zone should serialize its capacity policy")
 	demo.free()
 	transfer.free()
-	permission.free()
+	policy.free()
 	layouts.free()
 	recipes.free()
 
@@ -151,8 +154,9 @@ func _test_demo_hub_summary_panels() -> void:
 		return
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 0, "Content/RootMargin/RootVBox/TopRow", "transfer tab content should stay below the tab header")
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 1, "Content/RootMargin/RootVBox/Toolbar", "layout tab toolbar should stay below the tab header")
-	await _assert_tab_content_stays_below_tab_bar(tab_container, 2, "Content/RootMargin/RootVBox/Grid", "permission tab content should stay below the tab header")
+	await _assert_tab_content_stays_below_tab_bar(tab_container, 2, "Content/RootMargin/RootVBox/Grid", "policy tab content should stay below the tab header")
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 3, "Content/RootMargin/RootVBox/Toolbar", "recipes tab toolbar should stay below the tab header")
+	await _assert_tab_content_stays_below_tab_bar(tab_container, 7, "Content/RootMargin/RootVBox/ContentRow", "targeting tab content should stay below the tab header")
 
 func _test_transfer_playground_guidance() -> void:
 	var scene = TRANSFER_SCENE.instantiate()
@@ -172,13 +176,13 @@ func _test_transfer_playground_guidance() -> void:
 	if board_capacity_label == null or status == null or hand_zone == null or board_zone == null:
 		return
 	var hand_item = hand_zone.get_items()[0]
-	_check(hand_zone.move_item_to(hand_item, board_zone, board_zone.get_item_count()), "transfer playground smoke should move a hand card onto the board")
+	_check(hand_zone.move_item_to(hand_item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "transfer playground smoke should move a hand card onto the board")
 	await _settle_frames(3)
 	_check(board_capacity_label.text.contains("3 / 5"), "transfer playground board capacity label should refresh after a successful move")
 	_check(status.text.contains(hand_item.name), "transfer playground status should mention the most recent moved card")
 
-func _test_permission_lab_rule_cards_and_reject_feedback() -> void:
-	var scene = PERMISSION_SCENE.instantiate()
+func _test_policy_lab_rule_cards_and_reject_feedback() -> void:
+	var scene = POLICY_SCENE.instantiate()
 	add_child(scene)
 	await _settle_frames(3)
 	var board_rule_label = scene.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardRuleLabel") as Label
@@ -188,34 +192,34 @@ func _test_permission_lab_rule_cards_and_reject_feedback() -> void:
 	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
 	var hand_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/HandColumn/HandZone") as Zone
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
-	_check(scene.get_node_or_null("RootMargin/RootVBox/InfoRow") == null, "permission lab should avoid large onboarding cards over the play area")
-	_check(board_rule_label != null and board_rule_label.text.contains("Any source"), "permission lab should keep the board rule copy static and visible")
-	_check(board_capacity_label != null and board_capacity_label.text.contains("0 / 2"), "permission lab should show the board capacity before interaction")
-	_check(sanctum_rule_label != null and sanctum_rule_label.text.contains("HandZone"), "permission lab should show the sanctum source restriction before interaction")
-	_check(sanctum_capacity_label != null and sanctum_capacity_label.text.contains("0 / 2"), "permission lab should show the sanctum capacity before interaction")
-	_check(hand_zone != null and board_zone != null, "permission lab smoke should keep the hand and board zones accessible")
-	_check(board_zone != null and board_zone.size.y >= 200.0, "permission lab should preserve enough zone height after adding guidance")
+	_check(scene.get_node_or_null("RootMargin/RootVBox/InfoRow") == null, "policy lab should avoid large onboarding cards over the play area")
+	_check(board_rule_label != null and board_rule_label.text.contains("Any source"), "policy lab should keep the board rule copy static and visible")
+	_check(board_capacity_label != null and board_capacity_label.text.contains("0 / 2"), "policy lab should show the board capacity before interaction")
+	_check(sanctum_rule_label != null and sanctum_rule_label.text.contains("HandZone"), "policy lab should show the sanctum source restriction before interaction")
+	_check(sanctum_capacity_label != null and sanctum_capacity_label.text.contains("0 / 2"), "policy lab should show the sanctum capacity before interaction")
+	_check(hand_zone != null and board_zone != null, "policy lab smoke should keep the hand and board zones accessible")
+	_check(board_zone != null and board_zone.size.y >= 200.0, "policy lab should preserve enough zone height after adding guidance")
 	if board_capacity_label == null or sanctum_rule_label == null or status == null or hand_zone == null or board_zone == null:
 		return
 	for _i in range(2):
 		var item = hand_zone.get_items()[0]
-		_check(hand_zone.move_item_to(item, board_zone, board_zone.get_item_count()), "permission lab should allow the first two board transfers")
+		_check(hand_zone.move_item_to(item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "policy lab should allow the first two board transfers")
 		await _settle_frames(2)
 	var rejected_item = hand_zone.get_items()[0]
-	_check(not hand_zone.move_item_to(rejected_item, board_zone, board_zone.get_item_count()), "permission lab should reject transfers once the board is full")
+	_check(not hand_zone.move_item_to(rejected_item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "policy lab should reject transfers once the board is full")
 	await _settle_frames(2)
-	_check(board_capacity_label.text.contains("2 / 2"), "permission lab board capacity label should refresh to the full state")
-	_check(status.text.contains("rejected") or status.text.contains("拒绝"), "permission lab status should surface the rejection feedback")
+	_check(board_capacity_label.text.contains("2 / 2"), "policy lab board capacity label should refresh to the full state")
+	_check(status.text.contains("rejected") or status.text.contains("拒绝"), "policy lab status should surface the rejection feedback")
 
-func _test_permission_lab_deck_drag_paths() -> void:
-	var scene = PERMISSION_SCENE.instantiate()
+func _test_policy_lab_deck_drag_paths() -> void:
+	var scene = POLICY_SCENE.instantiate()
 	add_child(scene)
 	await _settle_frames(3)
 	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
 	var deck_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/DeckColumn/DeckZone") as Zone
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
 	var sanctum_zone = scene.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone") as Zone
-	_check(deck_zone != null and board_zone != null and sanctum_zone != null, "permission lab deck drag smoke should keep all target zones accessible")
+	_check(deck_zone != null and board_zone != null and sanctum_zone != null, "policy lab deck drag smoke should keep all target zones accessible")
 	if deck_zone == null or board_zone == null or sanctum_zone == null:
 		return
 	var moved_card = deck_zone.get_items()[0]
@@ -223,42 +227,42 @@ func _test_permission_lab_deck_drag_paths() -> void:
 	deck_zone.start_drag([moved_card])
 	var coordinator = deck_zone.get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
-	_check(session != null, "permission lab deck-to-board drag should create a drag session")
+	_check(session != null, "policy lab deck-to-board drag should create a drag session")
 	if session == null:
 		return
 	if is_instance_valid(session.cursor_proxy):
 		session.cursor_proxy.global_position = board_zone.global_position + Vector2(24, 24)
 	session.hover_zone = board_zone
-	session.requested_index = board_zone.get_item_count()
-	session.preview_index = board_zone.get_item_count()
+	session.requested_target = ZonePlacementTarget.linear(board_zone.get_item_count())
+	session.preview_target = ZonePlacementTarget.linear(board_zone.get_item_count())
 	board_zone.get_runtime().perform_drop(session)
 	await _settle_frames(3)
 	if DisplayServer.get_name() != "headless":
 		await get_tree().create_timer(0.25).timeout
 		await _settle_frames(1)
-	_check(board_zone.has_item(moved_card), "permission lab deck-to-board drag should insert the dragged deck card into board")
-	_check(moved_card.visible, "permission lab deck-to-board drag should leave the moved card visible")
-	_check(moved_card is ZoneCard and (moved_card as ZoneCard).face_up, "permission lab deck-to-board drag should reveal the moved deck card")
-	_check(deck_zone.get_item_count() == initial_deck_count - 1, "permission lab deck-to-board drag should remove one card from deck")
+	_check(board_zone.has_item(moved_card), "policy lab deck-to-board drag should insert the dragged deck card into board")
+	_check(moved_card.visible, "policy lab deck-to-board drag should leave the moved card visible")
+	_check(moved_card is ZoneCard and (moved_card as ZoneCard).face_up, "policy lab deck-to-board drag should reveal the moved deck card")
+	_check(deck_zone.get_item_count() == initial_deck_count - 1, "policy lab deck-to-board drag should remove one card from deck")
 	var rejected_card = deck_zone.get_items()[0]
 	deck_zone.start_drag([rejected_card])
 	coordinator = deck_zone.get_drag_coordinator(false)
 	session = coordinator.get_session() if coordinator != null else null
-	_check(session != null, "permission lab deck-to-sanctum drag should create a drag session")
+	_check(session != null, "policy lab deck-to-sanctum drag should create a drag session")
 	if session == null:
 		return
 	if is_instance_valid(session.cursor_proxy):
 		session.cursor_proxy.global_position = sanctum_zone.global_position + Vector2(24, 24)
 	session.hover_zone = sanctum_zone
-	session.requested_index = sanctum_zone.get_item_count()
-	session.preview_index = -1
+	session.requested_target = ZonePlacementTarget.linear(sanctum_zone.get_item_count())
+	session.preview_target = ZonePlacementTarget.invalid()
 	sanctum_zone.get_runtime().perform_drop(session)
 	await _settle_frames(3)
-	_check(deck_zone.has_item(rejected_card), "permission lab sanctum rejection should keep the dragged deck card in deck")
-	_check(not sanctum_zone.has_item(rejected_card), "permission lab sanctum rejection should not insert the dragged deck card into sanctum")
-	_check(rejected_card.visible, "permission lab sanctum rejection should restore the dragged deck card visibility")
+	_check(deck_zone.has_item(rejected_card), "policy lab sanctum rejection should keep the dragged deck card in deck")
+	_check(not sanctum_zone.has_item(rejected_card), "policy lab sanctum rejection should not insert the dragged deck card into sanctum")
+	_check(rejected_card.visible, "policy lab sanctum rejection should restore the dragged deck card visibility")
 	if status != null:
-		_check(status.text.contains("rejected") or status.text.contains("拒绝"), "permission lab sanctum rejection should update the status feedback")
+		_check(status.text.contains("rejected") or status.text.contains("拒绝"), "policy lab sanctum rejection should update the status feedback")
 
 func _test_layout_gallery_mode_and_captions() -> void:
 	var scene = LAYOUT_SCENE.instantiate()
@@ -338,6 +342,30 @@ func _test_battlefield_examples_load() -> void:
 		_check(found_battlefield_zone, "%s should expose at least one battlefield zone" % scene.name)
 		scene.queue_free()
 		await _settle_frames(1)
+
+func _test_targeting_example_load() -> void:
+	var scene = TARGETING_SCENE.instantiate()
+	add_child(scene)
+	await _settle_frames(3)
+	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
+	var content_row = scene.get_node_or_null("RootMargin/RootVBox/ContentRow") as HBoxContainer
+	var spell_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/SpellColumn/SpellHandPanel/SpellSourceZone") as Zone
+	var spell_targets = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/SpellColumn/SpellTargetPanel/SpellTargetZone") as Zone
+	var ability_button = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityToolbar/AimAbilityButton") as Button
+	var ability_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityPanel/AbilityBattlefieldZone") as Zone
+	_check(status != null and status.text.contains("Meteor"), "targeting lab should explain the spell targeting entry path in its status label")
+	_check(content_row != null, "targeting lab should serialize its main content row")
+	_check(spell_zone != null and spell_zone.get_item_count() == 1, "targeting lab should create a single spell source card")
+	_check(spell_targets != null and spell_targets.get_item_count() >= 2, "targeting lab should create multiple target pieces on the battlefield")
+	_check(ability_button != null, "targeting lab should expose the explicit begin_targeting button")
+	_check(ability_zone != null and ability_zone.get_item_count() >= 1, "targeting lab should create the battlefield used for piece abilities")
+	if ability_button != null and ability_zone != null:
+		ability_button.pressed.emit()
+		await _settle_frames(1)
+		_check(ability_zone.is_targeting(), "targeting lab ability button should start an explicit targeting session")
+		ability_zone.cancel_targeting()
+		await _settle_frames(1)
+		_check(not ability_zone.is_targeting(), "targeting lab cancel path should clear the explicit targeting session")
 
 func _assert_tab_content_stays_below_tab_bar(tab_container: TabContainer, tab_index: int, node_path: String, message: String) -> void:
 	tab_container.current_tab = tab_index

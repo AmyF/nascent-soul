@@ -12,19 +12,6 @@ var transfer_mode: TransferMode = TransferMode.DIRECT_PLACE
 var spawn_scene: PackedScene = null
 var metadata: Dictionary = {}
 
-var target_index: int:
-	get:
-		if resolved_target == null or not resolved_target.is_linear():
-			return -1
-		return resolved_target.slot
-	set(value):
-		if value < 0:
-			resolved_target = ZonePlacementTarget.invalid()
-			return
-		var existing_global = resolved_target.global_position if resolved_target != null else Vector2.ZERO
-		var existing_local = resolved_target.local_position if resolved_target != null else Vector2.ZERO
-		resolved_target = ZonePlacementTarget.linear(value, existing_global, existing_local)
-
 func _init(
 	p_allowed: bool = true,
 	p_reason: String = "",
