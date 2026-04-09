@@ -74,6 +74,8 @@ func targets_match(a: ZonePlacementTarget, b: ZonePlacementTarget) -> bool:
 	return a.matches(b)
 
 func rebuild_items_from_root() -> void:
+	if zone == null or not is_instance_valid(zone):
+		return
 	var items_root = zone.get_items_root()
 	if items_root == null:
 		clear_runtime_items(true)

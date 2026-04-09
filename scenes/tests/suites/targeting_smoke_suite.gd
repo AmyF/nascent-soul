@@ -192,7 +192,7 @@ func _test_overlay_state_and_highlight_cleanup() -> void:
 	if session == null:
 		return
 	source_zone.get_runtime().update_targeting_session(session, ally_piece.global_position + ally_piece.size * 0.5)
-	var overlay = get_viewport().get_node_or_null("__NascentSoulTargetingOverlay")
+	var overlay = _find_targeting_overlay()
 	var ally_overlay = ally_piece.get_node_or_null("PieceOverlay") as ColorRect
 	_check(overlay != null and overlay.get_script() == ZoneArrowTargetingOverlayScript, "targeting should render through a dedicated arrow overlay")
 	_check(overlay != null and overlay.visible, "active targeting should keep the overlay visible")
@@ -206,8 +206,14 @@ func _test_overlay_state_and_highlight_cleanup() -> void:
 	source_zone.cancel_targeting()
 	await _settle_frames(1)
 	_check(cancel_events == ["cancel"], "cancelling targeting should emit the targeting_cancelled signal once")
-	_check(get_viewport().get_node_or_null("__NascentSoulTargetingOverlay") == null, "cancelling targeting should clear the overlay node from the viewport")
+	_check(_find_targeting_overlay() == null, "cancelling targeting should clear the overlay node from the viewport")
 	_check(enemy_overlay != null and not enemy_overlay.visible, "cancelling targeting should clear the active item highlight")
+
+func _find_targeting_overlay() -> Control:
+	var viewport = get_viewport()
+	if viewport == null:
+		return null
+	return viewport.find_child("__NascentSoulTargetingOverlay", true, false) as Control
 
 func _make_square_battlefield(panel: Control, zone_name: String, columns: int, rows: int) -> BattlefieldZone:
 	var square_model := ZoneSquareGridSpaceModel.new()

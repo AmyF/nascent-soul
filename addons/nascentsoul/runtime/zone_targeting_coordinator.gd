@@ -2,9 +2,11 @@ class_name ZoneTargetingCoordinator extends Node
 
 const COORDINATOR_NAME := "__NascentSoulTargetingCoordinator"
 const ZONE_GROUP := "__NascentSoulZones"
+const OVERLAY_LAYER_NAME := "__NascentSoulTargetingLayer"
 
 var active_session: ZoneTargetingSession = null
 var _overlay: Control = null
+var _overlay_layer: CanvasLayer = null
 
 func _ready() -> void:
 	set_process(false)
@@ -123,6 +125,12 @@ func _update_overlay(source_zone: Zone) -> void:
 	if style == null:
 		_clear_overlay()
 		return
+	var viewport = get_viewport()
+	if viewport == null:
+		return
+	_ensure_overlay_layer(viewport)
+	if _overlay_layer != null and _overlay_layer.get_parent() == viewport:
+		viewport.move_child(_overlay_layer, viewport.get_child_count() - 1)
 	if _overlay == null or not is_instance_valid(_overlay):
 		_overlay = style.create_overlay(self)
 		if _overlay == null:
@@ -131,14 +139,12 @@ func _update_overlay(source_zone: Zone) -> void:
 		_overlay.visible = false
 		_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_overlay.top_level = true
-		_overlay.z_as_relative = false
-		_overlay.z_index = 4096
-		get_viewport().add_child(_overlay)
-	else:
-		_overlay.z_as_relative = false
-		_overlay.z_index = 4096
-	if _overlay.get_parent() == get_viewport():
-		get_viewport().move_child(_overlay, get_viewport().get_child_count() - 1)
+		if _overlay_layer != null:
+			_overlay_layer.add_child(_overlay)
+		else:
+			viewport.add_child(_overlay)
+	if _overlay_layer == null and _overlay.get_parent() == viewport:
+		viewport.move_child(_overlay, viewport.get_child_count() - 1)
 	style.update_overlay(_overlay, active_session, active_session.source_anchor_global, active_session.candidate, active_session.decision, active_session.pointer_global_position)
 
 func _resolve_style(source_zone: Zone) -> ZoneTargetingStyle:
@@ -151,8 +157,30 @@ func _resolve_style(source_zone: Zone) -> ZoneTargetingStyle:
 func _clear_overlay() -> void:
 	if _overlay == null or not is_instance_valid(_overlay):
 		_overlay = null
+		_clear_overlay_layer()
 		return
 	if _overlay.has_method("clear_state"):
 		_overlay.call("clear_state")
 	_overlay.queue_free()
 	_overlay = null
+	_clear_overlay_layer()
+
+func _ensure_overlay_layer(viewport: Viewport) -> void:
+	if _overlay_layer != null and is_instance_valid(_overlay_layer) and _overlay_layer.get_parent() == viewport:
+		return
+	_overlay_layer = viewport.get_node_or_null(OVERLAY_LAYER_NAME) as CanvasLayer
+	if _overlay_layer == null:
+		_overlay_layer = CanvasLayer.new()
+		_overlay_layer.name = OVERLAY_LAYER_NAME
+		_overlay_layer.layer = 120
+		viewport.add_child(_overlay_layer)
+	_overlay_layer.visible = true
+
+func _clear_overlay_layer() -> void:
+	if _overlay_layer == null or not is_instance_valid(_overlay_layer):
+		_overlay_layer = null
+		return
+	if _overlay_layer.get_child_count() > 0:
+		return
+	_overlay_layer.queue_free()
+	_overlay_layer = null

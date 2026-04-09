@@ -226,6 +226,8 @@ func apply_hover_feedback(items: Array[Control], decision: ZoneTransferDecision,
 	var next_target = decision.resolved_target if decision != null else ZonePlacementTarget.invalid()
 	if resolved_preview_target is ZonePlacementTarget and (resolved_preview_target as ZonePlacementTarget).is_valid():
 		next_target = (resolved_preview_target as ZonePlacementTarget).duplicate_target()
+	elif not next_allowed:
+		next_target = ZonePlacementTarget.invalid()
 	if next_active and next_allowed and next_target != null and next_target.is_valid():
 		if not is_instance_valid(ghost_instance) and is_instance_valid(preview_source):
 			create_ghost(preview_source)

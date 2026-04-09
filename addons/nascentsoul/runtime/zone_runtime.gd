@@ -550,6 +550,7 @@ func _clear_preview_internal() -> void:
 func _reorder_items(items_to_move: Array[Control], placement_target: ZonePlacementTarget) -> bool:
 	var moving_items: Array[Control] = []
 	var original_indices: Dictionary = {}
+	var removed_indices: Dictionary = {}
 	for item in item_state.items:
 		if _array_contains_valid_control(items_to_move, item):
 			original_indices[item] = _find_item_index(item)
@@ -584,6 +585,7 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 	var source_zone = source_zone_override if source_zone_override != null else zone
 	var moving_items: Array[Control] = []
 	var original_indices: Dictionary = {}
+	var removed_indices: Dictionary = {}
 	for item in item_state.items:
 		if _array_contains_valid_control(items_to_move, item):
 			original_indices[item] = _find_item_index(item)
@@ -598,16 +600,21 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 	if final_target == null or not final_target.is_valid():
 		final_target = target_runtime._resolve_transfer_target_for_api(moving_items, null)
 	if final_target == null or not final_target.is_valid():
+		target_zone.get_runtime()._emit_drop_rejected_items(moving_items, source_zone, "Invalid drop target.")
 		return false
+	var original_targets: Dictionary = {}
+	for item in moving_items:
+		original_targets[item] = item_state.get_item_target(item)
 	for item in moving_items:
 		selection_changed = _remove_item_from_state(item, false, false) or selection_changed
 		_clear_item_visual_state(item, false)
 		var from_index = original_indices.get(item, -1)
 		if from_index >= 0:
-			zone.item_removed.emit(item, from_index)
+			removed_indices[item] = from_index
 	if resolved_decision.transfer_mode == ZoneTransferDecision.TransferMode.SPAWN_PIECE:
 		var spawned_items = _build_spawned_items(moving_items, resolved_decision, final_target, source_zone)
 		if spawned_items.is_empty():
+			target_zone.get_runtime()._emit_drop_rejected_items(moving_items, source_zone, "No spawn item could be created.")
 			for item in moving_items:
 				if is_instance_valid(item):
 					item.visible = true
@@ -621,14 +628,12 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 			spawned_snapshots[spawned_items[index]] = transfer_snapshots.get(moving_items[index], {})
 		var spawned_inserted = target_runtime._insert_transferred_items(spawned_items, final_target, spawned_snapshots)
 		if not spawned_inserted:
-			for item in moving_items:
-				if is_instance_valid(item):
-					item.visible = true
-			item_state.rebuild_items_from_root()
-			refresh()
-			target_runtime.item_state.rebuild_items_from_root()
-			target_zone.refresh()
+			target_zone.get_runtime()._emit_drop_rejected_items(moving_items, source_zone, "Failed to insert spawned items.")
+			_restore_failed_transfer(moving_items, original_targets)
 			return false
+		for removed_item in moving_items:
+			if removed_indices.has(removed_item):
+				zone.item_removed.emit(removed_item, removed_indices[removed_item])
 		for source_item in moving_items:
 			if is_instance_valid(source_item):
 				var items_root = zone.get_items_root()
@@ -644,20 +649,12 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 					inserted = false
 					break
 		if not inserted:
-			for item in moving_items:
-				if is_instance_valid(item):
-					item.visible = true
-					var source_root = zone.get_items_root()
-					if source_root != null and item.get_parent() != source_root:
-						if item.get_parent() != null:
-							item.reparent(source_root, true)
-						else:
-							source_root.add_child(item)
-			item_state.rebuild_items_from_root()
-			refresh()
-			target_runtime.item_state.rebuild_items_from_root()
-			target_zone.refresh()
+			target_zone.get_runtime()._emit_drop_rejected_items(moving_items, source_zone, "Failed to insert items.")
+			_restore_failed_transfer(moving_items, original_targets)
 			return false
+		for removed_item in moving_items:
+			if removed_indices.has(removed_item):
+				zone.item_removed.emit(removed_item, removed_indices[removed_item])
 		for item in moving_items:
 			item.visible = true
 		_emit_item_transferred(source_zone, target_zone, moving_items)
@@ -697,6 +694,23 @@ func _insert_transferred_items(moving_items: Array[Control], placement_target: Z
 	_sync_container_order()
 	refresh()
 	return true
+
+func _restore_failed_transfer(moving_items: Array[Control], original_targets: Dictionary) -> void:
+	var source_root = zone.get_items_root()
+	for item in moving_items:
+		if not is_instance_valid(item):
+			continue
+		item.visible = true
+		if source_root != null and item.get_parent() != source_root:
+			if item.get_parent() != null:
+				item.reparent(source_root, true)
+			else:
+				source_root.add_child(item)
+		var original_target = original_targets.get(item, ZonePlacementTarget.invalid())
+		if original_target is ZonePlacementTarget and (original_target as ZonePlacementTarget).is_valid():
+			_set_item_target(item, original_target)
+	item_state.rebuild_items_from_root()
+	refresh()
 
 func _sync_container_order() -> void:
 	item_state.sync_container_order()
@@ -839,6 +853,8 @@ func _disconnect_zone_input() -> void:
 		zone.gui_input.disconnect(gui_input_callable)
 
 func _handle_items_root_structure_changed() -> void:
+	if zone == null or not is_instance_valid(zone):
+		return
 	_rebuild_items_from_root()
 	var coordinator = zone.get_drag_coordinator(false)
 	if coordinator == null or coordinator.get_session() == null:
