@@ -13,11 +13,10 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var reset_button: Button = $RootMargin/RootVBox/Toolbar/ResetButton
 @onready var board_capacity_label: Label = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardCapacityLabel
-@onready var _deck_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DeckColumn/DeckZone
-@onready var _hand_zone: Zone = $RootMargin/RootVBox/RecipesGrid/HandColumn/HandZone
-@onready var _board_zone: Zone = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone
-@onready var _discard_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DiscardColumn/DiscardZone
-@onready var _board_capacity: ZoneCapacityTransferPolicy = _board_zone.transfer_policy as ZoneCapacityTransferPolicy
+@onready var _deck_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DeckColumn/DeckZone as Zone
+@onready var _hand_zone: Zone = $RootMargin/RootVBox/RecipesGrid/HandColumn/HandZone as Zone
+@onready var _board_zone: Zone = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone as Zone
+@onready var _discard_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DiscardColumn/DiscardZone as Zone
 
 func _ready() -> void:
 	_populate_cards()
@@ -55,19 +54,19 @@ func _reset_recipe() -> void:
 
 func _draw_to_hand(item: Control) -> void:
 	if _deck_zone.has_item(item):
-		_deck_zone.move_item_to(item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
+		ExampleSupport.move_item(_deck_zone, item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
 
 func _play_to_board(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
+		ExampleSupport.move_item(_hand_zone, item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
 
 func _discard_from_hand(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
+		ExampleSupport.move_item(_hand_zone, item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 
 func _discard_from_board(item: Control) -> void:
 	if _board_zone.has_item(item):
-		_board_zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
+		ExampleSupport.move_item(_board_zone, item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:
@@ -96,6 +95,7 @@ func _on_drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reaso
 
 func _refresh_guidance() -> void:
 	var board_count = _board_zone.get_item_count()
+	var _board_capacity: ZoneCapacityTransferPolicy = ExampleSupport.get_zone_transfer_policy(_board_zone) as ZoneCapacityTransferPolicy
 	var board_limit = _board_capacity.max_items if _board_capacity != null else 0
 	board_capacity_label.text = "容量 %d / %d / Capacity %d / %d" % [board_count, board_limit, board_count, board_limit]
 

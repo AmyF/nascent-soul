@@ -80,9 +80,9 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(transfer_deck_cards.size() == 6, "transfer playground should serialize six deck sample cards")
 	_check(transfer_hand_cards.size() == 5, "transfer playground should serialize five hand sample cards")
 	_check(transfer_board_cards.size() == 2, "transfer playground should serialize two board sample cards")
-	_check(transfer_board != null and transfer_board.preset != null, "transfer playground board zone should serialize its preset")
-	_check(transfer_board != null and transfer_board.transfer_policy is ZoneCapacityTransferPolicy, "transfer playground board zone should serialize its capacity policy")
-	_check(transfer_board != null and transfer_board.drag_visual_factory is ZoneConfigurableDragVisualFactory, "transfer playground board zone should serialize its drag visual factory")
+	_check(transfer_board != null and transfer_board.config != null, "transfer playground board zone should serialize its config")
+	_check(transfer_board != null and ExampleSupport.get_zone_transfer_policy(transfer_board) is ZoneCapacityTransferPolicy, "transfer playground board zone should serialize its capacity policy")
+	_check(transfer_board != null and ExampleSupport.get_zone_drag_visual_factory(transfer_board) is ZoneConfigurableDragVisualFactory, "transfer playground board zone should serialize its drag visual factory")
 	var policy = POLICY_SCENE.instantiate()
 	var policy_board = policy.get_node_or_null("RootMargin/RootVBox/Grid/BoardColumn/BoardZone") as Zone
 	var sanctum_zone = policy.get_node_or_null("RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone") as Zone
@@ -97,9 +97,9 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(policy_grid != null and policy_grid.theme_type_variation == &"DemoPolicyGrid", "policy lab grid should use the shared policy grid variation")
 	_check(policy_deck_cards.size() == 4, "policy lab should serialize four deck sample cards")
 	_check(policy_hand_cards.size() == 3, "policy lab should serialize three hand sample cards")
-	_check(policy_board != null and policy_board.transfer_policy is ZoneCapacityTransferPolicy, "policy lab board zone should serialize its capacity policy")
-	_check(sanctum_zone != null and sanctum_zone.layout_policy is ZoneVBoxLayout, "policy lab sanctum zone should serialize its layout policy")
-	_check(sanctum_zone != null and sanctum_zone.transfer_policy is ZoneCompositeTransferPolicy, "policy lab sanctum zone should serialize its composite policy")
+	_check(policy_board != null and ExampleSupport.get_zone_transfer_policy(policy_board) is ZoneCapacityTransferPolicy, "policy lab board zone should serialize its capacity policy")
+	_check(sanctum_zone != null and ExampleSupport.get_zone_layout_policy(sanctum_zone) is ZoneVBoxLayout, "policy lab sanctum zone should serialize its layout policy")
+	_check(sanctum_zone != null and ExampleSupport.get_zone_transfer_policy(sanctum_zone) is ZoneCompositeTransferPolicy, "policy lab sanctum zone should serialize its composite policy")
 	var layouts = LAYOUT_SCENE.instantiate()
 	var row_zone = layouts.get_node_or_null("RootMargin/RootVBox/Grid/RowColumn/RowZone") as Zone
 	var list_zone = layouts.get_node_or_null("RootMargin/RootVBox/Grid/ListColumn/ListZone") as Zone
@@ -114,10 +114,10 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(reset_button != null and reset_button.theme_type_variation == &"DemoDangerActionButton", "layout gallery reset button should use the shared danger button variation")
 	_check(layout_grid != null and layout_grid.theme_type_variation == &"DemoLayoutGrid", "layout gallery grid should use the shared layout grid variation")
 	_check(gallery_cards.size() == 5, "layout gallery should serialize five gallery sample cards")
-	_check(row_zone != null and row_zone.layout_policy is ZoneHBoxLayout, "layout gallery row zone should serialize its row layout")
-	_check(row_zone != null and row_zone.sort_policy is ZonePropertySort, "layout gallery row zone should serialize its row sort")
-	_check(list_zone != null and list_zone.layout_policy is ZoneVBoxLayout, "layout gallery list zone should serialize its list layout")
-	_check(list_zone != null and list_zone.sort_policy is ZoneGroupSort, "layout gallery list zone should serialize its list sort")
+	_check(row_zone != null and ExampleSupport.get_zone_layout_policy(row_zone) is ZoneHBoxLayout, "layout gallery row zone should serialize its row layout")
+	_check(row_zone != null and ExampleSupport.get_zone_sort_policy(row_zone) is ZonePropertySort, "layout gallery row zone should serialize its row sort")
+	_check(list_zone != null and ExampleSupport.get_zone_layout_policy(list_zone) is ZoneVBoxLayout, "layout gallery list zone should serialize its list layout")
+	_check(list_zone != null and ExampleSupport.get_zone_sort_policy(list_zone) is ZoneGroupSort, "layout gallery list zone should serialize its list sort")
 	var recipes = RECIPES_SCENE.instantiate()
 	var recipes_board = recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone") as Zone
 	var recipes_reset = recipes.get_node_or_null("RootMargin/RootVBox/Toolbar/ResetButton") as Button
@@ -133,8 +133,8 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(recipes_deck_cards.size() == 6, "zone recipes should serialize six deck sample cards")
 	_check(recipes_hand_cards.size() == 4, "zone recipes should serialize four hand sample cards")
 	_check(recipes_board_cards.size() == 2, "zone recipes should serialize two board sample cards")
-	_check(recipes_board != null and recipes_board.preset != null, "zone recipes board zone should serialize its preset")
-	_check(recipes_board != null and recipes_board.transfer_policy is ZoneCapacityTransferPolicy, "zone recipes board zone should serialize its capacity policy")
+	_check(recipes_board != null and recipes_board.config != null, "zone recipes board zone should serialize its config")
+	_check(recipes_board != null and ExampleSupport.get_zone_transfer_policy(recipes_board) is ZoneCapacityTransferPolicy, "zone recipes board zone should serialize its capacity policy")
 	demo.free()
 	transfer.free()
 	policy.free()
@@ -176,7 +176,7 @@ func _test_transfer_playground_guidance() -> void:
 	if board_capacity_label == null or status == null or hand_zone == null or board_zone == null:
 		return
 	var hand_item = hand_zone.get_items()[0]
-	_check(hand_zone.move_item_to(hand_item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "transfer playground smoke should move a hand card onto the board")
+	_check(ExampleSupport.move_item(hand_zone, hand_item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "transfer playground smoke should move a hand card onto the board")
 	await _settle_frames(3)
 	_check(board_capacity_label.text.contains("3 / 5"), "transfer playground board capacity label should refresh after a successful move")
 	_check(status.text.contains(hand_item.name), "transfer playground status should mention the most recent moved card")
@@ -203,10 +203,10 @@ func _test_policy_lab_rule_cards_and_reject_feedback() -> void:
 		return
 	for _i in range(2):
 		var item = hand_zone.get_items()[0]
-		_check(hand_zone.move_item_to(item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "policy lab should allow the first two board transfers")
+		_check(ExampleSupport.move_item(hand_zone, item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "policy lab should allow the first two board transfers")
 		await _settle_frames(2)
 	var rejected_item = hand_zone.get_items()[0]
-	_check(not hand_zone.move_item_to(rejected_item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "policy lab should reject transfers once the board is full")
+	_check(not ExampleSupport.move_item(hand_zone, rejected_item, board_zone, ZonePlacementTarget.linear(board_zone.get_item_count())), "policy lab should reject transfers once the board is full")
 	await _settle_frames(2)
 	_check(board_capacity_label.text.contains("2 / 2"), "policy lab board capacity label should refresh to the full state")
 	_check(status.text.contains("rejected") or status.text.contains("拒绝"), "policy lab status should surface the rejection feedback")
@@ -235,7 +235,7 @@ func _test_policy_lab_deck_drag_paths() -> void:
 	session.hover_zone = board_zone
 	session.requested_target = ZonePlacementTarget.linear(board_zone.get_item_count())
 	session.preview_target = ZonePlacementTarget.linear(board_zone.get_item_count())
-	board_zone.get_runtime().perform_drop(session)
+	board_zone.perform_drop(session)
 	await _settle_frames(3)
 	if DisplayServer.get_name() != "headless":
 		await get_tree().create_timer(0.25).timeout
@@ -256,7 +256,7 @@ func _test_policy_lab_deck_drag_paths() -> void:
 	session.hover_zone = sanctum_zone
 	session.requested_target = ZonePlacementTarget.linear(sanctum_zone.get_item_count())
 	session.preview_target = ZonePlacementTarget.invalid()
-	sanctum_zone.get_runtime().perform_drop(session)
+	sanctum_zone.perform_drop(session)
 	await _settle_frames(3)
 	_check(deck_zone.has_item(rejected_card), "policy lab sanctum rejection should keep the dragged deck card in deck")
 	_check(not sanctum_zone.has_item(rejected_card), "policy lab sanctum rejection should not insert the dragged deck card into sanctum")
@@ -306,7 +306,7 @@ func _test_layout_gallery_pile_drag_proxy_layering() -> void:
 	if session.cursor_proxy != null:
 		_check(not session.cursor_proxy.z_as_relative, "layout gallery pile drag proxy should use absolute z ordering")
 		_check(session.cursor_proxy.z_index >= ZoneDragCoordinator.CURSOR_PROXY_Z_INDEX, "layout gallery pile drag proxy should render above the stacked pile cards")
-	pile_zone.get_runtime().cancel_drag()
+	pile_zone.cancel_drag()
 	await _settle_frames(2)
 
 func _test_zone_recipes_copy_hint_and_reset() -> void:
@@ -318,7 +318,7 @@ func _test_zone_recipes_copy_hint_and_reset() -> void:
 	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone") as Zone
 	_check(scene.get_node_or_null("RootMargin/RootVBox/InfoRow") == null, "zone recipes should keep the recipe board clear of large onboarding cards")
-	_check(board_details != null and board_details.text.contains("BoardZonePreset"), "zone recipes should keep the board recipe copy static")
+	_check(board_details != null and board_details.text.contains("BoardZoneConfig"), "zone recipes should keep the board recipe copy static")
 	_check(board_capacity_label != null and board_capacity_label.text.contains("2 / 4"), "zone recipes should show the board capacity in a dedicated dynamic label")
 	_check(board_zone != null and board_zone.size.y >= 220.0, "zone recipes should keep the board recipe large enough to inspect and copy")
 	if status == null:

@@ -1,5 +1,5 @@
 @tool
-class_name TargetingSpellCard extends ZoneCard
+extends "res://addons/nascentsoul/cards/zone_card.gd"
 
 const ZonePieceScript = preload("res://addons/nascentsoul/pieces/zone_piece.gd")
 const ZoneTargetRuleTablePolicyScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule_table_policy.gd")
@@ -15,7 +15,7 @@ const BACK_TEXTURE := preload("res://assets/card/card_back.png")
 @export var ally_meta_value: String = "ally"
 @export var ally_reject_reason: String = "This spell only targets enemies."
 
-func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -> ZoneTargetingIntent:
+func create_zone_targeting_intent(_command: ZoneTargetingCommand, _entry_mode: StringName) -> ZoneTargetingIntent:
 	var intent := ZoneTargetingIntent.new()
 	intent.allowed_candidate_kinds = PackedInt32Array([ZoneTargetCandidate.CandidateKind.ITEM])
 	intent.policy = _make_targeting_policy()
@@ -24,8 +24,8 @@ func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -
 	}
 	return intent
 
-static func create_demo_card(title: String, cost: int, tags: Array = ["spell"]) -> TargetingSpellCard:
-	var card := TargetingSpellCard.new()
+static func create_demo_card(title: String, cost: int, tags: Array = ["spell"]) -> ZoneCard:
+	var card := load("res://scenes/examples/shared/targeting_spell_card.gd").new() as ZoneCard
 	var normalized_tags := PackedStringArray()
 	for tag in tags:
 		normalized_tags.append(str(tag))
@@ -46,6 +46,11 @@ static func create_demo_card(title: String, cost: int, tags: Array = ["spell"]) 
 	card.data = data
 	card.face_up = true
 	card.spell_name = title
+	card.zone_item_metadata = {
+		"example_cost": cost,
+		"example_tags": normalized_tags,
+		"example_primary_tag": normalized_tags[0] if not normalized_tags.is_empty() else "spell"
+	}
 	card.set_meta("example_cost", cost)
 	card.set_meta("example_tags", normalized_tags)
 	card.set_meta("example_primary_tag", normalized_tags[0] if not normalized_tags.is_empty() else "spell")

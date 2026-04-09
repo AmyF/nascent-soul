@@ -68,7 +68,7 @@ func _test_regular_card_keeps_drag_transfer() -> void:
 	_check(signal_events == ["drag"], "cards without a targeting intent should keep the normal drag-transfer flow")
 	_check(drag_session != null, "regular drag flow should still create a drag session")
 	_check(source_zone.get_targeting_session() == null, "regular drag flow should not create a targeting session")
-	source_zone.get_runtime().cancel_drag()
+	source_zone.cancel_drag()
 	await _settle_frames(1)
 
 func _test_explicit_begin_targeting_resolves_placement_and_emits_result() -> void:
@@ -92,18 +92,18 @@ func _test_explicit_begin_targeting_resolves_placement_and_emits_result() -> voi
 	)
 	var target = ZonePlacementTarget.square(2, 1)
 	var intent = TargetingSupport.make_square_placement_intent("Guardian Dash")
-	_check(battlefield.begin_targeting(piece, intent), "begin_targeting should explicitly start a targeting session without drag history")
+	_check(_begin_item_targeting(battlefield, piece, intent), "begin_targeting should explicitly start a targeting session without drag history")
 	var session = battlefield.get_targeting_session()
 	_check(session != null and session.entry_mode == &"explicit", "explicit targeting should store the explicit entry mode")
 	if session == null:
 		return
-	battlefield.get_runtime().update_targeting_session(session, battlefield.get_runtime().resolve_target_anchor(target))
+	battlefield.update_targeting_session(session, battlefield.resolve_target_anchor(target))
 	_check(session.candidate.is_placement(), "explicit targeting should resolve empty or occupied board cells as placement candidates")
 	_check(session.decision.allowed, "placement targeting should allow a valid board cell")
 	_check(session.decision.resolved_candidate.placement_target.coordinates == Vector2i(2, 1), "explicit targeting should retain the resolved square coordinates")
 	_check(not preview_candidates.is_empty() and preview_candidates[preview_candidates.size() - 1] != null and preview_candidates[preview_candidates.size() - 1].has_method("describe"), "target preview callbacks should emit candidate objects instead of index semantics")
 	_check(not hover_decisions.is_empty() and hover_decisions[hover_decisions.size() - 1] != null and hover_decisions[hover_decisions.size() - 1].resolved_candidate != null, "target hover callbacks should emit decision objects")
-	battlefield.get_runtime().finalize_targeting_session(session)
+	battlefield.finalize_targeting_session(session)
 	await _settle_frames(1)
 	_check(resolved_candidates.size() == 1 and resolved_candidates[0].placement_target.coordinates == Vector2i(2, 1), "releasing a valid targeting session should emit the resolved placement candidate")
 	_check(battlefield.has_item(piece), "targeting resolution should not consume the source piece by default")
@@ -125,19 +125,19 @@ func _test_item_priority_and_placement_only_skip_item_targets() -> void:
 		ZoneTargetCandidate.CandidateKind.ITEM,
 		ZoneTargetCandidate.CandidateKind.PLACEMENT
 	])
-	_check(source_zone.begin_targeting(source_card, dual_intent), "explicit targeting should allow item-plus-placement candidate sets")
+	_check(_begin_item_targeting(source_zone, source_card, dual_intent), "explicit targeting should allow item-plus-placement candidate sets")
 	var session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone.get_runtime().update_targeting_session(session, piece_anchor)
+	source_zone.update_targeting_session(session, piece_anchor)
 	_check(session.candidate.is_item() and session.candidate.target_item == target_piece, "entity targeting should take priority over cell targeting when both are allowed")
 	source_zone.cancel_targeting()
 	await _settle_frames(1)
-	_check(source_zone.begin_targeting(source_card, TargetingSupport.make_square_placement_intent("Probe Shift")), "explicit targeting should restart cleanly with a new placement-only intent")
+	_check(_begin_item_targeting(source_zone, source_card, TargetingSupport.make_square_placement_intent("Probe Shift")), "explicit targeting should restart cleanly with a new placement-only intent")
 	session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone.get_runtime().update_targeting_session(session, piece_anchor)
+	source_zone.update_targeting_session(session, piece_anchor)
 	_check(session.candidate.is_placement(), "placement-only targeting should skip overlapped items and continue resolving the board cell")
 	_check(session.candidate.placement_target.coordinates == Vector2i(1, 0), "placement-only targeting should still resolve the correct occupied square")
 	source_zone.cancel_targeting()
@@ -150,21 +150,21 @@ func _test_source_and_target_policies_merge_with_reasons() -> void:
 	var battlefield = _make_square_battlefield(target_panel, "PolicyBattlefieldZone", 4, 2)
 	var ally_piece = TargetingSupport.make_target_piece("Bulwark", "ally", 1, 4)
 	var enemy_piece = TargetingSupport.make_target_piece("Enemy Scout", "enemy", 2, 1)
-	battlefield.targeting_policy = _make_enemy_only_target_policy("Spells in this zone cannot target allies.")
+	ExampleSupport.set_zone_targeting_policy(battlefield, _make_enemy_only_target_policy("Spells in this zone cannot target allies."))
 	battlefield.add_item(ally_piece, ZonePlacementTarget.square(0, 0))
 	battlefield.add_item(enemy_piece, ZonePlacementTarget.square(2, 0))
 	var source_card = ExampleSupport.make_card("Arc", 2, ["spell"], true)
 	source_zone.add_item(source_card)
 	await _settle_frames(2)
 	var intent = TargetingSupport.make_piece_item_intent()
-	_check(source_zone.begin_targeting(source_card, intent), "source policy smoke should start explicit item targeting")
+	_check(_begin_item_targeting(source_zone, source_card, intent), "source policy smoke should start explicit item targeting")
 	var session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone.get_runtime().update_targeting_session(session, ally_piece.global_position + ally_piece.size * 0.5)
+	source_zone.update_targeting_session(session, ally_piece.global_position + ally_piece.size * 0.5)
 	_check(not session.decision.allowed, "target zone policy should be able to reject a candidate after source policy allows it")
 	_check(session.decision.reason == "Spells in this zone cannot target allies.", "target zone rejection should surface its explicit reason")
-	source_zone.get_runtime().update_targeting_session(session, enemy_piece.global_position + enemy_piece.size * 0.5)
+	source_zone.update_targeting_session(session, enemy_piece.global_position + enemy_piece.size * 0.5)
 	_check(session.decision.allowed, "target zone should allow enemy piece candidates after source and target policies both pass")
 	_check(session.decision.resolved_candidate.target_item == enemy_piece, "policy merge should preserve the resolved entity candidate")
 	source_zone.cancel_targeting()
@@ -177,7 +177,7 @@ func _test_overlay_state_and_highlight_cleanup() -> void:
 	var battlefield = _make_square_battlefield(target_panel, "OverlayBattlefieldZone", 4, 2)
 	var ally_piece = TargetingSupport.make_target_piece("Beacon", "ally", 0, 2)
 	var enemy_piece = TargetingSupport.make_target_piece("Raider", "enemy", 2, 1)
-	battlefield.targeting_policy = _make_enemy_only_target_policy("Allies are invalid targets.")
+	ExampleSupport.set_zone_targeting_policy(battlefield, _make_enemy_only_target_policy("Allies are invalid targets."))
 	battlefield.add_item(ally_piece, ZonePlacementTarget.square(0, 0))
 	battlefield.add_item(enemy_piece, ZonePlacementTarget.square(2, 0))
 	var spell = TargetingSupport.make_spell_card("Meteor")
@@ -187,18 +187,18 @@ func _test_overlay_state_and_highlight_cleanup() -> void:
 	source_zone.targeting_cancelled.connect(func(_source_item, _source_zone_ref) -> void:
 		cancel_events.append("cancel")
 	)
-	_check(source_zone.begin_targeting(spell), "spell cards should allow explicit targeting via their built-in intent")
+	_check(_begin_item_targeting(source_zone, spell), "spell cards should allow explicit targeting via their built-in intent")
 	var session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone.get_runtime().update_targeting_session(session, ally_piece.global_position + ally_piece.size * 0.5)
+	source_zone.update_targeting_session(session, ally_piece.global_position + ally_piece.size * 0.5)
 	var overlay = _find_targeting_overlay()
 	var ally_overlay = ally_piece.get_node_or_null("PieceOverlay") as ColorRect
 	_check(overlay != null and overlay.get_script() == ZoneArrowTargetingOverlayScript, "targeting should render through a dedicated arrow overlay")
 	_check(overlay != null and overlay.visible, "active targeting should keep the overlay visible")
 	_check(overlay != null and int(overlay.get("_state")) == 2, "rejected hover candidates should switch the overlay into the invalid state")
 	_check(ally_overlay != null and ally_overlay.visible and ally_overlay.color.r > ally_overlay.color.g, "invalid item candidates should show the target highlight in an invalid color")
-	source_zone.get_runtime().update_targeting_session(session, enemy_piece.global_position + enemy_piece.size * 0.5)
+	source_zone.update_targeting_session(session, enemy_piece.global_position + enemy_piece.size * 0.5)
 	var enemy_overlay = enemy_piece.get_node_or_null("PieceOverlay") as ColorRect
 	_check(overlay != null and int(overlay.get("_state")) == 1, "valid hover candidates should switch the overlay into the valid state")
 	_check(enemy_overlay != null and enemy_overlay.visible and enemy_overlay.color.g > enemy_overlay.color.r, "valid item candidates should show the target highlight in a valid color")

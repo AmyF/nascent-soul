@@ -1,10 +1,10 @@
 @tool
 class_name ZoneSortPolicy extends Resource
 
-func sort_items(items: Array[Control]) -> Array[Control]:
+func sort_items(_context: ZoneContext, items: Array[ZoneItemControl]) -> Array[ZoneItemControl]:
 	return items.duplicate()
 
-func stable_sort_items(items: Array[Control], comparator: Callable) -> Array[Control]:
+func stable_sort_items(items: Array[ZoneItemControl], comparator: Callable) -> Array[ZoneItemControl]:
 	var result = items.duplicate()
 	for index in range(1, result.size()):
 		var current_item = result[index]
@@ -15,11 +15,16 @@ func stable_sort_items(items: Array[Control], comparator: Callable) -> Array[Con
 		result[compare_index + 1] = current_item
 	return result
 
-func resolve_item_value(item: Control, property_name: String = "", metadata_key: String = "", fallback = null):
+func resolve_item_value(item: ZoneItemControl, property_name: String = "", metadata_key: String = "", fallback = null):
 	if not is_instance_valid(item):
 		return fallback
-	if metadata_key != "" and item.has_meta(metadata_key):
-		return item.get_meta(metadata_key)
+	if metadata_key != "":
+		if item is ZoneItemControl:
+			var metadata = (item as ZoneItemControl).get_zone_item_metadata()
+			if metadata.has(metadata_key):
+				return metadata.get(metadata_key)
+		elif item.has_meta(metadata_key):
+			return item.get_meta(metadata_key)
 	if property_name != "":
 		var property_value = item.get(property_name)
 		if property_value != null:

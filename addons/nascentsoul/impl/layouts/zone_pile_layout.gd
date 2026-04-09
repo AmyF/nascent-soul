@@ -6,8 +6,10 @@ class_name ZonePileLayout extends ZoneLayoutPolicy
 @export var padding_left: float = 18.0
 @export var padding_top: float = 18.0
 
-func calculate(items: Array[Control], container_size: Vector2, ghost_item: Control = null, ghost_hint = null, runtime = null) -> Array[ZonePlacement]:
-	var render_items: Array[Control] = items.duplicate()
+func calculate(_context: ZoneContext, items: Array[ZoneItemControl], container_size: Vector2, ghost_item: Control = null, ghost_hint = null) -> Array[ZonePlacement]:
+	var render_items: Array = []
+	for item in items:
+		render_items.append(item)
 	var ghost_index = ghost_hint as int if ghost_hint is int else -1
 	if is_instance_valid(ghost_item) and ghost_index >= 0:
 		render_items.insert(clampi(ghost_index, 0, render_items.size()), ghost_item)
@@ -22,7 +24,7 @@ func calculate(items: Array[Control], container_size: Vector2, ghost_item: Contr
 		placements.append(ZonePlacement.new(item, pos, 0.0, Vector2.ONE, i, item == ghost_item))
 	return placements
 
-func get_insertion_index(items: Array[Control], container_size: Vector2, mouse_pos: Vector2) -> int:
+func get_insertion_index(items: Array[ZoneItemControl], container_size: Vector2, mouse_pos: Vector2) -> int:
 	var effective_overlap = _resolve_effective_overlap(items, container_size)
 	for i in range(items.size()):
 		var x = padding_left + i * effective_overlap.x
@@ -38,7 +40,7 @@ func would_escape_container(container_size: Vector2, item_count: int = 5, sample
 	var requested_height = padding_top * 2.0 + sample_item_size.y + max(0, item_count - 1) * abs(overlap_y)
 	return requested_width > container_size.x or requested_height > container_size.y
 
-func _resolve_effective_overlap(items: Array[Control], container_size: Vector2) -> Vector2:
+func _resolve_effective_overlap(items: Array, container_size: Vector2) -> Vector2:
 	if items.is_empty():
 		return Vector2(overlap_x, overlap_y)
 	var max_item_size = Vector2.ZERO

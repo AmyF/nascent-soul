@@ -4,13 +4,21 @@
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="10_theme"]
 [ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="11_card_spec"]
 [ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="3_hand"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="4_pile"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_config.tres" id="3_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_config.tres" id="4_pile"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hbox_layout.gd" id="5_hbox_layout"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_vbox_layout.gd" id="6_vbox_layout"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="7_pile_layout"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_property_sort.gd" id="8_property_sort"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_group_sort.gd" id="9_group_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="12_config"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="13_display"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="14_interaction"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hand_layout.gd" id="15_hand_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="16_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="17_allow_all"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="18_space"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="19_factory"]
 
 [sub_resource type="Resource" id="LayoutRowLayout"]
 script = ExtResource("5_hbox_layout")
@@ -117,6 +125,60 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
+[sub_resource type="Resource" id="LayoutCardDisplay"]
+script = ExtResource("13_display")
+
+[sub_resource type="Resource" id="LayoutInteraction"]
+script = ExtResource("14_interaction")
+
+[sub_resource type="Resource" id="LayoutHandLayout"]
+script = ExtResource("15_hand_layout")
+arch_angle_deg = 38.0
+arch_height = 26.0
+card_spacing_angle = 5.5
+
+[sub_resource type="Resource" id="LayoutManualSort"]
+script = ExtResource("16_sort")
+
+[sub_resource type="Resource" id="LayoutAllowAllPolicy"]
+script = ExtResource("17_allow_all")
+
+[sub_resource type="Resource" id="LayoutLinearSpace"]
+script = ExtResource("18_space")
+
+[sub_resource type="Resource" id="LayoutDragVisualFactory"]
+script = ExtResource("19_factory")
+
+[sub_resource type="Resource" id="LayoutRowZoneConfig"]
+script = ExtResource("12_config")
+space_model = SubResource("LayoutLinearSpace")
+layout_policy = SubResource("LayoutRowLayout")
+display_style = SubResource("LayoutCardDisplay")
+interaction = SubResource("LayoutInteraction")
+sort_policy = SubResource("LayoutRowSort")
+transfer_policy = SubResource("LayoutAllowAllPolicy")
+drag_visual_factory = SubResource("LayoutDragVisualFactory")
+
+[sub_resource type="Resource" id="LayoutListZoneConfig"]
+script = ExtResource("12_config")
+space_model = SubResource("LayoutLinearSpace")
+layout_policy = SubResource("LayoutListLayout")
+display_style = SubResource("LayoutCardDisplay")
+interaction = SubResource("LayoutInteraction")
+sort_policy = SubResource("LayoutListSort")
+transfer_policy = SubResource("LayoutAllowAllPolicy")
+drag_visual_factory = SubResource("LayoutDragVisualFactory")
+
+[sub_resource type="Resource" id="LayoutPileZoneConfig"]
+script = ExtResource("12_config")
+space_model = SubResource("LayoutLinearSpace")
+layout_policy = SubResource("LayoutPileLayout")
+display_style = SubResource("LayoutCardDisplay")
+interaction = SubResource("LayoutInteraction")
+sort_policy = SubResource("LayoutManualSort")
+transfer_policy = SubResource("LayoutAllowAllPolicy")
+drag_visual_factory = SubResource("LayoutDragVisualFactory")
+
 [node name="LayoutGallery" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -190,7 +252,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("LayoutHandZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("3_hand")
+config = ExtResource("3_hand")
 
 [node name="RowColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -214,8 +276,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("LayoutRowZonePanel")
 script = ExtResource("2_zone")
-layout_policy = SubResource("LayoutRowLayout")
-sort_policy = SubResource("LayoutRowSort")
+config = SubResource("LayoutRowZoneConfig")
 
 [node name="ListColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -240,8 +301,7 @@ size_flags_horizontal = 3
 clip_contents = true
 theme_override_styles/panel = SubResource("LayoutListZonePanel")
 script = ExtResource("2_zone")
-layout_policy = SubResource("LayoutListLayout")
-sort_policy = SubResource("LayoutListSort")
+config = SubResource("LayoutListZoneConfig")
 
 [node name="PileColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -265,8 +325,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("LayoutPileZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("4_pile")
-layout_policy = SubResource("LayoutPileLayout")
+config = SubResource("LayoutPileZoneConfig")
 
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2

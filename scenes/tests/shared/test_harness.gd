@@ -39,6 +39,21 @@ func _zone_item_names(zone: Zone) -> Array[String]:
 		names.append(item.name)
 	return names
 
+func _move_item(source_zone: Zone, item: Control, target_zone: Zone, placement_target: ZonePlacementTarget = null) -> bool:
+	return ExampleSupport.move_item(source_zone, item, target_zone, placement_target)
+
+func _transfer_items(source_zone: Zone, items: Array, target_zone: Zone, placement_target: ZonePlacementTarget = null) -> bool:
+	return ExampleSupport.transfer_items(source_zone, items, target_zone, placement_target)
+
+func _reorder_items(zone: Zone, items: Array, placement_target: ZonePlacementTarget = null) -> bool:
+	return ExampleSupport.reorder_items(zone, items, placement_target)
+
+func _begin_item_targeting(zone: Zone, item: Control, intent: ZoneTargetingIntent = null, pointer_global_position: Vector2 = Vector2.ZERO) -> bool:
+	return ExampleSupport.begin_item_targeting(zone, item, intent, pointer_global_position)
+
+func _first_open_target(zone: Zone, item: Control) -> ZonePlacementTarget:
+	return ExampleSupport.get_first_open_target(zone, item)
+
 func _managed_control_names(container: Control) -> Array[String]:
 	var names: Array[String] = []
 	var resolved_container = _resolve_managed_container(container)

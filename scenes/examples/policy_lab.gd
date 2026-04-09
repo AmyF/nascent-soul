@@ -12,13 +12,11 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var board_capacity_label: Label = $RootMargin/RootVBox/Grid/BoardColumn/BoardCapacityLabel
 @onready var sanctum_capacity_label: Label = $RootMargin/RootVBox/Grid/SanctumColumn/SanctumCapacityLabel
-@onready var _deck_zone: Zone = $RootMargin/RootVBox/Grid/DeckColumn/DeckZone
-@onready var _hand_zone: Zone = $RootMargin/RootVBox/Grid/HandColumn/HandZone
-@onready var _board_zone: Zone = $RootMargin/RootVBox/Grid/BoardColumn/BoardZone
-@onready var _sanctum_zone: Zone = $RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone
-@onready var _discard_zone: Zone = $RootMargin/RootVBox/Grid/DiscardColumn/DiscardZone
-@onready var _board_capacity: ZoneCapacityTransferPolicy = _board_zone.transfer_policy as ZoneCapacityTransferPolicy
-@onready var _sanctum_rules: ZoneCompositeTransferPolicy = _sanctum_zone.transfer_policy as ZoneCompositeTransferPolicy
+@onready var _deck_zone: Zone = $RootMargin/RootVBox/Grid/DeckColumn/DeckZone as Zone
+@onready var _hand_zone: Zone = $RootMargin/RootVBox/Grid/HandColumn/HandZone as Zone
+@onready var _board_zone: Zone = $RootMargin/RootVBox/Grid/BoardColumn/BoardZone as Zone
+@onready var _sanctum_zone: Zone = $RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone as Zone
+@onready var _discard_zone: Zone = $RootMargin/RootVBox/Grid/DiscardColumn/DiscardZone as Zone
 
 func _ready() -> void:
 	_populate_cards()
@@ -44,20 +42,20 @@ func _wire_actions() -> void:
 
 func _draw_to_hand(item: Control) -> void:
 	if _deck_zone.has_item(item):
-		_deck_zone.move_item_to(item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
+		ExampleSupport.move_item(_deck_zone, item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
 
 func _send_hand_to_sanctum(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _sanctum_zone, ZonePlacementTarget.linear(_sanctum_zone.get_item_count()))
+		ExampleSupport.move_item(_hand_zone, item, _sanctum_zone, ZonePlacementTarget.linear(_sanctum_zone.get_item_count()))
 
 func _send_hand_to_board(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
+		ExampleSupport.move_item(_hand_zone, item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
 
 func _discard_card(item: Control) -> void:
 	for zone in [_board_zone, _sanctum_zone]:
 		if zone.has_item(item):
-			zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
+			ExampleSupport.move_item(zone, item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 			return
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
@@ -87,8 +85,10 @@ func _on_drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reaso
 
 func _refresh_guidance() -> void:
 	var board_count = _board_zone.get_item_count()
+	var _board_capacity: ZoneCapacityTransferPolicy = ExampleSupport.get_zone_transfer_policy(_board_zone) as ZoneCapacityTransferPolicy
 	var board_limit = _board_capacity.max_items if _board_capacity != null else 0
 	board_capacity_label.text = "容量 %d / %d / Capacity %d / %d" % [board_count, board_limit, board_count, board_limit]
+	var _sanctum_rules: ZoneCompositeTransferPolicy = ExampleSupport.get_zone_transfer_policy(_sanctum_zone) as ZoneCompositeTransferPolicy
 	var sanctum_capacity = _resolve_capacity_policy(_sanctum_rules)
 	var sanctum_count = _sanctum_zone.get_item_count()
 	var sanctum_limit = sanctum_capacity.max_items if sanctum_capacity != null else 0

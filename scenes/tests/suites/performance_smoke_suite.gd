@@ -31,12 +31,12 @@ func _measure_card_count(card_count: int) -> void:
 	var source_items = source_zone.get_items()
 	var reorder_item = source_items[source_items.size() - 1]
 	var reorder_started = Time.get_ticks_usec()
-	source_zone.reorder_item(reorder_item, ZonePlacementTarget.linear(0))
+	_reorder_items(source_zone, [reorder_item], ZonePlacementTarget.linear(0))
 	await _settle_frames(2)
 	var reorder_ms = float(Time.get_ticks_usec() - reorder_started) / 1000.0
 	var transfer_item = source_zone.get_items()[0]
 	var transfer_started = Time.get_ticks_usec()
-	source_zone.move_item_to(transfer_item, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
+	_move_item(source_zone, transfer_item, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
 	await _settle_frames(2)
 	var transfer_ms = float(Time.get_ticks_usec() - transfer_started) / 1000.0
 	print("%s %d cards: refresh=%.2fms reorder=%.2fms transfer=%.2fms" % [_suite_name, card_count, refresh_ms, reorder_ms, transfer_ms])

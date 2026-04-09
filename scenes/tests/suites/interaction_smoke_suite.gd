@@ -33,20 +33,20 @@ func _test_hover_and_selection_visuals() -> void:
 	var base_position = alpha.position
 	_emit_mouse_entered(alpha)
 	await _settle_frames(1)
-	_check(zone.get_runtime().selection_state.hovered_item == alpha, "mouse enter should update hovered item")
+	_check(zone.get_hovered_item() == alpha, "mouse enter should update hovered item")
 	_check(alpha.scale.x > 1.0 and alpha.position.y < base_position.y, "hover should lift and scale the hovered card")
 	_check(_overlay_visible(alpha), "hover should show the card overlay")
 	_emit_mouse_exited(alpha)
 	await _settle_frames(1)
-	_check(zone.get_runtime().selection_state.hovered_item == null, "mouse exit should clear hovered item")
+	_check(zone.get_hovered_item() == null, "mouse exit should clear hovered item")
 	_check(alpha.scale == Vector2.ONE and is_equal_approx(alpha.position.y, base_position.y), "mouse exit should reset hover lift")
 	_emit_left_click(alpha)
 	await _settle_frames(1)
-	_check(zone.get_runtime().selection_state.is_selected(alpha), "left click should select the clicked card")
+	_check(zone.is_selected(alpha), "left click should select the clicked card")
 	_check(alpha.scale.x > 1.0, "selected card should receive selected scale styling")
 	_emit_left_click(beta, true)
 	await _settle_frames(1)
-	_check(zone.get_runtime().selection_state.is_selected(alpha) and zone.get_runtime().selection_state.is_selected(beta), "ctrl-click should multi-select cards")
+	_check(zone.is_selected(alpha) and zone.is_selected(beta), "ctrl-click should multi-select cards")
 
 func _test_drag_proxy_uses_pointer_position_and_stays_on_top() -> void:
 	var panel = _make_panel("PileDragPanel", Vector2(24, 24), Vector2(420, 320))
@@ -73,7 +73,7 @@ func _test_drag_proxy_uses_pointer_position_and_stays_on_top() -> void:
 	_check(session.cursor_proxy.top_level, "drag cursor proxy should render as a top-level control")
 	_check(not session.cursor_proxy.z_as_relative, "drag cursor proxy should use absolute z ordering")
 	_check(session.cursor_proxy.z_index >= ZoneDragCoordinator.CURSOR_PROXY_Z_INDEX, "drag cursor proxy should stay above stacked pile cards")
-	zone.get_runtime().cancel_drag()
+	zone.cancel_drag()
 	await _settle_frames(2)
 
 func _test_long_press_signal() -> void:
@@ -129,8 +129,8 @@ func _test_background_click_clears_hover_and_selection() -> void:
 	await _settle_frames(1)
 	_emit_background_left_click(panel, panel.global_position + panel.size - Vector2(24, 24))
 	await _settle_frames(1)
-	_check(zone.get_runtime().selection_state.hovered_item == null, "background click should clear hover state")
-	_check(zone.get_runtime().selection_state.get_selected_items().is_empty(), "background click should clear selected cards")
+	_check(zone.get_hovered_item() == null, "background click should clear hover state")
+	_check(zone.get_selected_items().is_empty(), "background click should clear selected cards")
 	_check(alpha.scale == Vector2.ONE, "background click should reset the selected card transform")
 
 func _test_shift_range_selection() -> void:
@@ -147,10 +147,10 @@ func _test_shift_range_selection() -> void:
 	await _settle_frames(1)
 	_emit_left_click(gamma, false, true)
 	await _settle_frames(1)
-	_check(zone.get_runtime().selection_state.get_selected_items() == [alpha, beta, gamma], "shift-click should select the range from anchor to clicked card")
+	_check(zone.get_selected_items() == [alpha, beta, gamma], "shift-click should select the range from anchor to clicked card")
 	_emit_left_click(delta, false, true)
 	await _settle_frames(1)
-	_check(zone.get_runtime().selection_state.get_selected_items() == [alpha, beta, gamma, delta], "repeated shift-click should keep the original anchor until a normal click changes it")
+	_check(zone.get_selected_items() == [alpha, beta, gamma, delta], "repeated shift-click should keep the original anchor until a normal click changes it")
 
 func _test_keyboard_navigation_actions() -> void:
 	var panel = _make_panel("KeyboardPanel", Vector2(24, 24), Vector2(780, 280))
@@ -205,11 +205,11 @@ func _test_animated_transfer_handoff_path() -> void:
 	source_zone.add_item(alpha)
 	await _settle_frames(2)
 	var source_origin = alpha.global_position
-	_check(source_zone.move_item_to(alpha, target_zone, ZonePlacementTarget.linear(0)), "animated transfer smoke should move the card into the target zone")
-	var target_state = target_zone.get_runtime().get_display_state(target_display)
+	_check(_move_item(source_zone, alpha, target_zone, ZonePlacementTarget.linear(0)), "animated transfer smoke should move the card into the target zone")
+	var target_state = target_zone.get_display_state(target_display)
 	_check(target_state["active_tweens"].has(alpha), "animated transfer should create a live tween in GUI mode")
 	_check(alpha.global_position.distance_to(source_origin) <= 0.5, "animated transfer should start from the source card position before tweening")
-	_check(not target_zone.get_runtime().item_state.transfer_handoffs.has(alpha), "animated transfer should consume handoff data on first apply")
+	_check(not target_zone.has_transfer_handoff(alpha), "animated transfer should consume handoff data on first apply")
 	await get_tree().create_timer(target_display.duration + 0.08).timeout
 	await _settle_frames(1)
 	_check(not target_state["active_tweens"].has(alpha), "animated transfer should clear its tween after finishing")
@@ -234,11 +234,12 @@ func _test_drop_preview_clear_signal() -> void:
 	_check(session != null, "preview clear smoke requires an active drag session")
 	if session == null:
 		return
-	target_zone.get_runtime().create_ghost(alpha)
-	target_zone.drop_preview_changed.emit(session.items, target_zone, ZonePlacementTarget.linear(0))
+	var request = target_zone.make_transfer_request(target_zone, source_zone, session.items, ZonePlacementTarget.linear(0), alpha.global_position)
+	var decision = target_zone.resolve_drop_decision(request)
+	target_zone.apply_hover_feedback(session.items, decision, ZonePlacementTarget.linear(0), alpha)
 	session.hover_zone = target_zone
 	session.preview_target = ZonePlacementTarget.linear(0)
-	source_zone.get_runtime().cancel_drag(session)
+	source_zone.cancel_drag(session)
 	await _settle_frames(2)
 	var last_preview_target = preview_targets[preview_targets.size() - 1] if not preview_targets.is_empty() else ZonePlacementTarget.invalid()
 	_check(preview_targets.size() >= 2 and (last_preview_target == null or not last_preview_target.is_valid()), "drag cleanup should emit a preview-cleared signal with an invalid target")

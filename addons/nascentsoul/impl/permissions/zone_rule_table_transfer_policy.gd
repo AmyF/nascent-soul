@@ -3,7 +3,7 @@ class_name ZoneRuleTableTransferPolicy extends ZoneTransferPolicy
 
 @export var rules: Array[ZoneTransferRule] = []
 
-func evaluate_transfer(request: ZoneTransferRequest) -> ZoneTransferDecision:
+func evaluate_transfer(_context: ZoneContext, request: ZoneTransferRequest) -> ZoneTransferDecision:
 	var fallback_target = request.placement_target.duplicate_target() if request.placement_target != null else ZonePlacementTarget.invalid()
 	for rule in rules:
 		if rule == null or not rule.matches(request):

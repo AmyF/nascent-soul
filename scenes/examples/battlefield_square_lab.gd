@@ -34,13 +34,13 @@ func _ready() -> void:
 func _on_source_card_double_clicked(item: Control) -> void:
 	if not _source_zone.has_item(item):
 		return
-	var target = _space_model.get_first_open_target(_battlefield_zone, _battlefield_zone.get_runtime(), item)
+	var target = _space_model.get_first_open_target(_battlefield_zone.get_context(), item)
 	if target.is_valid():
-		_source_zone.move_item_to(item, _battlefield_zone, target)
+		ExampleSupport.move_item(_source_zone, item, _battlefield_zone, target)
 
 func _on_battlefield_item_right_clicked(item: Control) -> void:
 	if _battlefield_zone.has_item(item):
-		_battlefield_zone.move_item_to(item, _source_zone, ZonePlacementTarget.linear(_source_zone.get_item_count()))
+		ExampleSupport.move_item(_battlefield_zone, item, _source_zone, ZonePlacementTarget.linear(_source_zone.get_item_count()))
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:

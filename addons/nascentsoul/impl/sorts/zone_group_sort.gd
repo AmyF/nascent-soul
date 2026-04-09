@@ -12,10 +12,10 @@ class_name ZoneGroupSort extends ZoneSortPolicy
 @export var item_metadata_key: String = ""
 @export var descending_items: bool = false
 
-func sort_items(items: Array[Control]) -> Array[Control]:
+func sort_items(_context: ZoneContext, items: Array[ZoneItemControl]) -> Array[ZoneItemControl]:
 	return stable_sort_items(items, Callable(self, "_compare_items"))
 
-func _compare_items(a: Control, b: Control) -> int:
+func _compare_items(a: ZoneItemControl, b: ZoneItemControl) -> int:
 	var a_group = _resolve_group_value(a)
 	var b_group = _resolve_group_value(b)
 	var group_comparison = _compare_group_values(a_group, b_group)
@@ -44,8 +44,8 @@ func _resolve_group_rank(group_value) -> int:
 		return group_order.size()
 	return rank
 
-func _resolve_group_value(item: Control):
+func _resolve_group_value(item: ZoneItemControl):
 	return resolve_item_value(item, group_property_name, group_metadata_key, "default")
 
-func _resolve_member_value(item: Control):
+func _resolve_member_value(item: ZoneItemControl):
 	return resolve_item_value(item, item_property_name, item_metadata_key, item.name)

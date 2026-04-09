@@ -1,5 +1,5 @@
 @tool
-class_name ZonePiece extends Control
+class_name ZonePiece extends ZoneItemControl
 
 var _data: PieceData = null
 var _highlighted: bool = false
@@ -42,18 +42,16 @@ func _ready() -> void:
 	_refresh_visuals()
 
 func set_hovered_visual(value: bool) -> void:
-	if _hovered_visual == value:
-		return
-	_hovered_visual = value
-	_refresh_visuals()
+	var state = get_zone_visual_state()
+	state.hovered = value
+	apply_zone_visual_state(state)
 
 func set_selected_visual(value: bool) -> void:
-	if _selected_visual == value:
-		return
-	_selected_visual = value
-	_refresh_visuals()
+	var state = get_zone_visual_state()
+	state.selected = value
+	apply_zone_visual_state(state)
 
-func apply_transfer_source(source_item: Control, _source_zone: Zone, _target_zone: Zone, _target: ZonePlacementTarget) -> void:
+func configure_from_transfer_source(source_item: ZoneItemControl, _context: ZoneContext, _target: ZonePlacementTarget) -> void:
 	if source_item is ZoneCard:
 		var source_card = source_item as ZoneCard
 		var next_data := PieceData.new()
@@ -68,18 +66,35 @@ func apply_transfer_source(source_item: Control, _source_zone: Zone, _target_zon
 			next_data.title = source_card.name
 		data = next_data
 
-func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -> ZoneTargetingIntent:
-	return null
+func create_zone_targeting_intent(_command: ZoneTargetingCommand, _entry_mode: StringName) -> ZoneTargetingIntent:
+	return super.create_zone_targeting_intent(_command, _entry_mode)
 
 func get_zone_target_anchor_global() -> Vector2:
 	return global_position + size * 0.5
 
 func set_target_candidate_visual(active: bool, allowed: bool) -> void:
-	if _target_candidate_active == active and _target_candidate_allowed == allowed:
-		return
-	_target_candidate_active = active
-	_target_candidate_allowed = allowed
-	_refresh_visuals()
+	var state = get_zone_visual_state()
+	state.target_candidate_active = active
+	state.target_candidate_allowed = allowed
+	apply_zone_visual_state(state)
+
+func apply_transfer_source(source_item: Control, _source_zone: Zone, _target_zone: Zone, _target: ZonePlacementTarget) -> void:
+	if source_item is ZoneItemControl:
+		configure_from_transfer_source(source_item as ZoneItemControl, null, _target)
+
+func apply_zone_visual_state(state: ZoneItemVisualState) -> void:
+	var next_state = state if state != null else ZoneItemVisualState.new()
+	var changed = _hovered_visual != next_state.hovered \
+		or _selected_visual != next_state.selected \
+		or _target_candidate_active != next_state.target_candidate_active \
+		or _target_candidate_allowed != next_state.target_candidate_allowed
+	super.apply_zone_visual_state(next_state)
+	_hovered_visual = next_state.hovered
+	_selected_visual = next_state.selected
+	_target_candidate_active = next_state.target_candidate_active
+	_target_candidate_allowed = next_state.target_candidate_allowed
+	if changed:
+		_refresh_visuals()
 
 func _ensure_nodes() -> void:
 	if _panel == null or not is_instance_valid(_panel):

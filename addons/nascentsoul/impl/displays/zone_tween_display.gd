@@ -5,8 +5,8 @@ class_name ZoneTweenDisplay extends ZoneDisplayStyle
 @export var trans_type: Tween.TransitionType = Tween.TRANS_CUBIC
 @export var ease_type: Tween.EaseType = Tween.EASE_OUT
 
-func apply(zone: Node, runtime, placements: Array[ZonePlacement]) -> void:
-	var state = runtime.get_display_state(self)
+func apply(context: ZoneContext, placements: Array[ZonePlacement]) -> void:
+	var state = context.get_display_state(self)
 	var active_tweens: Dictionary = state["active_tweens"]
 	var target_cache: Dictionary = state["target_cache"]
 	var should_animate = duration > 0.0 and DisplayServer.get_name() != "headless"
@@ -22,7 +22,7 @@ func apply(zone: Node, runtime, placements: Array[ZonePlacement]) -> void:
 	for item in target_cache.keys():
 		if not is_instance_valid(item) or not placed_lookup.has(item):
 			stale_lookup[item] = true
-	for item in runtime.get_items():
+	for item in context.get_items():
 		if is_instance_valid(item) and not placed_lookup.has(item):
 			stale_lookup[item] = true
 	for item in stale_lookup.keys():
@@ -37,8 +37,14 @@ func apply(zone: Node, runtime, placements: Array[ZonePlacement]) -> void:
 		if not is_instance_valid(placement.item):
 			continue
 		var item: Control = placement.item
-		var handoff = runtime.consume_transfer_handoff(item)
-		item.pivot_offset = runtime.resolve_item_size(item) / 2.0
+		var handoff: Dictionary = {}
+		var item_size := Vector2.ZERO
+		if item is ZoneItemControl:
+			handoff = context.consume_transfer_handoff(item as ZoneItemControl)
+			item_size = context.resolve_item_size(item as ZoneItemControl)
+		else:
+			item_size = item.size if item.size != Vector2.ZERO else item.custom_minimum_size
+		item.pivot_offset = item_size / 2.0
 		item.z_index = placement.z_index
 		if not handoff.is_empty():
 			_apply_handoff_transform(item, handoff, placement.z_index)

@@ -12,11 +12,10 @@ const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var board_capacity_label: Label = $RootMargin/RootVBox/TopRow/BoardColumn/BoardCapacityLabel
-@onready var _deck_zone: Zone = $RootMargin/RootVBox/TopRow/DeckColumn/DeckZone
-@onready var _board_zone: Zone = $RootMargin/RootVBox/TopRow/BoardColumn/BoardZone
-@onready var _discard_zone: Zone = $RootMargin/RootVBox/TopRow/DiscardColumn/DiscardZone
-@onready var _hand_zone: Zone = $RootMargin/RootVBox/HandZone
-@onready var _board_capacity: ZoneCapacityTransferPolicy = _board_zone.transfer_policy as ZoneCapacityTransferPolicy
+@onready var _deck_zone: Zone = $RootMargin/RootVBox/TopRow/DeckColumn/DeckZone as Zone
+@onready var _board_zone: Zone = $RootMargin/RootVBox/TopRow/BoardColumn/BoardZone as Zone
+@onready var _discard_zone: Zone = $RootMargin/RootVBox/TopRow/DiscardColumn/DiscardZone as Zone
+@onready var _hand_zone: Zone = $RootMargin/RootVBox/HandZone as Zone
 
 func _ready() -> void:
 	_populate_cards()
@@ -43,17 +42,17 @@ func _wire_demo_actions() -> void:
 
 func _on_deck_card_double_clicked(item: Control) -> void:
 	if _deck_zone.has_item(item):
-		_deck_zone.move_item_to(item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
+		ExampleSupport.move_item(_deck_zone, item, _hand_zone, ZonePlacementTarget.linear(_hand_zone.get_item_count()))
 
 func _on_hand_card_double_clicked(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
+		ExampleSupport.move_item(_hand_zone, item, _board_zone, ZonePlacementTarget.linear(_board_zone.get_item_count()))
 
 func _on_card_discard_requested(item: Control) -> void:
 	if _hand_zone.has_item(item):
-		_hand_zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
+		ExampleSupport.move_item(_hand_zone, item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 	elif _board_zone.has_item(item):
-		_board_zone.move_item_to(item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
+		ExampleSupport.move_item(_board_zone, item, _discard_zone, ZonePlacementTarget.linear(_discard_zone.get_item_count()))
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:
@@ -92,6 +91,7 @@ func _apply_zone_visual_state(item: Control, target_zone: Zone) -> void:
 
 func _refresh_guidance() -> void:
 	var board_count = _board_zone.get_item_count()
+	var _board_capacity: ZoneCapacityTransferPolicy = ExampleSupport.get_zone_transfer_policy(_board_zone) as ZoneCapacityTransferPolicy
 	var board_limit = _board_capacity.max_items if _board_capacity != null else 0
 	board_capacity_label.text = "容量 %d / %d / Capacity %d / %d" % [board_count, board_limit, board_count, board_limit]
 

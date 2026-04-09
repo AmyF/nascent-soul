@@ -43,11 +43,16 @@ func build_decision(request: ZoneTargetRequest) -> ZoneTargetDecision:
 func _matches_source_meta(source_item: Control) -> bool:
 	if required_source_meta_key == "":
 		return true
-	if not source_item.has_meta(required_source_meta_key):
+	var metadata: Dictionary = {}
+	if source_item is ZoneItemControl:
+		metadata = (source_item as ZoneItemControl).get_zone_item_metadata()
+	elif source_item.has_meta(required_source_meta_key):
+		metadata[required_source_meta_key] = source_item.get_meta(required_source_meta_key)
+	if not metadata.has(required_source_meta_key):
 		return false
 	if required_source_meta_value == "":
 		return true
-	return str(source_item.get_meta(required_source_meta_key)) == required_source_meta_value
+	return str(metadata.get(required_source_meta_key)) == required_source_meta_value
 
 func _matches_candidate_meta(candidate: ZoneTargetCandidate) -> bool:
 	if required_candidate_meta_key == "":

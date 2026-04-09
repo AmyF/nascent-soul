@@ -20,12 +20,8 @@ func _process(_delta: float) -> void:
 	if source_zone == null or not is_instance_valid(source_zone) or not source_zone.is_inside_tree() or not is_instance_valid(active_session.source_item):
 		clear_session(false)
 		return
-	var runtime = source_zone.get_runtime()
-	if runtime == null:
-		clear_session(false)
-		return
 	active_session.pointer_global_position = get_viewport().get_mouse_position()
-	runtime.update_targeting_session(active_session, active_session.pointer_global_position)
+	source_zone.update_targeting_session(active_session, active_session.pointer_global_position)
 	_update_overlay(source_zone)
 
 func _input(event: InputEvent) -> void:
@@ -36,14 +32,14 @@ func _input(event: InputEvent) -> void:
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
 			var source_zone = active_session.source_zone as Zone
 			if source_zone != null:
-				source_zone.get_runtime().finalize_targeting_session(active_session)
+				source_zone.finalize_targeting_session(active_session)
 			else:
 				clear_session(false)
 			return
 		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
 			var cancel_zone = active_session.source_zone as Zone
 			if cancel_zone != null:
-				cancel_zone.get_runtime().cancel_targeting_session(active_session, true)
+				cancel_zone.cancel_targeting_session(active_session, true)
 			else:
 				clear_session(false)
 			return
@@ -52,7 +48,7 @@ func _input(event: InputEvent) -> void:
 		if action_event.pressed and action_event.action == &"ui_cancel":
 			var cancel_zone = active_session.source_zone as Zone
 			if cancel_zone != null:
-				cancel_zone.get_runtime().cancel_targeting_session(active_session, true)
+				cancel_zone.cancel_targeting_session(active_session, true)
 			else:
 				clear_session(false)
 
@@ -95,8 +91,8 @@ func start_targeting(
 	active_session = ZoneTargetingSession.new(source_zone, source_item, intent, entry_mode, source_anchor_global, pointer_global_position)
 	set_process(true)
 	set_process_input(true)
-	if source_zone != null and source_zone.get_runtime() != null:
-		source_zone.get_runtime().update_targeting_session(active_session, pointer_global_position)
+	if source_zone != null:
+		source_zone.update_targeting_session(active_session, pointer_global_position)
 		refresh_overlay()
 	return active_session
 
@@ -109,7 +105,7 @@ func clear_session(keep_process_input: bool = false) -> void:
 		return
 	var source_zone = active_session.source_zone as Zone
 	if source_zone != null and is_instance_valid(source_zone):
-		source_zone.get_runtime().clear_targeting_feedback(false, active_session.source_item)
+		source_zone.clear_targeting_feedback(false, active_session.source_item)
 	active_session.cleanup()
 	active_session = null
 	set_process(false)
@@ -121,6 +117,7 @@ func _update_overlay(source_zone: Zone) -> void:
 	if source_zone == null:
 		_clear_overlay()
 		return
+	var context = source_zone.get_context()
 	var style = _resolve_style(source_zone)
 	if style == null:
 		_clear_overlay()
@@ -132,7 +129,7 @@ func _update_overlay(source_zone: Zone) -> void:
 	if _overlay_layer != null and _overlay_layer.get_parent() == viewport:
 		viewport.move_child(_overlay_layer, viewport.get_child_count() - 1)
 	if _overlay == null or not is_instance_valid(_overlay):
-		_overlay = style.create_overlay(self)
+		_overlay = style.create_overlay(context, self)
 		if _overlay == null:
 			return
 		_overlay.name = "__NascentSoulTargetingOverlay"
@@ -147,22 +144,27 @@ func _update_overlay(source_zone: Zone) -> void:
 		_overlay.top_level = false
 	if _overlay_layer == null and _overlay.get_parent() == viewport:
 		viewport.move_child(_overlay, viewport.get_child_count() - 1)
-	style.update_overlay(_overlay, active_session, active_session.source_anchor_global, active_session.candidate, active_session.decision, active_session.pointer_global_position)
+	style.update_overlay(context, _overlay, active_session, active_session.source_anchor_global, active_session.candidate, active_session.decision, active_session.pointer_global_position)
 
 func _resolve_style(source_zone: Zone) -> ZoneTargetingStyle:
 	if active_session == null:
 		return null
 	if active_session.intent != null and active_session.intent.style_override != null:
 		return active_session.intent.style_override
-	return source_zone.get_targeting_style_resource()
+	return source_zone.get_context().get_targeting_style()
 
 func _clear_overlay() -> void:
 	if _overlay == null or not is_instance_valid(_overlay):
 		_overlay = null
 		_clear_overlay_layer()
 		return
-	if _overlay.has_method("clear_state"):
-		_overlay.call("clear_state")
+	var source_zone: Zone = null
+	if active_session != null and active_session.source_zone is Zone:
+		source_zone = active_session.source_zone as Zone
+	if source_zone != null:
+		var style = _resolve_style(source_zone)
+		if style != null:
+			style.clear_overlay(_overlay)
 	if _overlay.get_parent() != null:
 		_overlay.get_parent().remove_child(_overlay)
 	_overlay.free()

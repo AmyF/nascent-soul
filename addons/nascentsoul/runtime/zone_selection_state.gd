@@ -1,8 +1,8 @@
 class_name ZoneSelectionState extends RefCounted
 
-var hovered_item: Control = null
-var selected_items: Array[Control] = []
-var anchor_item: Control = null
+var hovered_item: ZoneItemControl = null
+var selected_items: Array[ZoneItemControl] = []
+var anchor_item: ZoneItemControl = null
 
 func clear() -> bool:
 	var hover_changed = clear_hover()
@@ -21,13 +21,13 @@ func clear_selection() -> bool:
 	selected_items.clear()
 	return changed
 
-func set_hovered(item: Control) -> bool:
+func set_hovered(item: ZoneItemControl) -> bool:
 	if hovered_item == item:
 		return false
 	hovered_item = item
 	return true
 
-func select_single(item: Control) -> bool:
+func select_single(item: ZoneItemControl) -> bool:
 	if is_instance_valid(item) and selected_items.size() == 1 and _find_item_index(item) == 0:
 		anchor_item = item
 		return false
@@ -37,7 +37,7 @@ func select_single(item: Control) -> bool:
 		selected_items.append(item)
 	return true
 
-func toggle_item(item: Control) -> bool:
+func toggle_item(item: ZoneItemControl) -> bool:
 	if not is_instance_valid(item):
 		return false
 	var existing_index = _find_item_index(item)
@@ -48,7 +48,7 @@ func toggle_item(item: Control) -> bool:
 	anchor_item = item
 	return true
 
-func select_range(items_in_order: Array[Control], to_item: Control, additive: bool = false) -> bool:
+func select_range(items_in_order: Array[ZoneItemControl], to_item: ZoneItemControl, additive: bool = false) -> bool:
 	if not is_instance_valid(to_item):
 		return false
 	var anchor = anchor_item if is_instance_valid(anchor_item) else to_item
@@ -57,7 +57,7 @@ func select_range(items_in_order: Array[Control], to_item: Control, additive: bo
 	if start_index == -1 or end_index == -1:
 		return select_single(to_item)
 	var previous_selection = get_selected_items()
-	var next_selection: Array[Control] = []
+	var next_selection: Array[ZoneItemControl] = []
 	if additive:
 		next_selection = previous_selection.duplicate()
 	var range_start = mini(start_index, end_index)
@@ -71,7 +71,7 @@ func select_range(items_in_order: Array[Control], to_item: Control, additive: bo
 	anchor_item = anchor
 	return not _selection_matches(previous_selection, selected_items)
 
-func prune(valid_items: Array[Control]) -> bool:
+func prune(valid_items: Array[ZoneItemControl]) -> bool:
 	var changed = false
 	var valid_ids: Dictionary = {}
 	for item in valid_items:
@@ -83,7 +83,7 @@ func prune(valid_items: Array[Control]) -> bool:
 	if anchor_item != null and (not is_instance_valid(anchor_item) or not valid_ids.has(anchor_item.get_instance_id())):
 		anchor_item = null
 		changed = true
-	var remaining: Array[Control] = []
+	var remaining: Array[ZoneItemControl] = []
 	for item in selected_items:
 		if is_instance_valid(item) and valid_ids.has(item.get_instance_id()):
 			remaining.append(item)
@@ -92,21 +92,21 @@ func prune(valid_items: Array[Control]) -> bool:
 	selected_items = remaining
 	return changed
 
-func is_selected(item: Control) -> bool:
+func is_selected(item: ZoneItemControl) -> bool:
 	return _find_item_index(item) != -1
 
-func get_selected_items() -> Array[Control]:
+func get_selected_items() -> Array[ZoneItemControl]:
 	return selected_items.duplicate()
 
-func _find_item_index(item: Control) -> int:
+func _find_item_index(item: ZoneItemControl) -> int:
 	if not is_instance_valid(item):
 		return -1
 	return _find_item_index_in_array(selected_items, item)
 
-func _find_item_index_in_list(items: Array[Control], item: Control) -> int:
+func _find_item_index_in_list(items: Array[ZoneItemControl], item: ZoneItemControl) -> int:
 	return _find_item_index_in_array(items, item)
 
-func _find_item_index_in_array(items: Array[Control], item: Control) -> int:
+func _find_item_index_in_array(items: Array[ZoneItemControl], item: ZoneItemControl) -> int:
 	if not is_instance_valid(item):
 		return -1
 	for index in range(items.size()):
@@ -115,7 +115,7 @@ func _find_item_index_in_array(items: Array[Control], item: Control) -> int:
 			return index
 	return -1
 
-func _selection_matches(previous_selection: Array[Control], next_selection: Array[Control]) -> bool:
+func _selection_matches(previous_selection: Array[ZoneItemControl], next_selection: Array[ZoneItemControl]) -> bool:
 	if previous_selection.size() != next_selection.size():
 		return false
 	for index in range(previous_selection.size()):

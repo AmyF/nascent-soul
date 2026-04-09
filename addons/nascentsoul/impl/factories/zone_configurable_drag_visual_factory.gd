@@ -30,9 +30,9 @@ enum ProxyMode {
 @export var proxy_color: Color = Color(1, 1, 1, 0.72)
 @export var proxy_scale: Vector2 = Vector2.ONE
 
-func create_ghost(_zone: Node, runtime, source_item: Control) -> Control:
-	var item_size = runtime.resolve_item_size(source_item)
-	var fallback = _create_item_ghost(source_item)
+func create_ghost(context: ZoneContext, source_item: ZoneItemControl) -> Control:
+	var item_size = context.resolve_item_size(source_item)
+	var fallback = _create_item_ghost(context, source_item)
 	if fallback != null:
 		return fallback
 	match ghost_mode:
@@ -43,9 +43,9 @@ func create_ghost(_zone: Node, runtime, source_item: Control) -> Control:
 		_:
 			return _make_outline_panel(item_size)
 
-func create_drag_proxy(_zone: Node, runtime, source_item: Control) -> Control:
-	var item_size = runtime.resolve_item_size(source_item)
-	var fallback = _create_item_proxy(source_item)
+func create_drag_proxy(context: ZoneContext, source_item: ZoneItemControl) -> Control:
+	var item_size = context.resolve_item_size(source_item)
+	var fallback = _create_item_proxy(context, source_item)
 	if fallback != null:
 		return fallback
 	match proxy_mode:
@@ -64,24 +64,14 @@ func create_drag_proxy(_zone: Node, runtime, source_item: Control) -> Control:
 	fallback_proxy.global_position = source_item.global_position
 	return fallback_proxy
 
-func _create_item_ghost(source_item: Control) -> Control:
-	if prefer_item_methods and source_item.has_method("create_zone_ghost"):
-		var created = source_item.call("create_zone_ghost")
-		if created is Control:
-			return created as Control
-	if allow_meta_ghost_scene and source_item.has_meta("zone_ghost_scene"):
-		var ghost_scene = source_item.get_meta("zone_ghost_scene")
-		if ghost_scene is PackedScene:
-			var instance = ghost_scene.instantiate()
-			if instance is Control:
-				return instance as Control
+func _create_item_ghost(context: ZoneContext, source_item: ZoneItemControl) -> Control:
+	if prefer_item_methods:
+		return source_item.create_zone_drag_ghost(context)
 	return null
 
-func _create_item_proxy(source_item: Control) -> Control:
-	if prefer_item_methods and source_item.has_method("create_drag_proxy"):
-		var created = source_item.call("create_drag_proxy")
-		if created is Control:
-			return created as Control
+func _create_item_proxy(context: ZoneContext, source_item: ZoneItemControl) -> Control:
+	if prefer_item_methods:
+		return source_item.create_zone_drag_proxy(context)
 	return null
 
 func _make_outline_panel(item_size: Vector2) -> Control:

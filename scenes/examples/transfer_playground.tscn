@@ -4,15 +4,24 @@
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="9_theme"]
 [ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="10_card_spec"]
 [ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="3_pile"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="4_hand"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_preset.tres" id="5_board"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd" id="7_capacity"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_config.tres" id="3_pile"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_config.tres" id="4_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_config.tres" id="5_board"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_config.tres" id="6_discard"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd" id="7_policy"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_factory"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="11_config"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="12_display"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="13_interaction"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="14_pile_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hand_layout.gd" id="15_hand_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hbox_layout.gd" id="16_hbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="17_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="18_allow_all"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="19_space"]
 
 [sub_resource type="Resource" id="TransferBoardCapacityPolicy"]
-script = ExtResource("7_capacity")
+script = ExtResource("7_policy")
 max_items = 5
 reject_reason = "Board 已满。先把一张牌丢进 Discard 再试。\nBoard is full. Discard a card first, then try again."
 
@@ -151,6 +160,79 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
+[sub_resource type="Resource" id="TransferCardDisplay"]
+script = ExtResource("12_display")
+
+[sub_resource type="Resource" id="TransferInteraction"]
+script = ExtResource("13_interaction")
+
+[sub_resource type="Resource" id="TransferPileLayout"]
+script = ExtResource("14_pile_layout")
+overlap_x = 18.0
+padding_left = 16.0
+padding_top = 20.0
+
+[sub_resource type="Resource" id="TransferHandLayout"]
+script = ExtResource("15_hand_layout")
+arch_angle_deg = 38.0
+arch_height = 26.0
+card_spacing_angle = 5.5
+
+[sub_resource type="Resource" id="TransferBoardLayout"]
+script = ExtResource("16_hbox_layout")
+item_spacing = 16.0
+padding_left = 14.0
+padding_top = 12.0
+
+[sub_resource type="Resource" id="TransferManualSort"]
+script = ExtResource("17_sort")
+
+[sub_resource type="Resource" id="TransferAllowAllPolicy"]
+script = ExtResource("18_allow_all")
+
+[sub_resource type="Resource" id="TransferLinearSpace"]
+script = ExtResource("19_space")
+
+[sub_resource type="Resource" id="TransferDeckZoneConfig"]
+script = ExtResource("11_config")
+space_model = SubResource("TransferLinearSpace")
+layout_policy = SubResource("TransferPileLayout")
+display_style = SubResource("TransferCardDisplay")
+interaction = SubResource("TransferInteraction")
+sort_policy = SubResource("TransferManualSort")
+transfer_policy = SubResource("TransferAllowAllPolicy")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
+[sub_resource type="Resource" id="TransferBoardZoneConfig"]
+script = ExtResource("11_config")
+space_model = SubResource("TransferLinearSpace")
+layout_policy = SubResource("TransferBoardLayout")
+display_style = SubResource("TransferCardDisplay")
+interaction = SubResource("TransferInteraction")
+sort_policy = SubResource("TransferManualSort")
+transfer_policy = SubResource("TransferBoardCapacityPolicy")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
+[sub_resource type="Resource" id="TransferDiscardZoneConfig"]
+script = ExtResource("11_config")
+space_model = SubResource("TransferLinearSpace")
+layout_policy = SubResource("TransferPileLayout")
+display_style = SubResource("TransferCardDisplay")
+interaction = SubResource("TransferInteraction")
+sort_policy = SubResource("TransferManualSort")
+transfer_policy = SubResource("TransferAllowAllPolicy")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
+[sub_resource type="Resource" id="TransferHandZoneConfig"]
+script = ExtResource("11_config")
+space_model = SubResource("TransferLinearSpace")
+layout_policy = SubResource("TransferHandLayout")
+display_style = SubResource("TransferCardDisplay")
+interaction = SubResource("TransferInteraction")
+sort_policy = SubResource("TransferManualSort")
+transfer_policy = SubResource("TransferAllowAllPolicy")
+drag_visual_factory = SubResource("TransferDragVisualFactory")
+
 [node name="TransferPlayground" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -198,8 +280,7 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("TransferDeckZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("3_pile")
-drag_visual_factory = SubResource("TransferDragVisualFactory")
+config = SubResource("TransferDeckZoneConfig")
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
@@ -230,9 +311,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("TransferBoardZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("5_board")
-transfer_policy = SubResource("TransferBoardCapacityPolicy")
-drag_visual_factory = SubResource("TransferDragVisualFactory")
+config = SubResource("TransferBoardZoneConfig")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
@@ -250,8 +329,7 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("TransferDiscardZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("6_discard")
-drag_visual_factory = SubResource("TransferDragVisualFactory")
+config = SubResource("TransferDiscardZoneConfig")
 
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -264,8 +342,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("TransferHandZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("4_hand")
-drag_visual_factory = SubResource("TransferDragVisualFactory")
+config = SubResource("TransferHandZoneConfig")
 
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2

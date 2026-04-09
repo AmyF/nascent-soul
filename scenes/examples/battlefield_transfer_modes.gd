@@ -22,7 +22,7 @@ var _summon_space: ZoneSquareGridSpaceModel
 
 func _ready() -> void:
 	_source_zone = ExampleSupport.make_zone(source_panel, "ModeSourceZone", ZoneHBoxLayout.new())
-	_source_zone.transfer_policy = _make_cards_only_rule_table(ExampleSupport.compact_bilingual("Cards 只接受卡牌，不能接收已生成的棋子", "Cards only accept cards, not spawned pieces"))
+	ExampleSupport.set_zone_transfer_policy(_source_zone, _make_cards_only_rule_table(ExampleSupport.compact_bilingual("Cards 只接受卡牌，不能接收已生成的棋子", "Cards only accept cards, not spawned pieces")))
 	_direct_space = ZoneSquareGridSpaceModel.new()
 	_direct_space.columns = 3
 	_direct_space.rows = 2
@@ -66,16 +66,16 @@ func _ready() -> void:
 func _send_to_direct(item: Control) -> void:
 	if not _source_zone.has_item(item):
 		return
-	var target = _direct_space.get_first_open_target(_direct_zone, _direct_zone.get_runtime(), item)
+	var target = _direct_space.get_first_open_target(_direct_zone.get_context(), item)
 	if target.is_valid():
-		_source_zone.move_item_to(item, _direct_zone, target)
+		ExampleSupport.move_item(_source_zone, item, _direct_zone, target)
 
 func _send_to_summon(item: Control) -> void:
 	if not _source_zone.has_item(item):
 		return
-	var target = _summon_space.get_first_open_target(_summon_zone, _summon_zone.get_runtime(), item)
+	var target = _summon_space.get_first_open_target(_summon_zone.get_context(), item)
 	if target.is_valid():
-		_source_zone.move_item_to(item, _summon_zone, target)
+		ExampleSupport.move_item(_source_zone, item, _summon_zone, target)
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:

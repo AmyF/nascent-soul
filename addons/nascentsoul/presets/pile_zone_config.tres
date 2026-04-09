@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="ZonePreset" format=3 uid="uid://crjlyeyj3gqlr"]
+[gd_resource type="Resource" script_class="ZoneConfig" format=3 uid="uid://dcxgck3f45mx7"]
 
 [ext_resource type="Script" uid="uid://pqtywij3udlj" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="1_display"]
 [ext_resource type="Script" uid="uid://l46aq6johwmi" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_factory"]
 [ext_resource type="Script" uid="uid://bfhfgvr2bgtjn" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_interaction"]
-[ext_resource type="Script" uid="uid://dx6ura8dba65" path="res://addons/nascentsoul/impl/layouts/zone_hbox_layout.gd" id="4_layout"]
-[ext_resource type="Script" uid="uid://cwcldnwvhald2" path="res://addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd" id="5_policy"]
-[ext_resource type="Script" uid="uid://lhhiiws4nn87" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_preset"]
+[ext_resource type="Script" uid="uid://b2dhu4pigrv65" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="4_layout"]
+[ext_resource type="Script" uid="uid://cnjiy3tvac727" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="5_policy"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="6_config"]
 [ext_resource type="Script" uid="uid://b4r4k2du2v4kb" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="8_space"]
 
 [sub_resource type="Resource" id="Resource_display"]
 script = ExtResource("1_display")
@@ -19,23 +20,25 @@ script = ExtResource("3_interaction")
 
 [sub_resource type="Resource" id="Resource_layout"]
 script = ExtResource("4_layout")
-item_spacing = 16.0
-padding_left = 14.0
-padding_top = 12.0
+overlap_x = 18.0
+padding_left = 16.0
+padding_top = 20.0
 
-[sub_resource type="Resource" id="Resource_policy"]
+[sub_resource type="Resource" id="PileTransferPolicy"]
 script = ExtResource("5_policy")
-max_items = 4
-reject_reason = "Board recipe is full. Raise max_items or discard a card."
 
 [sub_resource type="Resource" id="Resource_sort"]
 script = ExtResource("7_sort")
 
+[sub_resource type="Resource" id="Resource_space"]
+script = ExtResource("8_space")
+
 [resource]
-script = ExtResource("6_preset")
+script = ExtResource("6_config")
+space_model = SubResource("Resource_space")
 layout_policy = SubResource("Resource_layout")
 display_style = SubResource("Resource_display")
 interaction = SubResource("Resource_interaction")
 sort_policy = SubResource("Resource_sort")
-transfer_policy = SubResource("Resource_policy")
+transfer_policy = SubResource("PileTransferPolicy")
 drag_visual_factory = SubResource("Resource_factory")

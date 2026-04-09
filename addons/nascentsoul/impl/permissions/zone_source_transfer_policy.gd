@@ -6,7 +6,7 @@ class_name ZoneSourceTransferPolicy extends ZoneTransferPolicy
 @export var allow_external_source: bool = true
 @export var reject_reason: String = "This zone does not accept cards from that source."
 
-func evaluate_transfer(request: ZoneTransferRequest) -> ZoneTransferDecision:
+func evaluate_transfer(_context: ZoneContext, request: ZoneTransferRequest) -> ZoneTransferDecision:
 	var target = request.placement_target.duplicate_target() if request.placement_target != null else ZonePlacementTarget.invalid()
 	var source_zone = request.source_zone as Zone
 	if source_zone == null:

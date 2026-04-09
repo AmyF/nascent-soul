@@ -6,8 +6,10 @@ class_name ZoneHandLayout extends ZoneLayoutPolicy
 @export var card_spacing_angle: float = 5.0
 @export var center_offset_y: float = 0.0
 
-func calculate(items: Array[Control], container_size: Vector2, ghost_item: Control = null, ghost_hint = null, runtime = null) -> Array[ZonePlacement]:
-	var render_items: Array[Control] = items.duplicate()
+func calculate(_context: ZoneContext, items: Array[ZoneItemControl], container_size: Vector2, ghost_item: Control = null, ghost_hint = null) -> Array[ZonePlacement]:
+	var render_items: Array = []
+	for item in items:
+		render_items.append(item)
 	var ghost_index = ghost_hint as int if ghost_hint is int else -1
 	if is_instance_valid(ghost_item) and ghost_index >= 0:
 		render_items.insert(clampi(ghost_index, 0, render_items.size()), ghost_item)
@@ -31,7 +33,7 @@ func calculate(items: Array[Control], container_size: Vector2, ghost_item: Contr
 		placements.append(ZonePlacement.new(item, pos, angle * 0.55, Vector2.ONE, i, item == ghost_item))
 	return placements
 
-func get_insertion_index(items: Array[Control], container_size: Vector2, mouse_pos: Vector2) -> int:
+func get_insertion_index(items: Array[ZoneItemControl], container_size: Vector2, mouse_pos: Vector2) -> int:
 	var count = items.size()
 	if count == 0:
 		return 0
@@ -72,7 +74,7 @@ func would_escape_container(container_size: Vector2, item_count: int = 5, sample
 			return true
 	return false
 
-func _resolve_max_item_size(items: Array[Control]) -> Vector2:
+func _resolve_max_item_size(items: Array) -> Vector2:
 	var max_size = Vector2(120, 180)
 	for item in items:
 		var size = resolve_item_size(item)

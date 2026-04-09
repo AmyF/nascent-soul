@@ -28,7 +28,7 @@ func _build_spell_targeting_demo() -> void:
 	var hand_layout := ZoneHBoxLayout.new()
 	hand_layout.item_spacing = 16.0
 	_spell_source_zone = ExampleSupport.make_zone(spell_hand_panel, "SpellSourceZone", hand_layout)
-	_spell_source_zone.targeting_style = _make_arrow_style(Color(0.95, 0.83, 0.35, 0.88), Color(0.40, 0.92, 0.62, 0.92), Color(1.0, 0.42, 0.42, 0.92))
+	ExampleSupport.set_zone_targeting_style(_spell_source_zone, _make_arrow_style(Color(0.95, 0.83, 0.35, 0.88), Color(0.40, 0.92, 0.62, 0.92), Color(1.0, 0.42, 0.42, 0.92)))
 	_spell_source_zone.targeting_started.connect(_on_targeting_started.bind("spell"))
 	_spell_source_zone.target_hover_state_changed.connect(_on_target_hover_state_changed.bind("spell"))
 	_spell_source_zone.targeting_resolved.connect(_on_targeting_resolved.bind("spell"))
@@ -48,7 +48,7 @@ func _build_piece_targeting_demo() -> void:
 	ability_space.columns = 4
 	ability_space.rows = 3
 	_ability_zone = ExampleSupport.make_battlefield_zone(ability_panel, "AbilityBattlefieldZone", ability_space, ZoneOccupancyTransferPolicy.new())
-	_ability_zone.targeting_style = _make_arrow_style(Color(0.60, 0.78, 1.0, 0.88), Color(0.44, 0.92, 0.62, 0.92), Color(1.0, 0.42, 0.42, 0.92))
+	ExampleSupport.set_zone_targeting_style(_ability_zone, _make_arrow_style(Color(0.60, 0.78, 1.0, 0.88), Color(0.44, 0.92, 0.62, 0.92), Color(1.0, 0.42, 0.42, 0.92)))
 	_ability_zone.targeting_started.connect(_on_targeting_started.bind("ability"))
 	_ability_zone.target_hover_state_changed.connect(_on_target_hover_state_changed.bind("ability"))
 	_ability_zone.targeting_resolved.connect(_on_targeting_resolved.bind("ability"))
@@ -60,7 +60,7 @@ func _build_piece_targeting_demo() -> void:
 func _start_piece_targeting() -> void:
 	if _ability_piece == null or not is_instance_valid(_ability_piece) or not _ability_zone.has_item(_ability_piece):
 		return
-	if _ability_zone.begin_targeting(_ability_piece, TargetingSupport.make_square_placement_intent("Guardian Dash")):
+	if ExampleSupport.begin_item_targeting(_ability_zone, _ability_piece, TargetingSupport.make_square_placement_intent("Guardian Dash")):
 		_set_status(ExampleSupport.compact_bilingual("Guardian 已进入选目标状态，请选择一个格子", "Guardian is now targeting. Choose a board cell."))
 
 func _cancel_targeting() -> void:

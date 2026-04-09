@@ -1,23 +1,33 @@
-class_name ZoneTargetingRuntime extends RefCounted
+class_name ZoneTargetingService extends RefCounted
 
-var runtime
+var context: ZoneContext
 var zone: Zone
 
 var candidate: ZoneTargetCandidate = ZoneTargetCandidate.invalid()
 var decision: ZoneTargetDecision = ZoneTargetDecision.new()
-var highlight_item: Control = null
+var highlight_item: ZoneItemControl = null
 
-func _init(p_runtime) -> void:
-	runtime = p_runtime
-	zone = runtime.zone
+func _init(p_context: ZoneContext) -> void:
+	context = p_context
+	zone = context.zone
 
-func begin_targeting(item: Control, intent: ZoneTargetingIntent = null) -> bool:
-	var pointer_global_position = Vector2.ZERO
-	if zone.get_viewport() != null:
-		pointer_global_position = zone.get_viewport().get_mouse_position()
-	elif is_instance_valid(item):
-		pointer_global_position = item.global_position
-	return start_targeting_internal(item, intent, &"explicit", pointer_global_position)
+func begin_targeting(command: ZoneTargetingCommand) -> bool:
+	if command == null or not is_instance_valid(command.source_item):
+		return false
+	var resolved_command = command.duplicate_command()
+	if resolved_command.pointer_global_position == Vector2.ZERO:
+		if zone.get_viewport() != null:
+			resolved_command.pointer_global_position = zone.get_viewport().get_mouse_position()
+		else:
+			resolved_command.pointer_global_position = resolved_command.source_item.global_position
+	return start_targeting_internal(resolved_command)
+
+func try_start_drag_targeting(item: ZoneItemControl, global_position: Vector2) -> bool:
+	var command = ZoneTargetingCommand.drag_for_item(zone, item, null, global_position)
+	command.intent = resolve_targeting_intent(command, &"drag")
+	if command.intent == null:
+		return false
+	return start_targeting_internal(command)
 
 func cancel_targeting() -> void:
 	var coordinator = zone.get_targeting_coordinator(false)
@@ -61,10 +71,10 @@ func cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) 
 	if coordinator != null:
 		coordinator.clear_session()
 
-func start_targeting_internal(item: Control, intent: ZoneTargetingIntent, entry_mode: StringName, pointer_global_position: Vector2) -> bool:
-	if not runtime.has_item(item):
+func start_targeting_internal(command: ZoneTargetingCommand) -> bool:
+	if command == null or not context.has_item(command.source_item):
 		return false
-	var resolved_intent = intent if intent != null else resolve_targeting_intent(item, entry_mode)
+	var resolved_intent = command.intent if command.intent != null else resolve_targeting_intent(command, command.entry_mode)
 	if resolved_intent == null:
 		return false
 	var coordinator = zone.get_targeting_coordinator(true)
@@ -73,27 +83,24 @@ func start_targeting_internal(item: Control, intent: ZoneTargetingIntent, entry_
 	var drag_coordinator = zone.get_drag_coordinator(false)
 	if drag_coordinator != null and drag_coordinator.get_session() != null:
 		return false
-	var source_anchor = resolve_item_target_anchor_global(item)
-	var session = coordinator.start_targeting(zone, item, resolved_intent, entry_mode, source_anchor, pointer_global_position)
+	command.intent = resolved_intent
+	var source_anchor = resolve_item_target_anchor_global(command.source_item)
+	var session = coordinator.start_targeting(zone, command.source_item, resolved_intent, command.entry_mode, source_anchor, command.pointer_global_position)
 	if session == null:
 		return false
-	zone.targeting_started.emit(item, zone, resolved_intent)
+	update_targeting_session(session, command.pointer_global_position)
+	zone.targeting_started.emit(command.source_item, zone, resolved_intent)
 	return true
 
-func resolve_targeting_intent(item: Control, entry_mode: StringName) -> ZoneTargetingIntent:
-	if not is_instance_valid(item) or not item.has_method("create_zone_targeting_intent"):
+func resolve_targeting_intent(command: ZoneTargetingCommand, entry_mode: StringName) -> ZoneTargetingIntent:
+	if command == null or not is_instance_valid(command.source_item):
 		return null
-	var created = item.call("create_zone_targeting_intent", zone, entry_mode)
-	return created as ZoneTargetingIntent if created is ZoneTargetingIntent else null
+	return command.source_item.create_zone_targeting_intent(command, entry_mode)
 
-func resolve_item_target_anchor_global(item: Control) -> Vector2:
+func resolve_item_target_anchor_global(item: ZoneItemControl) -> Vector2:
 	if not is_instance_valid(item):
 		return zone.global_position + zone.size * 0.5
-	if item.has_method("get_zone_target_anchor_global"):
-		var anchor = item.call("get_zone_target_anchor_global")
-		if anchor is Vector2:
-			return anchor as Vector2
-	return item.global_position + item.size * 0.5
+	return item.get_zone_target_anchor_global()
 
 func resolve_target_candidate(intent: ZoneTargetingIntent, global_position: Vector2) -> ZoneTargetCandidate:
 	var allows_item = intent == null or intent.allows_candidate_kind(ZoneTargetCandidate.CandidateKind.ITEM)
@@ -109,25 +116,26 @@ func resolve_target_candidate(intent: ZoneTargetingIntent, global_position: Vect
 		for target_zone in zones:
 			if not target_zone.get_global_rect().has_point(global_position):
 				continue
-			var space_model = target_zone.get_space_model_resource()
+			var target_context = target_zone.get_context()
+			var space_model = target_context.get_space_model()
 			if space_model == null:
 				continue
 			var local_position = global_position - target_zone.global_position
-			var placement_target = space_model.resolve_hover_target(target_zone, target_zone.get_runtime(), target_zone.get_items(), global_position, local_position)
-			placement_target = space_model.normalize_target(target_zone, target_zone.get_runtime(), placement_target, [])
+			var placement_target = space_model.resolve_hover_target(target_context, target_context.get_items(), global_position, local_position)
+			placement_target = space_model.normalize_target(target_context, placement_target, [])
 			if placement_target == null or not placement_target.is_valid():
 				continue
 			return build_placement_candidate(target_zone, placement_target, global_position)
 	return ZoneTargetCandidate.invalid(global_position, global_position - zone.global_position)
 
-func resolve_target_decision(source_item: Control, intent: ZoneTargetingIntent, current_candidate: ZoneTargetCandidate, global_position: Vector2) -> ZoneTargetDecision:
+func resolve_target_decision(source_item: ZoneItemControl, intent: ZoneTargetingIntent, current_candidate: ZoneTargetCandidate, global_position: Vector2) -> ZoneTargetDecision:
 	if current_candidate == null or not current_candidate.is_valid():
 		return ZoneTargetDecision.new(false, "", ZoneTargetCandidate.invalid(global_position, global_position - zone.global_position))
 	var request = ZoneTargetRequest.new(zone, source_item, intent, current_candidate, global_position)
 	var resolved_candidate = current_candidate.duplicate_candidate()
 	var metadata: Dictionary = {}
 	if intent != null and intent.policy != null:
-		var source_decision = intent.policy.evaluate_target(request)
+		var source_decision = intent.policy.evaluate_target(context, request)
 		if source_decision == null:
 			source_decision = ZoneTargetDecision.new(resolved_candidate.is_valid(), "", resolved_candidate)
 		metadata.merge(source_decision.metadata, true)
@@ -137,9 +145,10 @@ func resolve_target_decision(source_item: Control, intent: ZoneTargetingIntent, 
 		request = ZoneTargetRequest.new(zone, source_item, intent, resolved_candidate, global_position)
 	var target_zone = resolved_candidate.target_zone as Zone
 	if target_zone != null:
-		var target_policy = target_zone.get_targeting_policy_resource()
+		var target_context = target_zone.get_context()
+		var target_policy = target_context.get_targeting_policy()
 		if target_policy != null:
-			var target_decision = target_policy.evaluate_target(request)
+			var target_decision = target_policy.evaluate_target(target_context, request)
 			if target_decision == null:
 				target_decision = ZoneTargetDecision.new(resolved_candidate.is_valid(), "", resolved_candidate)
 			metadata.merge(target_decision.metadata, true)
@@ -168,13 +177,13 @@ func collect_targeting_zones() -> Array[Zone]:
 			continue
 		if target_zone.mouse_filter == Control.MOUSE_FILTER_IGNORE:
 			continue
-		if target_zone.get_targeting_policy_resource() == null:
+		if target_zone.get_context().get_targeting_policy() == null:
 			continue
 		zones.append(target_zone)
 	zones.reverse()
 	return zones
 
-func build_item_candidate(target_zone: Zone, item: Control, global_position: Vector2) -> ZoneTargetCandidate:
+func build_item_candidate(target_zone: Zone, item: ZoneItemControl, global_position: Vector2) -> ZoneTargetCandidate:
 	var placement_target = target_zone.get_item_target(item)
 	var metadata = build_candidate_metadata(item, placement_target)
 	var anchor = resolve_item_target_anchor_global(item)
@@ -182,26 +191,18 @@ func build_item_candidate(target_zone: Zone, item: Control, global_position: Vec
 
 func build_placement_candidate(target_zone: Zone, placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTargetCandidate:
 	var metadata = build_candidate_metadata(null, placement_target)
-	var anchor = target_zone.get_runtime().resolve_target_anchor(placement_target)
+	var anchor = target_zone.get_context().resolve_target_anchor(placement_target)
 	return ZoneTargetCandidate.placement(target_zone, placement_target, anchor, global_position - target_zone.global_position, metadata)
 
-func build_candidate_metadata(item: Control, placement_target: ZonePlacementTarget) -> Dictionary:
+func build_candidate_metadata(item: ZoneItemControl, placement_target: ZonePlacementTarget) -> Dictionary:
 	var metadata: Dictionary = {}
 	if is_instance_valid(item):
-		metadata.merge(extract_node_metadata(item), true)
-	metadata["candidate_kind"] = "item" if is_instance_valid(item) else "placement"
+		metadata.merge(item.get_zone_item_metadata(), true)
 	if placement_target != null and placement_target.is_valid():
 		metadata.merge(placement_target.metadata, true)
 		metadata["placement_kind"] = placement_target.kind
 		metadata["cell_id"] = placement_target.cell_id
-	return metadata
-
-func extract_node_metadata(node: Object) -> Dictionary:
-	var metadata: Dictionary = {}
-	if node == null or not node.has_method("get_meta_list"):
-		return metadata
-	for key in node.get_meta_list():
-		metadata[str(key)] = node.get_meta(key)
+	metadata["candidate_kind"] = "item" if is_instance_valid(item) else "placement"
 	return metadata
 
 func apply_targeting_feedback(session: ZoneTargetingSession, next_candidate: ZoneTargetCandidate, next_decision: ZoneTargetDecision) -> void:
@@ -222,7 +223,7 @@ func apply_targeting_feedback(session: ZoneTargetingSession, next_candidate: Zon
 	if not target_decisions_match(previous_decision, session.decision):
 		zone.target_hover_state_changed.emit(session.source_item, session.candidate.target_zone, session.decision)
 
-func clear_targeting_feedback(emit_clear_signals: bool, source_item: Control = null) -> void:
+func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
 	var had_candidate = candidate != null and candidate.is_valid()
 	if is_instance_valid(highlight_item):
 		set_target_candidate_visual(highlight_item, false, decision.allowed if decision != null else false)
@@ -233,10 +234,13 @@ func clear_targeting_feedback(emit_clear_signals: bool, source_item: Control = n
 	candidate = ZoneTargetCandidate.invalid()
 	decision = ZoneTargetDecision.new()
 
-func set_target_candidate_visual(item: Control, active: bool, allowed: bool) -> void:
-	if not is_instance_valid(item) or not item.has_method("set_target_candidate_visual"):
+func set_target_candidate_visual(item: ZoneItemControl, active: bool, allowed: bool) -> void:
+	if not is_instance_valid(item):
 		return
-	item.call("set_target_candidate_visual", active, allowed)
+	var visual_state = item.get_zone_visual_state()
+	visual_state.target_candidate_active = active
+	visual_state.target_candidate_allowed = allowed
+	item.apply_zone_visual_state(visual_state)
 
 func target_candidates_match(a: ZoneTargetCandidate, b: ZoneTargetCandidate) -> bool:
 	if a == null and b == null:

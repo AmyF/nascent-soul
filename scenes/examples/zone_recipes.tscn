@@ -4,14 +4,14 @@
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="8_theme"]
 [ext_resource type="Script" path="res://scenes/examples/shared/example_card_spec.gd" id="9_card_spec"]
 [ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="2_zone"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_preset.tres" id="3_pile"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="4_hand"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_preset.tres" id="5_board"]
-[ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd" id="7_capacity"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/pile_zone_config.tres" id="3_pile"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_config.tres" id="4_hand"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_config.tres" id="5_board"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_config.tres" id="6_discard"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd" id="7_policy"]
 
 [sub_resource type="Resource" id="RecipeBoardCapacityPolicy"]
-script = ExtResource("7_capacity")
+script = ExtResource("7_policy")
 max_items = 4
 reject_reason = "Board recipe 已满。提高 max_items 或先弃掉一张牌。\nBoard recipe is full. Raise max_items or discard a card first."
 
@@ -190,7 +190,7 @@ text = "牌库模板 / Deck recipe"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "PileZonePreset，适合抽牌堆与隐藏堆叠 / PileZonePreset for draw piles and hidden stacks"
+text = "PileZoneConfig，适合抽牌堆与隐藏堆叠 / PileZoneConfig for draw piles and hidden stacks"
 
 [node name="DeckZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/DeckColumn"]
 custom_minimum_size = Vector2(200, 240)
@@ -198,7 +198,7 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("RecipeDeckZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("3_pile")
+config = ExtResource("3_pile")
 
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
@@ -215,7 +215,7 @@ text = "手牌模板 / Hand recipe"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "HandZonePreset，适合手牌与奖励选择 / HandZonePreset for player hands and reward picks"
+text = "HandZoneConfig，适合手牌与奖励选择 / HandZoneConfig for player hands and reward picks"
 
 [node name="HandZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/HandColumn"]
 custom_minimum_size = Vector2(260, 240)
@@ -224,7 +224,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("RecipeHandZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("4_hand")
+config = ExtResource("4_hand")
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
@@ -241,7 +241,7 @@ text = "战场模板 / Board recipe"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "BoardZonePreset，容量限制的主动位 / BoardZonePreset for capacity-limited active rows"
+text = "BoardZoneConfig，容量限制的主动位 / BoardZoneConfig for capacity-limited active rows"
 
 [node name="BoardCapacityLabel" type="Label" parent="RootMargin/RootVBox/RecipesGrid/BoardColumn"]
 layout_mode = 2
@@ -256,8 +256,8 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("RecipeBoardZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("5_board")
-transfer_policy = SubResource("RecipeBoardCapacityPolicy")
+config = ExtResource("5_board")
+config/transfer_policy = SubResource("RecipeBoardCapacityPolicy")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/RecipesGrid"]
 layout_mode = 2
@@ -273,7 +273,7 @@ text = "弃牌堆模板 / Discard recipe"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "DiscardZonePreset，适合弃牌堆与回收区 / DiscardZonePreset for discard piles and recovery zones"
+text = "DiscardZoneConfig，适合弃牌堆与回收区 / DiscardZoneConfig for discard piles and recovery zones"
 
 [node name="DiscardZone" type="Control" parent="RootMargin/RootVBox/RecipesGrid/DiscardColumn"]
 custom_minimum_size = Vector2(200, 240)
@@ -281,7 +281,7 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("RecipeDiscardZonePanel")
 script = ExtResource("2_zone")
-preset = ExtResource("6_discard")
+config = ExtResource("6_discard")
 
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2

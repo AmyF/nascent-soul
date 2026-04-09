@@ -1,10 +1,10 @@
 @tool
 class_name ZoneLayoutPolicy extends Resource
 
-func calculate(items: Array[Control], container_size: Vector2, ghost_item: Control = null, ghost_hint = null, runtime = null) -> Array[ZonePlacement]:
+func calculate(context: ZoneContext, items: Array[ZoneItemControl], container_size: Vector2, ghost_item: Control = null, ghost_hint = null) -> Array[ZonePlacement]:
 	return []
 
-func get_insertion_index(items: Array[Control], container_size: Vector2, mouse_pos: Vector2) -> int:
+func get_insertion_index(items: Array[ZoneItemControl], container_size: Vector2, mouse_pos: Vector2) -> int:
 	return items.size()
 
 func resolve_item_size(item: Control) -> Vector2:

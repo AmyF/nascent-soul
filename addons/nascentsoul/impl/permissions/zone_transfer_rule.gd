@@ -38,8 +38,13 @@ func _matches_item(item: Control) -> bool:
 	if source_item_script != null and item.get_script() != source_item_script:
 		return false
 	if required_item_meta_key != "":
-		if not item.has_meta(required_item_meta_key):
+		var metadata: Dictionary = {}
+		if item is ZoneItemControl:
+			metadata = (item as ZoneItemControl).get_zone_item_metadata()
+		elif item.has_meta(required_item_meta_key):
+			metadata[required_item_meta_key] = item.get_meta(required_item_meta_key)
+		if not metadata.has(required_item_meta_key):
 			return false
-		if required_item_meta_value != "" and str(item.get_meta(required_item_meta_key)) != required_item_meta_value:
+		if required_item_meta_value != "" and str(metadata.get(required_item_meta_key)) != required_item_meta_value:
 			return false
 	return true

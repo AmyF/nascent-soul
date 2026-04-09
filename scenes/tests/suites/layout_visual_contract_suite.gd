@@ -73,7 +73,7 @@ func _test_pile_preview_stays_inside_panel() -> void:
 	_check(session != null, "pile preview contract requires an active drag session")
 	if session == null:
 		return
-	pile_zone.get_runtime().create_ghost(alpha)
+	pile_zone.get_render_service().create_ghost(alpha)
 	session.hover_zone = pile_zone
 	session.preview_target = ZonePlacementTarget.linear(1)
 	pile_zone.refresh()
@@ -81,7 +81,7 @@ func _test_pile_preview_stays_inside_panel() -> void:
 	_check(ghost != null, "pile preview should create a ghost control")
 	if ghost != null:
 		_check(_rect_inside(pile_panel.get_global_rect(), ghost.get_global_rect()), "pile preview ghost should stay inside the pile panel bounds")
-	source_zone.get_runtime().cancel_drag(session)
+	source_zone.cancel_drag(session)
 	await _settle_frames(2)
 
 func _test_recipe_scene_loads() -> void:

@@ -5,8 +5,10 @@ class_name ZoneHBoxLayout extends ZoneLayoutPolicy
 @export var padding_left: float = 16.0
 @export var padding_top: float = 16.0
 
-func calculate(items: Array[Control], container_size: Vector2, ghost_item: Control = null, ghost_hint = null, runtime = null) -> Array[ZonePlacement]:
-	var render_items: Array[Control] = items.duplicate()
+func calculate(_context: ZoneContext, items: Array[ZoneItemControl], container_size: Vector2, ghost_item: Control = null, ghost_hint = null) -> Array[ZonePlacement]:
+	var render_items: Array = []
+	for item in items:
+		render_items.append(item)
 	var ghost_index = ghost_hint as int if ghost_hint is int else -1
 	if is_instance_valid(ghost_item) and ghost_index >= 0:
 		render_items.insert(clampi(ghost_index, 0, render_items.size()), ghost_item)
@@ -21,7 +23,7 @@ func calculate(items: Array[Control], container_size: Vector2, ghost_item: Contr
 		current_x += size.x + item_spacing
 	return placements
 
-func get_insertion_index(items: Array[Control], container_size: Vector2, mouse_pos: Vector2) -> int:
+func get_insertion_index(items: Array[ZoneItemControl], container_size: Vector2, mouse_pos: Vector2) -> int:
 	var current_x = _resolve_start_x(items, container_size)
 	for i in range(items.size()):
 		var width = resolve_item_size(items[i]).x
@@ -30,7 +32,7 @@ func get_insertion_index(items: Array[Control], container_size: Vector2, mouse_p
 		current_x += width + item_spacing
 	return items.size()
 
-func _resolve_start_x(items: Array[Control], container_size: Vector2) -> float:
+func _resolve_start_x(items: Array, container_size: Vector2) -> float:
 	var total_width = 0.0
 	for i in range(items.size()):
 		total_width += resolve_item_size(items[i]).x

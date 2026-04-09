@@ -1,5 +1,5 @@
 @tool
-class_name ZoneCard extends Control
+class_name ZoneCard extends ZoneItemControl
 
 var _data: CardData = null
 var _face_up: bool = true
@@ -78,18 +78,16 @@ func _apply_flip_state(to_face_up: bool) -> void:
 	face_up = to_face_up
 
 func set_hovered_visual(value: bool) -> void:
-	if _hovered_visual == value:
-		return
-	_hovered_visual = value
-	_refresh_visuals()
+	var state = get_zone_visual_state()
+	state.hovered = value
+	apply_zone_visual_state(state)
 
 func set_selected_visual(value: bool) -> void:
-	if _selected_visual == value:
-		return
-	_selected_visual = value
-	_refresh_visuals()
+	var state = get_zone_visual_state()
+	state.selected = value
+	apply_zone_visual_state(state)
 
-func create_zone_ghost() -> Control:
+func create_zone_drag_ghost(_context: ZoneContext) -> Control:
 	var ghost := Panel.new()
 	ghost.custom_minimum_size = _resolved_card_size()
 	ghost.size = _resolved_card_size()
@@ -107,7 +105,7 @@ func create_zone_ghost() -> Control:
 	ghost.add_theme_stylebox_override("panel", style)
 	return ghost
 
-func create_drag_proxy() -> Control:
+func create_zone_drag_proxy(_context: ZoneContext) -> Control:
 	var proxy = duplicate(0)
 	if proxy is Control:
 		var control_proxy := proxy as Control
@@ -120,20 +118,23 @@ func create_drag_proxy() -> Control:
 	fallback.size = _resolved_card_size()
 	return fallback
 
-func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -> ZoneTargetingIntent:
-	return null
+func create_zone_targeting_intent(_command: ZoneTargetingCommand, _entry_mode: StringName) -> ZoneTargetingIntent:
+	return super.create_zone_targeting_intent(_command, _entry_mode)
 
 func get_zone_target_anchor_global() -> Vector2:
 	return global_position + size * 0.5
 
 func set_target_candidate_visual(active: bool, allowed: bool) -> void:
-	if _target_candidate_active == active and _target_candidate_allowed == allowed:
-		return
-	_target_candidate_active = active
-	_target_candidate_allowed = allowed
-	_refresh_visuals()
+	var state = get_zone_visual_state()
+	state.target_candidate_active = active
+	state.target_candidate_allowed = allowed
+	apply_zone_visual_state(state)
 
-func create_zone_piece() -> Control:
+func create_zone_spawned_item(
+	_context: ZoneContext,
+	_decision: ZoneTransferDecision,
+	_placement_target: ZonePlacementTarget
+) -> ZoneItemControl:
 	var piece := ZonePiece.new()
 	piece.name = "%sPiece" % (data.title if data != null and data.title != "" else name)
 	piece.custom_minimum_size = Vector2(92, 92)
@@ -146,8 +147,39 @@ func create_zone_piece() -> Control:
 		piece_data.attack = data.cost
 		piece_data.defense = max(1, data.tags.size())
 		piece_data.custom_data = data.custom_data.duplicate(true)
-	piece.data = piece_data
+		piece.data = piece_data
 	return piece
+
+func configure_zone_spawned_item(
+	spawned_item: ZoneItemControl,
+	context: ZoneContext,
+	placement_target: ZonePlacementTarget
+) -> void:
+	if spawned_item is ZonePiece:
+		(spawned_item as ZonePiece).configure_from_transfer_source(self, context, placement_target)
+
+func create_zone_ghost() -> Control:
+	return create_zone_drag_ghost(null)
+
+func create_drag_proxy() -> Control:
+	return create_zone_drag_proxy(null)
+
+func create_zone_piece() -> Control:
+	return create_zone_spawned_item(null, ZoneTransferDecision.new(), ZonePlacementTarget.invalid())
+
+func apply_zone_visual_state(state: ZoneItemVisualState) -> void:
+	var next_state = state if state != null else ZoneItemVisualState.new()
+	var changed = _hovered_visual != next_state.hovered \
+		or _selected_visual != next_state.selected \
+		or _target_candidate_active != next_state.target_candidate_active \
+		or _target_candidate_allowed != next_state.target_candidate_allowed
+	super.apply_zone_visual_state(next_state)
+	_hovered_visual = next_state.hovered
+	_selected_visual = next_state.selected
+	_target_candidate_active = next_state.target_candidate_active
+	_target_candidate_allowed = next_state.target_candidate_allowed
+	if changed:
+		_refresh_visuals()
 
 func _ensure_nodes() -> void:
 	if _visual_root == null or not is_instance_valid(_visual_root):

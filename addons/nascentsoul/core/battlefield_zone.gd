@@ -2,17 +2,19 @@
 class_name BattlefieldZone extends Zone
 
 func _ready() -> void:
-	if space_model == null:
-		space_model = ZoneSquareGridSpaceModel.new()
-	if layout_policy == null:
-		layout_policy = ZoneBattlefieldLayout.new()
+	if config == null:
+		config = _build_default_battlefield_config()
 	super._ready()
 
-func place_item_at(item: Control, target: ZonePlacementTarget) -> bool:
-	return add_item(item, target)
-
-func move_item_to_target(item: Control, target_zone: Zone, target: ZonePlacementTarget) -> bool:
-	return move_item_to(item, target_zone, target)
-
-func get_item_cell(item: Control) -> ZonePlacementTarget:
-	return get_item_target(item)
+func _build_default_battlefield_config() -> ZoneConfig:
+	var resolved := ZoneConfig.new()
+	var space := ZoneSquareGridSpaceModel.new()
+	resolved.space_model = space
+	resolved.layout_policy = ZoneBattlefieldLayout.new()
+	resolved.display_style = ZoneCardDisplay.new()
+	resolved.interaction = ZoneInteraction.new()
+	resolved.transfer_policy = ZoneOccupancyTransferPolicy.new()
+	resolved.drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
+	resolved.targeting_style = ZoneArrowTargetingStyle.new()
+	resolved.targeting_policy = ZoneTargetAllowAllPolicy.new()
+	return resolved

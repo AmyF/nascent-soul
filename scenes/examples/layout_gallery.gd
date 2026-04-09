@@ -9,11 +9,10 @@ const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd"
 @onready var sort_button: Button = $RootMargin/RootVBox/Toolbar/SortButton
 @onready var reset_button: Button = $RootMargin/RootVBox/Toolbar/ResetButton
 @onready var sort_mode_label: Label = $RootMargin/RootVBox/Toolbar/SortModeLabel
-@onready var _hand_zone: Zone = $RootMargin/RootVBox/Grid/HandColumn/HandZone
-@onready var _row_zone: Zone = $RootMargin/RootVBox/Grid/RowColumn/RowZone
-@onready var _list_zone: Zone = $RootMargin/RootVBox/Grid/ListColumn/ListZone
-@onready var _pile_zone: Zone = $RootMargin/RootVBox/Grid/PileColumn/PileZone
-@onready var _row_sort: ZonePropertySort = _row_zone.sort_policy as ZonePropertySort
+@onready var _hand_zone: Zone = $RootMargin/RootVBox/Grid/HandColumn/HandZone as Zone
+@onready var _row_zone: Zone = $RootMargin/RootVBox/Grid/RowColumn/RowZone as Zone
+@onready var _list_zone: Zone = $RootMargin/RootVBox/Grid/ListColumn/ListZone as Zone
+@onready var _pile_zone: Zone = $RootMargin/RootVBox/Grid/PileColumn/PileZone as Zone
 
 func _ready() -> void:
 	_populate_cards()
@@ -30,6 +29,9 @@ func _populate_cards() -> void:
 	ExampleSupport.add_cards_from_specs(_pile_zone, gallery_cards, false)
 
 func _toggle_row_sort() -> void:
+	var _row_sort: ZonePropertySort = ExampleSupport.get_zone_sort_policy(_row_zone) as ZonePropertySort
+	if _row_sort == null:
+		return
 	_row_sort.descending = not _row_sort.descending
 	_row_zone.refresh()
 	_refresh_guidance()
@@ -44,6 +46,7 @@ func _reset_gallery() -> void:
 			zone.remove_item(item)
 			item.queue_free()
 	_populate_cards()
+	var _row_sort: ZonePropertySort = ExampleSupport.get_zone_sort_policy(_row_zone) as ZonePropertySort
 	_row_sort.descending = false
 	_row_zone.refresh()
 	_refresh_guidance()
@@ -62,9 +65,11 @@ func _set_status(message: String) -> void:
 	status_label.text = "%s: %s" % [ExampleSupport.compact_bilingual("最近", "Latest"), message]
 
 func _current_sort_name() -> String:
+	var _row_sort: ZonePropertySort = ExampleSupport.get_zone_sort_policy(_row_zone) as ZonePropertySort
 	return "降序" if _row_sort != null and _row_sort.descending else "升序"
 
 func _current_sort_name_en() -> String:
+	var _row_sort: ZonePropertySort = ExampleSupport.get_zone_sort_policy(_row_zone) as ZonePropertySort
 	return "descending" if _row_sort != null and _row_sort.descending else "ascending"
 
 func _schedule_headless_quit_if_root() -> void:

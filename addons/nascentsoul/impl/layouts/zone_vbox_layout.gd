@@ -4,8 +4,10 @@ class_name ZoneVBoxLayout extends ZoneLayoutPolicy
 @export var item_spacing: float = 10.0
 @export var padding_top: float = 10.0
 
-func calculate(items: Array[Control], container_size: Vector2, ghost_item: Control = null, ghost_hint = null, runtime = null) -> Array[ZonePlacement]:
-	var render_items: Array[Control] = items.duplicate()
+func calculate(_context: ZoneContext, items: Array[ZoneItemControl], container_size: Vector2, ghost_item: Control = null, ghost_hint = null) -> Array[ZonePlacement]:
+	var render_items: Array = []
+	for item in items:
+		render_items.append(item)
 	var ghost_index = ghost_hint as int if ghost_hint is int else -1
 	if is_instance_valid(ghost_item) and ghost_index >= 0:
 		render_items.insert(clampi(ghost_index, 0, render_items.size()), ghost_item)
@@ -19,7 +21,7 @@ func calculate(items: Array[Control], container_size: Vector2, ghost_item: Contr
 		current_y += size.y + item_spacing
 	return placements
 
-func get_insertion_index(items: Array[Control], container_size: Vector2, mouse_pos: Vector2) -> int:
+func get_insertion_index(items: Array[ZoneItemControl], container_size: Vector2, mouse_pos: Vector2) -> int:
 	var current_y = _resolve_start_y(items, container_size)
 	var count = items.size()
 	for i in range(count):
@@ -32,7 +34,7 @@ func get_insertion_index(items: Array[Control], container_size: Vector2, mouse_p
 		current_y += h + item_spacing
 	return count
 
-func _resolve_start_y(items: Array[Control], container_size: Vector2) -> float:
+func _resolve_start_y(items: Array, container_size: Vector2) -> float:
 	var total_height = 0.0
 	for i in range(items.size()):
 		total_height += resolve_item_size(items[i]).y

@@ -16,10 +16,10 @@ class_name ZoneArrowTargetingStyle extends ZoneTargetingStyle
 @export var pulse_enabled: bool = true
 @export_range(0.5, 12.0, 0.1) var pulse_speed: float = 4.0
 
-func create_overlay(_coordinator: Node) -> Control:
+func create_overlay(_context: ZoneContext, _coordinator: Node) -> Control:
 	return ZoneArrowTargetingOverlay.new()
 
-func update_overlay(overlay: Control, _session, source_anchor: Vector2, candidate: ZoneTargetCandidate, decision: ZoneTargetDecision, pointer_global_position: Vector2) -> void:
+func update_overlay(_context: ZoneContext, overlay: Control, _session, source_anchor: Vector2, candidate: ZoneTargetCandidate, decision: ZoneTargetDecision, pointer_global_position: Vector2) -> void:
 	if overlay == null or not is_instance_valid(overlay) or overlay is not ZoneArrowTargetingOverlay:
 		return
 	var resolved_candidate = decision.resolved_candidate if decision != null and decision.resolved_candidate != null and decision.resolved_candidate.is_valid() else candidate
