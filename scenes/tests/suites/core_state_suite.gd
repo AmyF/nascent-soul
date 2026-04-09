@@ -1,6 +1,6 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
-const ZoneCompositePermissionScript = preload("res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd")
+const ZoneCompositeTransferPolicyScript = preload("res://addons/nascentsoul/impl/permissions/zone_composite_transfer_policy.gd")
 const ZoneConfigurableDragVisualFactoryScript = preload("res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd")
 const ZoneGroupSortScript = preload("res://addons/nascentsoul/impl/sorts/zone_group_sort.gd")
 const HAND_PRESET = preload("res://addons/nascentsoul/presets/hand_zone_preset.tres")
@@ -27,13 +27,13 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_rejected_hover_hides_preview_but_still_rejects_drop()
 	await _reset_root()
-	await _test_composite_permission()
+	await _test_composite_policy()
 	await _reset_root()
 	await _test_group_sort_policy()
 	await _reset_root()
 	await _test_drag_visual_factory()
 	await _reset_root()
-	await _test_permission_reject_cleanup()
+	await _test_policy_reject_cleanup()
 	await _reset_root()
 	await _test_drag_cancel_cleanup()
 	await _reset_root()
@@ -81,16 +81,16 @@ func _test_internal_roots_and_preset_override() -> void:
 	override_layout.item_spacing = 20.0
 	override_layout.padding_left = 10.0
 	zone.layout_policy = override_layout
-	var override_permission := ZoneCapacityPermission.new()
-	override_permission.max_items = 2
-	zone.transfer_policy = override_permission
+	var override_policy := ZoneCapacityTransferPolicy.new()
+	override_policy.max_items = 2
+	zone.transfer_policy = override_policy
 	await _settle_frames(2)
 	_check(zone.get_items_root() != null, "zone should always create an ItemsRoot child")
 	_check(zone.get_preview_root() != null, "zone should always create a PreviewRoot child")
 	_check(zone.get_items_root().get_parent() == zone, "ItemsRoot should belong to the zone itself")
 	_check(zone.get_preview_root().get_parent() == zone, "PreviewRoot should belong to the zone itself")
 	_check(zone.get_layout_policy_resource() == override_layout, "layout override should take precedence over preset layout")
-	_check(zone.get_transfer_policy_resource() == override_permission, "transfer override should take precedence over preset transfer policy")
+	_check(zone.get_transfer_policy_resource() == override_policy, "transfer override should take precedence over preset transfer policy")
 	_check(zone.get_display_style_resource() == HAND_PRESET.display_style, "preset display style should resolve when no override exists")
 	_check(zone.get_drag_visual_factory_resource() == HAND_PRESET.drag_visual_factory, "preset drag visual factory should resolve when no override exists")
 
@@ -172,22 +172,22 @@ func _test_transfer_snapshots_preserve_animation_origins() -> void:
 	var alpha_rotation = alpha.rotation
 	var beta_rotation = beta.rotation
 	var runtime = zone.get_runtime()
-	var baseline_snapshots = runtime._build_transfer_snapshots([alpha, beta])
+	var baseline_snapshots = runtime.build_transfer_snapshots([alpha, beta])
 	var alpha_baseline: Dictionary = baseline_snapshots.get(alpha, {})
 	var beta_baseline: Dictionary = baseline_snapshots.get(beta, {})
 	_check(alpha_baseline.get("global_position", Vector2.ZERO).distance_to(alpha_origin) <= 0.01, "baseline transfer snapshot should preserve the primary card global position")
 	_check(beta_baseline.get("global_position", Vector2.ZERO).distance_to(beta_origin) <= 0.01, "baseline transfer snapshot should preserve the secondary card global position")
 	_check(is_equal_approx(alpha_baseline.get("rotation", 0.0), alpha_rotation), "baseline transfer snapshot should preserve the primary card rotation")
 	_check(is_equal_approx(beta_baseline.get("rotation", 0.0), beta_rotation), "baseline transfer snapshot should preserve the secondary card rotation")
-	var programmatic_origin = runtime._resolve_programmatic_transfer_global_position([alpha, beta])
+	var programmatic_origin = runtime.resolve_programmatic_transfer_global_position([alpha, beta])
 	_check(programmatic_origin is Vector2 and (programmatic_origin as Vector2).distance_to(alpha_origin) <= 0.01, "programmatic transfer APIs should use the primary card's current global position as their animation origin")
-	var programmatic_snapshots = runtime._build_transfer_snapshots([alpha, beta], programmatic_origin)
+	var programmatic_snapshots = runtime.build_transfer_snapshots([alpha, beta], programmatic_origin)
 	var alpha_programmatic: Dictionary = programmatic_snapshots.get(alpha, {})
 	var beta_programmatic: Dictionary = programmatic_snapshots.get(beta, {})
 	_check(alpha_programmatic.get("global_position", Vector2.ZERO).distance_to(alpha_origin) <= 0.01, "programmatic transfer snapshots should leave the primary card anchored at its current position")
 	_check(beta_programmatic.get("global_position", Vector2.ZERO).distance_to(beta_origin) <= 0.01, "programmatic transfer snapshots should preserve secondary card positions when no drag cursor offset exists")
 	var drop_position = Vector2(540, 180)
-	var dragged_snapshots = runtime._build_transfer_snapshots([alpha, beta], drop_position)
+	var dragged_snapshots = runtime.build_transfer_snapshots([alpha, beta], drop_position)
 	var alpha_dragged: Dictionary = dragged_snapshots.get(alpha, {})
 	var beta_dragged: Dictionary = dragged_snapshots.get(beta, {})
 	var dragged_offset: Vector2 = beta_dragged.get("global_position", Vector2.ZERO) - alpha_dragged.get("global_position", Vector2.ZERO)
@@ -209,16 +209,16 @@ func _test_transfer_handoff_cleanup() -> void:
 	await _settle_frames(2)
 	_check(source_zone.get_runtime().item_state.transfer_handoffs.is_empty(), "source runtime should not retain transfer handoff data after a completed move")
 	_check(target_zone.get_runtime().item_state.transfer_handoffs.is_empty(), "target runtime should consume transfer handoff data during refresh")
-	target_zone.get_runtime()._set_transfer_handoff(alpha, {"global_position": Vector2(10, 10)})
+	target_zone.get_runtime().set_transfer_handoff(alpha, {"global_position": Vector2(10, 10)})
 	target_zone.remove_item(alpha)
 	await _settle_frames(1)
 	_check(target_zone.get_runtime().item_state.transfer_handoffs.is_empty(), "remove_item should clear any pending handoff for the removed card")
 	target_zone.add_item(alpha)
 	await _settle_frames(2)
-	target_zone.get_runtime()._set_transfer_handoff(alpha, {"global_position": Vector2(20, 20)})
+	target_zone.get_runtime().set_transfer_handoff(alpha, {"global_position": Vector2(20, 20)})
 	target_zone.get_runtime().clear_display_state()
 	_check(target_zone.get_runtime().item_state.transfer_handoffs.is_empty(), "clear_display_state should clear pending handoff data")
-	target_zone.get_runtime()._set_transfer_handoff(alpha, {"global_position": Vector2(30, 30)})
+	target_zone.get_runtime().set_transfer_handoff(alpha, {"global_position": Vector2(30, 30)})
 	target_zone.get_runtime().unbind()
 	_check(target_zone.get_runtime().item_state.transfer_handoffs.is_empty(), "unbind should clear pending handoff data")
 	target_zone.get_runtime().bind()
@@ -258,7 +258,7 @@ func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	var target_panel = _make_panel("RejectHoverTargetPanel", Vector2.ZERO, Vector2(620, 260))
 	var source_panel = _make_panel("RejectHoverSourcePanel", Vector2(24, 320), Vector2(620, 260))
 	var source_zone = ExampleSupport.make_zone(source_panel, "RejectHoverSourceZone", ZoneHBoxLayout.new())
-	var capacity = ZoneCapacityPermission.new()
+	var capacity = ZoneCapacityTransferPolicy.new()
 	capacity.max_items = 0
 	capacity.reject_reason = "Reject hover target is full."
 	var target_zone = ExampleSupport.make_zone(target_panel, "RejectHoverTargetZone", ZoneHBoxLayout.new(), null, capacity)
@@ -294,12 +294,12 @@ func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	if session == null:
 		return
 	var target_runtime = target_zone.get_runtime()
-	var request = target_runtime._make_transfer_request(target_zone, source_zone, session.items, ZonePlacementTarget.linear(0), Vector2.ZERO)
-	var decision = target_runtime._resolve_drop_decision(request)
+	var request = target_runtime.make_transfer_request(target_zone, source_zone, session.items, ZonePlacementTarget.linear(0), Vector2.ZERO)
+	var decision = target_runtime.resolve_drop_decision(request)
 	session.hover_zone = target_zone
 	session.requested_target = ZonePlacementTarget.linear(0)
 	session.preview_target = ZonePlacementTarget.invalid()
-	if target_runtime._apply_hover_feedback(session.items, decision, ZonePlacementTarget.invalid(), alpha):
+	if target_runtime.apply_hover_feedback(session.items, decision, ZonePlacementTarget.invalid(), alpha):
 		target_zone.refresh()
 	_check(not decision.allowed, "reject hover should resolve to a rejected decision")
 	_check(hover_states == [{
@@ -316,11 +316,11 @@ func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	_check(source_zone.has_item(alpha), "reject hover release should keep the dragged card in the source zone")
 	_check(not target_zone.has_item(alpha), "reject hover release should not insert the card into the target zone")
 
-func _test_permission_reject_cleanup() -> void:
+func _test_policy_reject_cleanup() -> void:
 	var target_panel = _make_panel("RejectTargetPanel", Vector2.ZERO, Vector2(620, 260))
 	var source_panel = _make_panel("RejectSourcePanel", Vector2(24, 320), Vector2(620, 260))
 	var source_zone = ExampleSupport.make_zone(source_panel, "RejectSourceZone", ZoneHBoxLayout.new())
-	var capacity = ZoneCapacityPermission.new()
+	var capacity = ZoneCapacityTransferPolicy.new()
 	capacity.max_items = 0
 	capacity.reject_reason = "Reject target is full."
 	var target_zone = ExampleSupport.make_zone(target_panel, "RejectTargetZone", ZoneHBoxLayout.new(), null, capacity)
@@ -351,20 +351,20 @@ func _test_permission_reject_cleanup() -> void:
 	_check(_unmanaged_control_names(source_zone).is_empty(), "rejected drop should not leave a source ghost behind")
 	_check(_unmanaged_control_names(target_zone).is_empty(), "rejected drop should not leave a target ghost behind")
 
-func _test_composite_permission() -> void:
+func _test_composite_policy() -> void:
 	var target_panel = _make_panel("CompositeTargetPanel", Vector2.ZERO, Vector2(620, 260))
 	var hand_panel = _make_panel("CompositeHandPanel", Vector2(24, 320), Vector2(620, 260))
 	var deck_panel = _make_panel("CompositeDeckPanel", Vector2(24, 616), Vector2(620, 260))
 	var hand_zone = ExampleSupport.make_zone(hand_panel, "HandZone", ZoneHBoxLayout.new())
 	var deck_zone = ExampleSupport.make_zone(deck_panel, "DeckZone", ZoneHBoxLayout.new())
-	var source_policy := ZoneSourcePermission.new()
+	var source_policy := ZoneSourceTransferPolicy.new()
 	source_policy.allowed_source_zone_names = PackedStringArray(["HandZone"])
 	source_policy.reject_reason = "Composite target only accepts cards from HandZone."
-	var capacity_policy := ZoneCapacityPermission.new()
+	var capacity_policy := ZoneCapacityTransferPolicy.new()
 	capacity_policy.max_items = 1
 	capacity_policy.reject_reason = "Composite target is full."
-	var composite_policy := ZoneCompositePermissionScript.new()
-	composite_policy.combine_mode = ZoneCompositePermissionScript.CombineMode.ALL
+	var composite_policy := ZoneCompositeTransferPolicyScript.new()
+	composite_policy.combine_mode = ZoneCompositeTransferPolicyScript.CombineMode.ALL
 	composite_policy.policies = [source_policy, capacity_policy]
 	var target_zone = ExampleSupport.make_zone(target_panel, "CompositeTargetZone", ZoneHBoxLayout.new(), null, composite_policy)
 	var hand_alpha = ExampleSupport.make_card("HandAlpha", 1, ["skill"], true)
@@ -379,19 +379,19 @@ func _test_composite_permission() -> void:
 	hand_zone.add_item(hand_beta)
 	deck_zone.add_item(deck_alpha)
 	await _settle_frames(2)
-	_check(hand_zone.move_item_to(hand_alpha, target_zone, ZonePlacementTarget.linear(0)), "composite permission should allow a card from the allowed source zone")
+	_check(hand_zone.move_item_to(hand_alpha, target_zone, ZonePlacementTarget.linear(0)), "composite policy should allow a card from the allowed source zone")
 	await _settle_frames(2)
-	_check(_zone_item_names(target_zone) == ["HandAlpha"], "composite permission should insert the first allowed card")
-	_check(not hand_zone.move_item_to(hand_beta, target_zone, ZonePlacementTarget.linear(1)), "composite permission should reject a second card when capacity is full")
+	_check(_zone_item_names(target_zone) == ["HandAlpha"], "composite policy should insert the first allowed card")
+	_check(not hand_zone.move_item_to(hand_beta, target_zone, ZonePlacementTarget.linear(1)), "composite policy should reject a second card when capacity is full")
 	await _settle_frames(2)
 	_check(_zone_item_names(hand_zone) == ["HandBeta"], "capacity rejection should leave the second hand card in the source zone")
-	_check(not deck_zone.move_item_to(deck_alpha, target_zone, ZonePlacementTarget.linear(1)), "composite permission should reject a card from a disallowed source zone")
+	_check(not deck_zone.move_item_to(deck_alpha, target_zone, ZonePlacementTarget.linear(1)), "composite policy should reject a card from a disallowed source zone")
 	await _settle_frames(2)
 	_check(_zone_item_names(deck_zone) == ["DeckAlpha"], "source rejection should leave the deck card in the source zone")
 	_check(reject_events == [
 		"HandBeta:HandZone:Composite target is full.",
 		"DeckAlpha:DeckZone:Composite target only accepts cards from HandZone."
-	], "composite permission should surface the specific rejecting reason")
+		], "composite policy should surface the specific rejecting reason")
 
 func _test_group_sort_policy() -> void:
 	var panel = _make_panel("GroupSortPanel", Vector2(24, 24), Vector2(920, 280))
@@ -453,7 +453,7 @@ func _test_drag_visual_factory() -> void:
 		_check(proxy.color == source_factory.proxy_color, "custom drag proxy should use the configured color")
 		_check(proxy.scale == source_factory.proxy_scale, "custom drag proxy should use the configured scale")
 	var target_runtime = target_zone.get_runtime()
-	target_runtime._create_ghost(alpha)
+	target_runtime.create_ghost(alpha)
 	session.hover_zone = target_zone
 	session.preview_target = ZonePlacementTarget.linear(0)
 	target_zone.refresh()

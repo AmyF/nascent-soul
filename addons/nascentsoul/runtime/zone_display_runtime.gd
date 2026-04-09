@@ -99,10 +99,15 @@ func update_hover_preview(session: ZoneDragSession) -> void:
 			runtime.refresh()
 		return
 	var visible_items = get_layout_items(session)
-	var requested_target = zone.get_space_model_resource().resolve_hover_target(zone, runtime, visible_items, global_mouse, zone.get_local_mouse_position())
-	requested_target = zone.get_space_model_resource().normalize_target(zone, runtime, requested_target, session.items)
-	var request = runtime._make_transfer_request(zone, session.source_zone, session.items, requested_target, global_mouse)
-	var decision = runtime._resolve_drop_decision(request)
+	var space_model = zone.get_space_model_resource()
+	if space_model == null:
+		if clear_hover_feedback(session.items):
+			runtime.refresh()
+		return
+	var requested_target = space_model.resolve_hover_target(zone, runtime, visible_items, global_mouse, zone.get_local_mouse_position())
+	requested_target = space_model.normalize_target(zone, runtime, requested_target, session.items)
+	var request = runtime.make_transfer_request(zone, session.source_zone, session.items, requested_target, global_mouse)
+	var decision = runtime.resolve_drop_decision(request)
 	var preview_target = decision.resolved_target if decision.allowed else ZonePlacementTarget.invalid()
 	session.hover_zone = zone
 	session.requested_target = requested_target

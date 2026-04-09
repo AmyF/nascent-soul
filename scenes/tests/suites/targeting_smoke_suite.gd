@@ -219,7 +219,7 @@ func _make_square_battlefield(panel: Control, zone_name: String, columns: int, r
 	var square_model := ZoneSquareGridSpaceModel.new()
 	square_model.columns = columns
 	square_model.rows = rows
-	return ExampleSupport.make_battlefield_zone(panel, zone_name, square_model, ZoneOccupancyPermission.new())
+	return ExampleSupport.make_battlefield_zone(panel, zone_name, square_model, ZoneOccupancyTransferPolicy.new())
 
 func _make_enemy_only_target_policy(reject_reason: String) -> ZoneTargetingPolicy:
 	var reject_allies := ZoneTargetRuleScript.new()

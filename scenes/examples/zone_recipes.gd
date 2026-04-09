@@ -17,7 +17,7 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 @onready var _hand_zone: Zone = $RootMargin/RootVBox/RecipesGrid/HandColumn/HandZone
 @onready var _board_zone: Zone = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone
 @onready var _discard_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DiscardColumn/DiscardZone
-@onready var _board_capacity: ZoneCapacityPermission = _board_zone.transfer_policy as ZoneCapacityPermission
+@onready var _board_capacity: ZoneCapacityTransferPolicy = _board_zone.transfer_policy as ZoneCapacityTransferPolicy
 
 func _ready() -> void:
 	_populate_cards()

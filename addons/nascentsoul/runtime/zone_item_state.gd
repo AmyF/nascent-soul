@@ -29,8 +29,11 @@ func get_item_target(item: Control) -> ZonePlacementTarget:
 		var existing = item_targets[item]
 		if existing is ZonePlacementTarget:
 			return (existing as ZonePlacementTarget).duplicate_target()
+	var space_model = zone.get_space_model_resource()
+	if space_model == null:
+		return ZonePlacementTarget.invalid()
 	var fallback_index = find_item_index(item)
-	return zone.get_space_model_resource().resolve_render_target(zone, runtime, item, fallback_index)
+	return space_model.resolve_render_target(zone, runtime, item, fallback_index)
 
 func get_items_at_target(target: ZonePlacementTarget) -> Array[Control]:
 	var matched: Array[Control] = []
@@ -80,6 +83,10 @@ func rebuild_items_from_root() -> void:
 	if items_root == null:
 		clear_runtime_items(true)
 		return
+	var space_model = zone.get_space_model_resource()
+	if space_model == null:
+		clear_runtime_items(true)
+		return
 	var container_items: Array[Control] = []
 	for child in items_root.get_children():
 		if child is Control and child != runtime.display_runtime.ghost_instance:
@@ -88,15 +95,15 @@ func rebuild_items_from_root() -> void:
 	var existing_items := items.duplicate()
 	for item in existing_items:
 		if not is_instance_valid(item) or item.get_parent() != items_root or item not in container_items:
-			selection_changed = runtime._remove_item_from_state(item, false, true) or selection_changed
+			selection_changed = runtime.remove_item_from_state(item, false, true) or selection_changed
 	for i in range(container_items.size()):
 		var item = container_items[i]
 		register_item(item)
 		var restored_target = item.get_meta("zone_placement_target") if item.has_meta("zone_placement_target") else null
 		if restored_target != null and restored_target is ZonePlacementTarget:
-			set_item_target(item, zone.get_space_model_resource().normalize_target(zone, runtime, restored_target as ZonePlacementTarget, [item]))
+			set_item_target(item, space_model.normalize_target(zone, runtime, restored_target as ZonePlacementTarget, [item]))
 		elif not item_targets.has(item):
-			set_item_target(item, zone.get_space_model_resource().resolve_add_target(zone, runtime, item, i))
+			set_item_target(item, space_model.resolve_add_target(zone, runtime, item, i))
 		if contains_item_reference(item):
 			continue
 		var insert_at = min(i, items.size())
@@ -134,7 +141,7 @@ func unregister_item(item) -> void:
 	if not item_bindings.has(item):
 		return
 	var bindings: Dictionary = item_bindings[item]
-	runtime._reset_press_state_for_item(item)
+	runtime.reset_press_state_for_item(item)
 	if is_instance_valid(item):
 		if item.gui_input.is_connected(bindings["gui_input"]):
 			item.gui_input.disconnect(bindings["gui_input"])
@@ -148,7 +155,7 @@ func clear_runtime_items(emit_selection_changed: bool) -> void:
 	var selection_changed = runtime.selection_state.clear()
 	var existing_items := items.duplicate()
 	for item in existing_items:
-		runtime._remove_item_from_state(item, false, true)
+		runtime.remove_item_from_state(item, false, true)
 	items.clear()
 	item_targets.clear()
 	clear_transfer_handoffs()

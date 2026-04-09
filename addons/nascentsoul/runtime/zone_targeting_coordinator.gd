@@ -109,7 +109,7 @@ func clear_session(keep_process_input: bool = false) -> void:
 		return
 	var source_zone = active_session.source_zone as Zone
 	if source_zone != null and is_instance_valid(source_zone):
-		source_zone.get_runtime()._clear_targeting_feedback(false, active_session.source_item)
+		source_zone.get_runtime().clear_targeting_feedback(false, active_session.source_item)
 	active_session.cleanup()
 	active_session = null
 	set_process(false)
@@ -138,11 +138,13 @@ func _update_overlay(source_zone: Zone) -> void:
 		_overlay.name = "__NascentSoulTargetingOverlay"
 		_overlay.visible = false
 		_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_overlay.top_level = true
+		_overlay.top_level = _overlay_layer == null
 		if _overlay_layer != null:
 			_overlay_layer.add_child(_overlay)
 		else:
 			viewport.add_child(_overlay)
+	elif _overlay_layer != null and _overlay.top_level:
+		_overlay.top_level = false
 	if _overlay_layer == null and _overlay.get_parent() == viewport:
 		viewport.move_child(_overlay, viewport.get_child_count() - 1)
 	style.update_overlay(_overlay, active_session, active_session.source_anchor_global, active_session.candidate, active_session.decision, active_session.pointer_global_position)

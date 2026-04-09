@@ -62,6 +62,15 @@ func unbind() -> void:
 	targeting_runtime.clear_targeting_feedback(false)
 	interaction_runtime.cleanup()
 
+func dispose() -> void:
+	unbind()
+	display_runtime.clear_preview_internal()
+	display_runtime.clear_display_state()
+	item_state.clear_transfer_handoffs()
+	display_runtime.reset_hover_feedback_tracking()
+	targeting_runtime.clear_targeting_feedback(false)
+	interaction_runtime.cleanup()
+
 func process(_delta: float) -> void:
 	if item_state.bound_items_root != zone.get_items_root():
 		bind()
@@ -140,7 +149,7 @@ func _clear_item_target(item) -> void:
 func _targets_match(a: ZonePlacementTarget, b: ZonePlacementTarget) -> bool:
 	return item_state.targets_match(a, b)
 
-func _resolve_transfer_target_for_api(items: Array[Control], placement_target: ZonePlacementTarget) -> ZonePlacementTarget:
+func resolve_transfer_target_for_api(items: Array[Control], placement_target: ZonePlacementTarget) -> ZonePlacementTarget:
 	var space_model = zone.get_space_model_resource()
 	if space_model == null:
 		return ZonePlacementTarget.invalid()
@@ -237,7 +246,7 @@ func remove_item(item: Control) -> bool:
 	if not has_item(item):
 		return false
 	var previous_index = _find_item_index(item)
-	var selection_changed = _remove_item_from_state(item, false, true)
+	var selection_changed = remove_item_from_state(item, false, true)
 	var items_root = zone.get_items_root()
 	if items_root != null and item.get_parent() == items_root:
 		items_root.remove_child(item)
@@ -255,10 +264,10 @@ func move_item_to(item: Control, target_zone: Zone, placement_target: ZonePlacem
 	if target_zone == zone:
 		return reorder_item(item, placement_target)
 	var moving_items: Array[Control] = [item]
-	var requested_target = target_zone.get_runtime()._resolve_transfer_target_for_api(moving_items, placement_target)
-	var request_position = _resolve_programmatic_transfer_global_position(moving_items)
-	var request = _make_transfer_request(target_zone, zone, moving_items, requested_target, request_position)
-	var decision = target_zone.get_runtime()._resolve_drop_decision(request)
+	var requested_target = target_zone.get_runtime().resolve_transfer_target_for_api(moving_items, placement_target)
+	var request_position = resolve_programmatic_transfer_global_position(moving_items)
+	var request = make_transfer_request(target_zone, zone, moving_items, requested_target, request_position)
+	var decision = target_zone.get_runtime().resolve_drop_decision(request)
 	if not decision.allowed:
 		target_zone.get_runtime()._emit_drop_rejected_items(moving_items, zone, decision.reason)
 		return false
@@ -274,10 +283,10 @@ func transfer_items(items: Array[Control], target_zone: Zone, placement_target: 
 	if moving_items.is_empty():
 		return false
 	if target_zone == zone:
-		return _reorder_items(moving_items, _resolve_transfer_target_for_api(moving_items, placement_target))
-	var request_position = _resolve_programmatic_transfer_global_position(moving_items)
-	var request = _make_transfer_request(target_zone, zone, moving_items, target_zone.get_runtime()._resolve_transfer_target_for_api(moving_items, placement_target), request_position)
-	var decision = target_zone.get_runtime()._resolve_drop_decision(request)
+		return _reorder_items(moving_items, resolve_transfer_target_for_api(moving_items, placement_target))
+	var request_position = resolve_programmatic_transfer_global_position(moving_items)
+	var request = make_transfer_request(target_zone, zone, moving_items, target_zone.get_runtime().resolve_transfer_target_for_api(moving_items, placement_target), request_position)
+	var decision = target_zone.get_runtime().resolve_drop_decision(request)
 	if not decision.allowed:
 		target_zone.get_runtime()._emit_drop_rejected_items(moving_items, zone, decision.reason)
 		return false
@@ -287,7 +296,7 @@ func reorder_item(item: Control, placement_target: ZonePlacementTarget = null) -
 	if not has_item(item):
 		return false
 	var moving_items: Array[Control] = [item]
-	return _reorder_items(moving_items, _resolve_transfer_target_for_api(moving_items, placement_target))
+	return _reorder_items(moving_items, resolve_transfer_target_for_api(moving_items, placement_target))
 
 func clear_selection() -> void:
 	interaction_runtime.clear_selection()
@@ -297,6 +306,9 @@ func select_item(item: Control, additive: bool = false) -> void:
 
 func start_drag(items: Array[Control]) -> void:
 	_start_drag_internal(items)
+
+func start_drag_at(items: Array[Control], pointer_global_position: Vector2) -> void:
+	_start_drag_internal(items, pointer_global_position)
 
 func _start_drag_internal(items: Array[Control], pointer_global_position = null) -> void:
 	if zone.get_items_root() == null or items.is_empty():
@@ -345,8 +357,8 @@ func perform_drop(session: ZoneDragSession) -> bool:
 		_cleanup_drag_session(session, true, true)
 		return false
 	var requested_target = session.requested_target if session.requested_target != null and session.requested_target.is_valid() else session.preview_target
-	var request = _make_transfer_request(zone, session.source_zone, session.items, requested_target, _get_drop_global_position(session))
-	var decision = _resolve_drop_decision(request)
+	var request = make_transfer_request(zone, session.source_zone, session.items, requested_target, _get_drop_global_position(session))
+	var decision = resolve_drop_decision(request)
 	if not decision.allowed:
 		_emit_drop_rejected(session, decision.reason)
 		_cleanup_drag_session(session, true, true)
@@ -451,9 +463,6 @@ func _stop_long_press_timer() -> void:
 func _on_long_press_timeout() -> void:
 	interaction_runtime.on_long_press_timeout()
 
-func _handle_targeting_input(event: InputEvent) -> bool:
-	return targeting_runtime.handle_targeting_input(event)
-
 func update_targeting_session(session: ZoneTargetingSession, global_position: Vector2) -> void:
 	targeting_runtime.update_targeting_session(session, global_position)
 
@@ -463,53 +472,8 @@ func finalize_targeting_session(session: ZoneTargetingSession) -> void:
 func cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) -> void:
 	targeting_runtime.cancel_targeting_session(session, emit_signal)
 
-func _start_targeting_internal(item: Control, intent: ZoneTargetingIntent, entry_mode: StringName, pointer_global_position: Vector2) -> bool:
-	return targeting_runtime.start_targeting_internal(item, intent, entry_mode, pointer_global_position)
-
-func _resolve_targeting_intent(item: Control, entry_mode: StringName) -> ZoneTargetingIntent:
-	return targeting_runtime.resolve_targeting_intent(item, entry_mode)
-
-func _resolve_item_target_anchor_global(item: Control) -> Vector2:
-	return targeting_runtime.resolve_item_target_anchor_global(item)
-
-func _resolve_target_candidate(intent: ZoneTargetingIntent, global_position: Vector2) -> ZoneTargetCandidate:
-	return targeting_runtime.resolve_target_candidate(intent, global_position)
-
-func _resolve_target_decision(source_item: Control, intent: ZoneTargetingIntent, candidate: ZoneTargetCandidate, global_position: Vector2) -> ZoneTargetDecision:
-	return targeting_runtime.resolve_target_decision(source_item, intent, candidate, global_position)
-
-func _resolve_target_candidate_from_decision(decision: ZoneTargetDecision, fallback: ZoneTargetCandidate) -> ZoneTargetCandidate:
-	return targeting_runtime.resolve_target_candidate_from_decision(decision, fallback)
-
-func _collect_targeting_zones() -> Array[Zone]:
-	return targeting_runtime.collect_targeting_zones()
-
-func _build_item_candidate(target_zone: Zone, item: Control, global_position: Vector2) -> ZoneTargetCandidate:
-	return targeting_runtime.build_item_candidate(target_zone, item, global_position)
-
-func _build_placement_candidate(target_zone: Zone, placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTargetCandidate:
-	return targeting_runtime.build_placement_candidate(target_zone, placement_target, global_position)
-
-func _build_candidate_metadata(item: Control, placement_target: ZonePlacementTarget) -> Dictionary:
-	return targeting_runtime.build_candidate_metadata(item, placement_target)
-
-func _extract_node_metadata(node: Object) -> Dictionary:
-	return targeting_runtime.extract_node_metadata(node)
-
-func _apply_targeting_feedback(session: ZoneTargetingSession, candidate: ZoneTargetCandidate, decision: ZoneTargetDecision) -> void:
-	targeting_runtime.apply_targeting_feedback(session, candidate, decision)
-
-func _clear_targeting_feedback(emit_clear_signals: bool, source_item: Control = null) -> void:
+func clear_targeting_feedback(emit_clear_signals: bool, source_item: Control = null) -> void:
 	targeting_runtime.clear_targeting_feedback(emit_clear_signals, source_item)
-
-func _set_target_candidate_visual(item: Control, active: bool, allowed: bool) -> void:
-	targeting_runtime.set_target_candidate_visual(item, active, allowed)
-
-func _target_candidates_match(a: ZoneTargetCandidate, b: ZoneTargetCandidate) -> bool:
-	return targeting_runtime.target_candidates_match(a, b)
-
-func _target_decisions_match(a: ZoneTargetDecision, b: ZoneTargetDecision) -> bool:
-	return targeting_runtime.target_decisions_match(a, b)
 
 func _update_hover_preview(session: ZoneDragSession) -> void:
 	display_runtime.update_hover_preview(session)
@@ -520,7 +484,7 @@ func _get_layout_items(session: ZoneDragSession) -> Array[Control]:
 func _should_render_ghost_for_session(session: ZoneDragSession) -> bool:
 	return display_runtime.should_render_ghost_for_session(session)
 
-func _create_ghost(source_item: Control) -> void:
+func create_ghost(source_item: Control) -> void:
 	display_runtime.create_ghost(source_item)
 
 func _create_cursor_proxy(source_item: Control) -> Control:
@@ -557,7 +521,7 @@ func _reorder_items(items_to_move: Array[Control], placement_target: ZonePlaceme
 			moving_items.append(item)
 	if moving_items.is_empty():
 		return false
-	var resolved_target = _resolve_transfer_target_for_api(moving_items, placement_target)
+	var resolved_target = resolve_transfer_target_for_api(moving_items, placement_target)
 	if resolved_target == null or not resolved_target.is_valid():
 		return false
 	var target_index = _resolve_linear_insert_index(_find_item_index(moving_items[0]), resolved_target)
@@ -592,13 +556,13 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 			moving_items.append(item)
 	if moving_items.is_empty():
 		return false
-	var transfer_snapshots = _build_transfer_snapshots(moving_items, drop_position)
+	var transfer_snapshots = build_transfer_snapshots(moving_items, drop_position)
 	var selection_changed = false
 	var target_runtime = target_zone.get_runtime()
-	var resolved_decision = decision if decision != null else ZoneTransferDecision.new(true, "", target_runtime._resolve_transfer_target_for_api(moving_items, placement_target))
-	var final_target = target_runtime._resolve_transfer_target_for_api(moving_items, resolved_decision.resolved_target)
+	var resolved_decision = decision if decision != null else ZoneTransferDecision.new(true, "", target_runtime.resolve_transfer_target_for_api(moving_items, placement_target))
+	var final_target = target_runtime.resolve_transfer_target_for_api(moving_items, resolved_decision.resolved_target)
 	if final_target == null or not final_target.is_valid():
-		final_target = target_runtime._resolve_transfer_target_for_api(moving_items, null)
+		final_target = target_runtime.resolve_transfer_target_for_api(moving_items, null)
 	if final_target == null or not final_target.is_valid():
 		target_zone.get_runtime()._emit_drop_rejected_items(moving_items, source_zone, "Invalid drop target.")
 		return false
@@ -606,7 +570,7 @@ func _transfer_items_to(target_zone: Zone, items_to_move: Array[Control], placem
 	for item in moving_items:
 		original_targets[item] = item_state.get_item_target(item)
 	for item in moving_items:
-		selection_changed = _remove_item_from_state(item, false, false) or selection_changed
+		selection_changed = remove_item_from_state(item, false, false) or selection_changed
 		_clear_item_visual_state(item, false)
 		var from_index = original_indices.get(item, -1)
 		if from_index >= 0:
@@ -672,7 +636,7 @@ func _insert_transferred_items(moving_items: Array[Control], placement_target: Z
 	var items_root = zone.get_items_root()
 	if items_root == null:
 		return false
-	var resolved_target = _resolve_transfer_target_for_api(moving_items, placement_target)
+	var resolved_target = resolve_transfer_target_for_api(moving_items, placement_target)
 	if resolved_target == null or not resolved_target.is_valid():
 		return false
 	var target_index = _resolve_linear_insert_index(item_state.items.size(), resolved_target)
@@ -685,7 +649,7 @@ func _insert_transferred_items(moving_items: Array[Control], placement_target: Z
 				item.reparent(items_root, true)
 			else:
 				items_root.add_child(item)
-		_set_transfer_handoff(item, transfer_snapshots.get(item, {}))
+		set_transfer_handoff(item, transfer_snapshots.get(item, {}))
 		item.visible = true
 		_register_item(item)
 		item_state.items.insert(target_index + offset, item)
@@ -739,7 +703,7 @@ func _cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emi
 	for involved_zone in involved_zones:
 		involved_zone.get_runtime()._clear_preview_for_session(session)
 		involved_zone.get_runtime()._clear_hover_for_items(session.items, false)
-		involved_zone.get_runtime()._reset_press_state_for_item()
+		involved_zone.get_runtime().reset_press_state_for_item()
 	for item in session.items:
 		if is_instance_valid(item):
 			item.visible = true
@@ -774,10 +738,10 @@ func _append_unique_zone(zones: Array[Zone], candidate: Zone) -> void:
 		return
 	zones.append(candidate)
 
-func _clear_runtime_items(emit_selection_changed: bool) -> void:
+func clear_runtime_items(emit_selection_changed: bool) -> void:
 	item_state.clear_runtime_items(emit_selection_changed)
 
-func _remove_item_from_state(item, remove_from_container: bool, clear_visuals: bool) -> bool:
+func remove_item_from_state(item, remove_from_container: bool, clear_visuals: bool) -> bool:
 	var selection_changed = false
 	var item_is_valid = is_instance_valid(item)
 	if item_is_valid and selection_state.hovered_item == item and selection_state.set_hovered(null):
@@ -808,16 +772,16 @@ func _clear_item_visual_state(item, reset_transform: bool) -> void:
 		item.rotation = 0.0
 		item.z_index = 0
 
-func _build_transfer_snapshots(moving_items: Array[Control], drop_position = null) -> Dictionary:
+func build_transfer_snapshots(moving_items: Array[Control], drop_position = null) -> Dictionary:
 	return item_state.build_transfer_snapshots(moving_items, drop_position)
 
-func _resolve_programmatic_transfer_global_position(moving_items: Array[Control]):
+func resolve_programmatic_transfer_global_position(moving_items: Array[Control]):
 	return item_state.resolve_programmatic_transfer_global_position(moving_items)
 
 func _snapshot_item_visual_state(item: Control) -> Dictionary:
 	return item_state.snapshot_item_visual_state(item)
 
-func _set_transfer_handoff(item: Control, snapshot: Dictionary) -> void:
+func set_transfer_handoff(item: Control, snapshot: Dictionary) -> void:
 	item_state.set_transfer_handoff(item, snapshot)
 
 func _clear_transfer_handoff(item) -> void:
@@ -829,7 +793,7 @@ func _clear_transfer_handoffs() -> void:
 func _clear_hover_for_items(items: Array[Control], emit_signal: bool) -> void:
 	interaction_runtime.clear_hover_for_items(items, emit_signal)
 
-func _reset_press_state_for_item(item = null) -> void:
+func reset_press_state_for_item(item = null) -> void:
 	interaction_runtime.reset_press_state_for_item(item)
 
 func _get_drop_global_position(session: ZoneDragSession) -> Vector2:
@@ -887,7 +851,10 @@ func _clear_preview_for_session(session: ZoneDragSession) -> void:
 
 func _evaluate_drop_request(request: ZoneTransferRequest) -> ZoneTransferDecision:
 	var target = request.placement_target.duplicate_target() if request.placement_target != null else ZonePlacementTarget.invalid()
-	if not zone.get_space_model_resource().is_target_valid(zone, self, target):
+	var space_model = zone.get_space_model_resource()
+	if space_model == null:
+		return ZoneTransferDecision.new(false, "This zone rejected the drop target.", ZonePlacementTarget.invalid())
+	if not space_model.is_target_valid(zone, self, target):
 		return ZoneTransferDecision.new(false, "This zone rejected the drop target.", ZonePlacementTarget.invalid())
 	var decision = ZoneTransferDecision.new(true, "", target)
 	var transfer_policy = zone.get_transfer_policy_resource()
@@ -897,10 +864,10 @@ func _evaluate_drop_request(request: ZoneTransferRequest) -> ZoneTransferDecisio
 		return ZoneTransferDecision.new(true, "", target)
 	return decision
 
-func _make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[Control], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
+func make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[Control], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
 	return ZoneTransferRequest.new(target_zone, source_zone, items, placement_target, global_position)
 
-func _resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
+func resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
 	var decision = _evaluate_drop_request(request)
 	if decision == null:
 		decision = ZoneTransferDecision.new(true, "", request.placement_target)
@@ -908,10 +875,10 @@ func _resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecisio
 		return ZoneTransferDecision.new(decision.allowed, decision.reason, request.placement_target, decision.transfer_mode, decision.spawn_scene, decision.metadata)
 	return decision
 
-func _apply_hover_feedback(items: Array[Control], decision: ZoneTransferDecision, preview_target, preview_source: Control) -> bool:
+func apply_hover_feedback(items: Array[Control], decision: ZoneTransferDecision, preview_target, preview_source: Control) -> bool:
 	return display_runtime.apply_hover_feedback(items, decision, preview_target, preview_source)
 
-func _clear_hover_feedback(items: Array[Control]) -> bool:
+func clear_hover_feedback(items: Array[Control]) -> bool:
 	return display_runtime.clear_hover_feedback(items)
 
 func _has_hover_state_changed(active: bool, decision: ZoneTransferDecision) -> bool:

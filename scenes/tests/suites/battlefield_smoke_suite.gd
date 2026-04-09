@@ -1,9 +1,9 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
-const ZoneRuleTablePermissionScript = preload("res://addons/nascentsoul/impl/permissions/zone_rule_table_permission.gd")
+const ZoneRuleTableTransferPolicyScript = preload("res://addons/nascentsoul/impl/permissions/zone_rule_table_transfer_policy.gd")
 const ZoneTransferRuleScript = preload("res://addons/nascentsoul/impl/permissions/zone_transfer_rule.gd")
-const ZoneOccupancyPermissionScript = preload("res://addons/nascentsoul/impl/permissions/zone_occupancy_permission.gd")
-const ZoneCompositePermissionScript = preload("res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd")
+const ZoneOccupancyTransferPolicyScript = preload("res://addons/nascentsoul/impl/permissions/zone_occupancy_transfer_policy.gd")
+const ZoneCompositeTransferPolicyScript = preload("res://addons/nascentsoul/impl/permissions/zone_composite_transfer_policy.gd")
 const ZoneCardScript = preload("res://addons/nascentsoul/cards/zone_card.gd")
 const ZonePieceScript = preload("res://addons/nascentsoul/pieces/zone_piece.gd")
 
@@ -29,7 +29,7 @@ func _test_square_battlefield_direct_place() -> void:
 	var source_panel = _make_panel("BattlefieldDirectSource", Vector2(24, 24), Vector2(620, 220))
 	var target_panel = _make_panel("BattlefieldDirectTarget", Vector2(24, 280), Vector2(860, 560))
 	var source_zone = ExampleSupport.make_zone(source_panel, "CardSourceZone", ZoneHBoxLayout.new())
-	var occupancy = ZoneOccupancyPermissionScript.new()
+	var occupancy = ZoneOccupancyTransferPolicyScript.new()
 	var square_model = ZoneSquareGridSpaceModel.new()
 	square_model.columns = 4
 	square_model.rows = 3
@@ -50,7 +50,7 @@ func _test_square_occupancy_rejects_second_item() -> void:
 	var source_panel = _make_panel("BattlefieldOccupancySource", Vector2(24, 24), Vector2(620, 220))
 	var target_panel = _make_panel("BattlefieldOccupancyTarget", Vector2(24, 280), Vector2(860, 560))
 	var source_zone = ExampleSupport.make_zone(source_panel, "OccupancySourceZone", ZoneHBoxLayout.new())
-	var occupancy = ZoneOccupancyPermissionScript.new()
+	var occupancy = ZoneOccupancyTransferPolicyScript.new()
 	var square_model = ZoneSquareGridSpaceModel.new()
 	square_model.columns = 3
 	square_model.rows = 2
@@ -72,7 +72,7 @@ func _test_hex_battlefield_direct_place() -> void:
 	var source_panel = _make_panel("BattlefieldHexSource", Vector2(24, 24), Vector2(620, 220))
 	var target_panel = _make_panel("BattlefieldHexTarget", Vector2(24, 280), Vector2(920, 560))
 	var source_zone = ExampleSupport.make_zone(source_panel, "HexSourceZone", ZoneHBoxLayout.new())
-	var occupancy = ZoneOccupancyPermissionScript.new()
+	var occupancy = ZoneOccupancyTransferPolicyScript.new()
 	var hex_model = ZoneHexGridSpaceModel.new()
 	hex_model.columns = 4
 	hex_model.rows = 3
@@ -94,8 +94,8 @@ func _test_spawn_piece_transfer_rule() -> void:
 	var square_model = ZoneSquareGridSpaceModel.new()
 	square_model.columns = 4
 	square_model.rows = 3
-	var occupancy = ZoneOccupancyPermissionScript.new()
-	var rule_table = ZoneRuleTablePermissionScript.new()
+	var occupancy = ZoneOccupancyTransferPolicyScript.new()
+	var rule_table = ZoneRuleTableTransferPolicyScript.new()
 	var rule = ZoneTransferRuleScript.new()
 	rule.source_item_script = ZoneCardScript
 	rule.target_kind = ZonePlacementTarget.TargetKind.SQUARE
@@ -107,7 +107,7 @@ func _test_spawn_piece_transfer_rule() -> void:
 	rule.spawn_scene = piece_scene
 	var typed_rules: Array[ZoneTransferRule] = [rule]
 	rule_table.rules = typed_rules
-	var composite = ZoneCompositePermissionScript.new()
+	var composite = ZoneCompositeTransferPolicyScript.new()
 	var typed_policies: Array[ZoneTransferPolicy] = [occupancy, rule_table]
 	composite.policies = typed_policies
 	var battlefield = ExampleSupport.make_battlefield_zone(target_panel, "SummonBattlefieldZone", square_model, composite)
@@ -126,7 +126,7 @@ func _test_spawn_piece_transfer_rule() -> void:
 
 func _test_battlefield_piece_reposition() -> void:
 	var host_panel = _make_panel("BattlefieldMoveTarget", Vector2(24, 24), Vector2(860, 560))
-	var occupancy = ZoneOccupancyPermissionScript.new()
+	var occupancy = ZoneOccupancyTransferPolicyScript.new()
 	var square_model = ZoneSquareGridSpaceModel.new()
 	square_model.columns = 4
 	square_model.rows = 3
@@ -149,8 +149,8 @@ func _test_piece_can_move_between_piece_battlefields() -> void:
 	var right_space = ZoneSquareGridSpaceModel.new()
 	right_space.columns = 3
 	right_space.rows = 2
-	var left_zone = ExampleSupport.make_battlefield_zone(left_panel, "PieceSourceBattlefieldZone", left_space, ZoneOccupancyPermissionScript.new())
-	var right_zone = ExampleSupport.make_battlefield_zone(right_panel, "PieceTargetBattlefieldZone", right_space, ZoneOccupancyPermissionScript.new())
+	var left_zone = ExampleSupport.make_battlefield_zone(left_panel, "PieceSourceBattlefieldZone", left_space, ZoneOccupancyTransferPolicyScript.new())
+	var right_zone = ExampleSupport.make_battlefield_zone(right_panel, "PieceTargetBattlefieldZone", right_space, ZoneOccupancyTransferPolicyScript.new())
 	var piece = ExampleSupport.make_piece("Relay", "blue", 2, 2)
 	_check(left_zone.add_item(piece, ZonePlacementTarget.square(0, 0)), "piece should be placeable in the first battlefield zone")
 	await _settle_frames(2)
@@ -168,19 +168,19 @@ func _test_modes_restrict_piece_backflow() -> void:
 	var direct_space = ZoneSquareGridSpaceModel.new()
 	direct_space.columns = 3
 	direct_space.rows = 2
-	var direct_composite = ZoneCompositePermissionScript.new()
-	var direct_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyPermissionScript.new(), _make_cards_only_rule_table("direct place rejects pieces")]
+	var direct_composite = ZoneCompositeTransferPolicyScript.new()
+	var direct_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyTransferPolicyScript.new(), _make_cards_only_rule_table("direct place rejects pieces")]
 	direct_composite.policies = direct_policies
 	var direct_zone = ExampleSupport.make_battlefield_zone(direct_panel, "DirectBattlefieldZone", direct_space, direct_composite)
 	var summon_space = ZoneSquareGridSpaceModel.new()
 	summon_space.columns = 3
 	summon_space.rows = 2
-	var summon_composite = ZoneCompositePermissionScript.new()
-	var summon_rule_table = ZoneRuleTablePermissionScript.new()
+	var summon_composite = ZoneCompositeTransferPolicyScript.new()
+	var summon_rule_table = ZoneRuleTableTransferPolicyScript.new()
 	var spawn_rule = _make_spawn_piece_rule()
 	var summon_rules: Array[ZoneTransferRule] = [spawn_rule]
 	summon_rule_table.rules = summon_rules
-	var summon_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyPermissionScript.new(), summon_rule_table]
+	var summon_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyTransferPolicyScript.new(), summon_rule_table]
 	summon_composite.policies = summon_policies
 	var summon_zone = ExampleSupport.make_battlefield_zone(summon_panel, "SummonBattlefieldZone", summon_space, summon_composite)
 	var direct_card = ExampleSupport.make_card("Aegis", 1, ["unit"], true)
@@ -201,8 +201,8 @@ func _test_modes_restrict_piece_backflow() -> void:
 	await _settle_frames(2)
 	_check(summon_zone.get_item_count() == 1 and summon_zone.get_items()[0] == spawned_piece, "rejected moves should leave the spawned piece in the Spawn Piece battlefield")
 
-func _make_cards_only_rule_table(reject_reason: String) -> ZoneRuleTablePermission:
-	var rule_table = ZoneRuleTablePermissionScript.new()
+func _make_cards_only_rule_table(reject_reason: String) -> ZoneRuleTableTransferPolicy:
+	var rule_table = ZoneRuleTableTransferPolicyScript.new()
 	var reject_rule = ZoneTransferRuleScript.new()
 	reject_rule.source_item_script = ZonePieceScript
 	reject_rule.allowed = false

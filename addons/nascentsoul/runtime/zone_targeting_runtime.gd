@@ -28,28 +28,6 @@ func cancel_targeting() -> void:
 		return
 	cancel_targeting_session(session, true)
 
-func handle_targeting_input(event: InputEvent) -> bool:
-	var coordinator = zone.get_targeting_coordinator(false)
-	if coordinator == null:
-		return false
-	var session = coordinator.get_session()
-	if session == null or session.source_zone != zone:
-		return false
-	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
-		if mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
-			finalize_targeting_session(session)
-			return true
-		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
-			cancel_targeting_session(session, true)
-			return true
-	if event is InputEventAction:
-		var action_event := event as InputEventAction
-		if action_event.pressed and action_event.action == &"ui_cancel":
-			cancel_targeting_session(session, true)
-			return true
-	return false
-
 func update_targeting_session(session: ZoneTargetingSession, global_position: Vector2) -> void:
 	if session == null or session.source_zone != zone or not is_instance_valid(session.source_item):
 		return
@@ -131,9 +109,12 @@ func resolve_target_candidate(intent: ZoneTargetingIntent, global_position: Vect
 		for target_zone in zones:
 			if not target_zone.get_global_rect().has_point(global_position):
 				continue
+			var space_model = target_zone.get_space_model_resource()
+			if space_model == null:
+				continue
 			var local_position = global_position - target_zone.global_position
-			var placement_target = target_zone.get_space_model_resource().resolve_hover_target(target_zone, target_zone.get_runtime(), target_zone.get_items(), global_position, local_position)
-			placement_target = target_zone.get_space_model_resource().normalize_target(target_zone, target_zone.get_runtime(), placement_target, [])
+			var placement_target = space_model.resolve_hover_target(target_zone, target_zone.get_runtime(), target_zone.get_items(), global_position, local_position)
+			placement_target = space_model.normalize_target(target_zone, target_zone.get_runtime(), placement_target, [])
 			if placement_target == null or not placement_target.is_valid():
 				continue
 			return build_placement_candidate(target_zone, placement_target, global_position)
@@ -178,8 +159,18 @@ func collect_targeting_zones() -> Array[Zone]:
 	if tree == null:
 		return zones
 	for node in tree.get_nodes_in_group(Zone.TARGETING_ZONE_GROUP):
-		if node is Zone and (node as Zone).is_inside_tree():
-			zones.append(node as Zone)
+		if node is not Zone:
+			continue
+		var target_zone := node as Zone
+		if not target_zone.is_inside_tree():
+			continue
+		if not target_zone.is_visible_in_tree():
+			continue
+		if target_zone.mouse_filter == Control.MOUSE_FILTER_IGNORE:
+			continue
+		if target_zone.get_targeting_policy_resource() == null:
+			continue
+		zones.append(target_zone)
 	zones.reverse()
 	return zones
 

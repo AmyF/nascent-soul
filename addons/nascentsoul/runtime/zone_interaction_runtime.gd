@@ -55,8 +55,6 @@ func select_item(item: Control, additive: bool = false) -> void:
 func on_item_gui_input(event: InputEvent, item: Control) -> void:
 	if zone.get_interaction_config() == null:
 		return
-	if runtime._handle_targeting_input(event):
-		return
 	if event is InputEventMouseButton:
 		handle_mouse_button(event as InputEventMouseButton, item)
 	elif event is InputEventMouseMotion:
@@ -65,8 +63,6 @@ func on_item_gui_input(event: InputEvent, item: Control) -> void:
 func on_zone_gui_input(event: InputEvent) -> void:
 	var interaction = zone.get_interaction_config()
 	if interaction == null:
-		return
-	if runtime._handle_targeting_input(event):
 		return
 	var targeting_coordinator = zone.get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
@@ -154,7 +150,7 @@ func handle_mouse_motion(event: InputEventMouseMotion, item: Control) -> void:
 	if targeting_intent != null and runtime.targeting_runtime.start_targeting_internal(item, targeting_intent, &"drag", event.global_position):
 		return
 	var drag_items = resolve_drag_items(item)
-	runtime._start_drag_internal(drag_items, event.global_position)
+	runtime.start_drag_at(drag_items, event.global_position)
 
 func apply_click_selection(item: Control, event: InputEventMouseButton) -> void:
 	var interaction = zone.get_interaction_config()

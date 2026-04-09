@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://l46aq6johwmi" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_factory"]
 [ext_resource type="Script" uid="uid://bfhfgvr2bgtjn" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_interaction"]
 [ext_resource type="Script" uid="uid://cmq0l0eqybr5v" path="res://addons/nascentsoul/impl/layouts/zone_hand_layout.gd" id="4_layout"]
-[ext_resource type="Script" uid="uid://cnjiy3tvac727" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_permission.gd" id="5_permission"]
+[ext_resource type="Script" uid="uid://cnjiy3tvac727" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="5_policy"]
 [ext_resource type="Script" uid="uid://lhhiiws4nn87" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_preset"]
 [ext_resource type="Script" uid="uid://b4r4k2du2v4kb" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_sort"]
 
@@ -23,8 +23,8 @@ arch_angle_deg = 38.0
 arch_height = 26.0
 card_spacing_angle = 5.5
 
-[sub_resource type="Resource" id="Resource_permission"]
-script = ExtResource("5_permission")
+[sub_resource type="Resource" id="Resource_policy"]
+script = ExtResource("5_policy")
 
 [sub_resource type="Resource" id="Resource_sort"]
 script = ExtResource("7_sort")
@@ -35,5 +35,5 @@ layout_policy = SubResource("Resource_layout")
 display_style = SubResource("Resource_display")
 interaction = SubResource("Resource_interaction")
 sort_policy = SubResource("Resource_sort")
-transfer_policy = SubResource("Resource_permission")
+transfer_policy = SubResource("Resource_policy")
 drag_visual_factory = SubResource("Resource_factory")

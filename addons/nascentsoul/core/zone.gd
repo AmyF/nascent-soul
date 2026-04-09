@@ -175,7 +175,7 @@ func _exit_tree() -> void:
 		if session.source_zone == self or session.candidate.target_zone == self:
 			targeting_coordinator.clear_session()
 	if _runtime != null:
-		_runtime.unbind()
+		_runtime.dispose()
 	remove_from_group(TARGETING_ZONE_GROUP)
 
 func _process(delta: float) -> void:
@@ -448,7 +448,7 @@ func _ensure_default_resources() -> void:
 	if _default_sort_policy == null:
 		_default_sort_policy = ZoneManualSort.new()
 	if _default_transfer_policy == null:
-		_default_transfer_policy = ZoneAllowAllPermission.new()
+		_default_transfer_policy = ZoneAllowAllTransferPolicy.new()
 	if _default_drag_visual_factory == null:
 		_default_drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
 	if _default_targeting_style == null:

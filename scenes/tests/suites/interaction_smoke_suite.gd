@@ -221,10 +221,10 @@ func _test_drop_preview_clear_signal() -> void:
 	var source_zone = _make_test_zone(source_panel, "PreviewSourceZone")
 	var target_zone = _make_test_zone(target_panel, "PreviewTargetZone")
 	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
-	var preview_indices: Array[int] = []
+	var preview_targets: Array[ZonePlacementTarget] = []
 	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target) -> void:
 		var preview_target: ZonePlacementTarget = target if target is ZonePlacementTarget else ZonePlacementTarget.invalid()
-		preview_indices.append(preview_target.slot if preview_target.is_linear() else -1)
+		preview_targets.append(preview_target.duplicate_target())
 	)
 	source_zone.add_item(alpha)
 	await _settle_frames(2)
@@ -234,14 +234,14 @@ func _test_drop_preview_clear_signal() -> void:
 	_check(session != null, "preview clear smoke requires an active drag session")
 	if session == null:
 		return
-	target_zone.get_runtime()._create_ghost(alpha)
+	target_zone.get_runtime().create_ghost(alpha)
 	target_zone.drop_preview_changed.emit(session.items, target_zone, ZonePlacementTarget.linear(0))
 	session.hover_zone = target_zone
 	session.preview_target = ZonePlacementTarget.linear(0)
 	source_zone.get_runtime().cancel_drag(session)
 	await _settle_frames(2)
-	var last_preview_index = preview_indices[preview_indices.size() - 1] if not preview_indices.is_empty() else 0
-	_check(preview_indices.size() >= 2 and last_preview_index == -1, "drag cleanup should emit a preview-cleared signal with index -1")
+	var last_preview_target = preview_targets[preview_targets.size() - 1] if not preview_targets.is_empty() else ZonePlacementTarget.invalid()
+	_check(preview_targets.size() >= 2 and (last_preview_target == null or not last_preview_target.is_valid()), "drag cleanup should emit a preview-cleared signal with an invalid target")
 
 func _make_test_zone(panel: Control, zone_name: String, interaction: ZoneInteraction = null) -> Zone:
 	var display := ZoneCardDisplay.new()

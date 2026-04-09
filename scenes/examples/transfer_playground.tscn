@@ -8,10 +8,10 @@
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/hand_zone_preset.tres" id="4_hand"]
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/board_zone_preset.tres" id="5_board"]
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="7_capacity"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd" id="7_capacity"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_factory"]
 
-[sub_resource type="Resource" id="TransferBoardCapacityPermission"]
+[sub_resource type="Resource" id="TransferBoardCapacityPolicy"]
 script = ExtResource("7_capacity")
 max_items = 5
 reject_reason = "Board 已满。先把一张牌丢进 Discard 再试。\nBoard is full. Discard a card first, then try again."
@@ -231,7 +231,7 @@ size_flags_vertical = 3
 theme_override_styles/panel = SubResource("TransferBoardZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("5_board")
-transfer_policy = SubResource("TransferBoardCapacityPermission")
+transfer_policy = SubResource("TransferBoardCapacityPolicy")
 drag_visual_factory = SubResource("TransferDragVisualFactory")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]

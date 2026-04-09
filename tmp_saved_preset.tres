@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_6unid"]
 [ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_7f1mq"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hand_layout.gd" id="4_8xk23"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_permission.gd" id="5_1u8ld"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="5_1u8ld"]
 [ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_pdw4d"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_2x2so"]
 

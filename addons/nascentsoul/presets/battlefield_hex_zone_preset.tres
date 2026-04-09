@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="2_factory"]
 [ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="3_interaction"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd" id="4_layout"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_occupancy_permission.gd" id="5_transfer"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_occupancy_transfer_policy.gd" id="5_transfer"]
 [ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_preset.gd" id="6_preset"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_hex_grid_space_model.gd" id="7_space"]
 

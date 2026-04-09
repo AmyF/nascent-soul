@@ -1,5 +1,5 @@
 @tool
-class_name ZoneCapacityPermission extends ZoneTransferPolicy
+class_name ZoneCapacityTransferPolicy extends ZoneTransferPolicy
 
 @export var max_items: int = 7
 @export var reject_reason: String = "This zone is full."

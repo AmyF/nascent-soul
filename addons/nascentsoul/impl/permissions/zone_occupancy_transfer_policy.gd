@@ -1,5 +1,5 @@
 @tool
-class_name ZoneOccupancyPermission extends ZoneTransferPolicy
+class_name ZoneOccupancyTransferPolicy extends ZoneTransferPolicy
 
 @export var allow_multiple_items_per_target: bool = false
 @export var reject_reason: String = "This cell is occupied."

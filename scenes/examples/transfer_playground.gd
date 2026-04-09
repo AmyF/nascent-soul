@@ -16,7 +16,7 @@ const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 @onready var _board_zone: Zone = $RootMargin/RootVBox/TopRow/BoardColumn/BoardZone
 @onready var _discard_zone: Zone = $RootMargin/RootVBox/TopRow/DiscardColumn/DiscardZone
 @onready var _hand_zone: Zone = $RootMargin/RootVBox/HandZone
-@onready var _board_capacity: ZoneCapacityPermission = _board_zone.transfer_policy as ZoneCapacityPermission
+@onready var _board_capacity: ZoneCapacityTransferPolicy = _board_zone.transfer_policy as ZoneCapacityTransferPolicy
 
 func _ready() -> void:
 	_populate_cards()

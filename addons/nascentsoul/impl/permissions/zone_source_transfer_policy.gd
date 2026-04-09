@@ -1,5 +1,5 @@
 @tool
-class_name ZoneSourcePermission extends ZoneTransferPolicy
+class_name ZoneSourceTransferPolicy extends ZoneTransferPolicy
 
 @export var allowed_source_zone_names: PackedStringArray = []
 @export var allow_same_zone: bool = true

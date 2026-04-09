@@ -17,8 +17,8 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 @onready var _board_zone: Zone = $RootMargin/RootVBox/Grid/BoardColumn/BoardZone
 @onready var _sanctum_zone: Zone = $RootMargin/RootVBox/Grid/SanctumColumn/SanctumZone
 @onready var _discard_zone: Zone = $RootMargin/RootVBox/Grid/DiscardColumn/DiscardZone
-@onready var _board_capacity: ZoneCapacityPermission = _board_zone.transfer_policy as ZoneCapacityPermission
-@onready var _sanctum_rules: ZoneCompositePermission = _sanctum_zone.transfer_policy as ZoneCompositePermission
+@onready var _board_capacity: ZoneCapacityTransferPolicy = _board_zone.transfer_policy as ZoneCapacityTransferPolicy
+@onready var _sanctum_rules: ZoneCompositeTransferPolicy = _sanctum_zone.transfer_policy as ZoneCompositeTransferPolicy
 
 func _ready() -> void:
 	_populate_cards()
@@ -94,12 +94,12 @@ func _refresh_guidance() -> void:
 	var sanctum_limit = sanctum_capacity.max_items if sanctum_capacity != null else 0
 	sanctum_capacity_label.text = "容量 %d / %d / Capacity %d / %d" % [sanctum_count, sanctum_limit, sanctum_count, sanctum_limit]
 
-func _resolve_capacity_policy(policy: ZoneCompositePermission) -> ZoneCapacityPermission:
+func _resolve_capacity_policy(policy: ZoneCompositeTransferPolicy) -> ZoneCapacityTransferPolicy:
 	if policy == null:
 		return null
 	for child_policy in policy.policies:
-		if child_policy is ZoneCapacityPermission:
-			return child_policy as ZoneCapacityPermission
+		if child_policy is ZoneCapacityTransferPolicy:
+			return child_policy as ZoneCapacityTransferPolicy
 	return null
 
 func _set_status(message: String, font_color: Color = NORMAL_STATUS_COLOR) -> void:

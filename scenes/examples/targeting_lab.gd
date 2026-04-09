@@ -38,7 +38,7 @@ func _build_spell_targeting_demo() -> void:
 	var spell_space := ZoneSquareGridSpaceModel.new()
 	spell_space.columns = 4
 	spell_space.rows = 2
-	_spell_target_zone = ExampleSupport.make_battlefield_zone(spell_target_panel, "SpellTargetZone", spell_space, ZoneOccupancyPermission.new())
+	_spell_target_zone = ExampleSupport.make_battlefield_zone(spell_target_panel, "SpellTargetZone", spell_space, ZoneOccupancyTransferPolicy.new())
 	_spell_target_zone.add_item(TargetingSupport.make_target_piece("Bulwark", "ally", 1, 4), ZonePlacementTarget.square(0, 0))
 	_spell_target_zone.add_item(TargetingSupport.make_target_piece("Enemy Scout", "enemy", 2, 1), ZonePlacementTarget.square(2, 0))
 	_spell_target_zone.add_item(TargetingSupport.make_target_piece("Enemy Sentinel", "enemy", 3, 3), ZonePlacementTarget.square(3, 1))
@@ -47,7 +47,7 @@ func _build_piece_targeting_demo() -> void:
 	var ability_space := ZoneSquareGridSpaceModel.new()
 	ability_space.columns = 4
 	ability_space.rows = 3
-	_ability_zone = ExampleSupport.make_battlefield_zone(ability_panel, "AbilityBattlefieldZone", ability_space, ZoneOccupancyPermission.new())
+	_ability_zone = ExampleSupport.make_battlefield_zone(ability_panel, "AbilityBattlefieldZone", ability_space, ZoneOccupancyTransferPolicy.new())
 	_ability_zone.targeting_style = _make_arrow_style(Color(0.60, 0.78, 1.0, 0.88), Color(0.44, 0.92, 0.62, 0.92), Color(1.0, 0.42, 0.42, 0.92))
 	_ability_zone.targeting_started.connect(_on_targeting_started.bind("ability"))
 	_ability_zone.target_hover_state_changed.connect(_on_target_hover_state_changed.bind("ability"))

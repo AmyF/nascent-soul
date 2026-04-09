@@ -10,81 +10,81 @@
 [ext_resource type="Resource" path="res://addons/nascentsoul/presets/discard_zone_preset.tres" id="6_discard"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_pile_layout.gd" id="7_pile_layout"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_vbox_layout.gd" id="8_vbox_layout"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_permission.gd" id="9_capacity"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_source_permission.gd" id="10_source"]
-[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_composite_permission.gd" id="11_composite"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd" id="9_capacity"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_source_transfer_policy.gd" id="10_source"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_composite_transfer_policy.gd" id="11_composite"]
 
-[sub_resource type="Resource" id="PermissionDeckPileLayout"]
+[sub_resource type="Resource" id="PolicyDeckPileLayout"]
 script = ExtResource("7_pile_layout")
 overlap_x = 16.0
 
-[sub_resource type="Resource" id="PermissionBoardCapacityPermission"]
+[sub_resource type="Resource" id="PolicyBoardCapacityPolicy"]
 script = ExtResource("9_capacity")
 max_items = 2
 reject_reason = "Board 在这个实验里只允许 2 张牌。\nBoard only allows two cards in this lab."
 
-[sub_resource type="Resource" id="PermissionSanctumLayout"]
+[sub_resource type="Resource" id="PolicySanctumLayout"]
 script = ExtResource("8_vbox_layout")
 item_spacing = 10.0
 padding_top = 14.0
 
-[sub_resource type="Resource" id="PermissionSanctumSourcePermission"]
+[sub_resource type="Resource" id="PolicySanctumSourcePolicy"]
 script = ExtResource("10_source")
 allowed_source_zone_names = PackedStringArray("HandZone")
 reject_reason = "Sanctum 只接收来自 HandZone 的卡牌。\nSanctum only accepts cards that come from HandZone."
 
-[sub_resource type="Resource" id="PermissionSanctumCapacityPermission"]
+[sub_resource type="Resource" id="PolicySanctumCapacityPolicy"]
 script = ExtResource("9_capacity")
 max_items = 2
 reject_reason = "Sanctum 在这个实验里也只允许 2 张牌。\nSanctum also allows only two cards in this lab."
 
-[sub_resource type="Resource" id="PermissionSanctumCompositePermission"]
+[sub_resource type="Resource" id="PolicySanctumCompositePolicy"]
 script = ExtResource("11_composite")
-policies = [SubResource("PermissionSanctumSourcePermission"), SubResource("PermissionSanctumCapacityPermission")]
+policies = [SubResource("PolicySanctumSourcePolicy"), SubResource("PolicySanctumCapacityPolicy")]
 
-[sub_resource type="Resource" id="PermissionDeckCardRune"]
+[sub_resource type="Resource" id="PolicyDeckCardRune"]
 script = ExtResource("13_card_spec")
 title = "Rune"
 cost = 1
 tags = PackedStringArray("skill")
 
-[sub_resource type="Resource" id="PermissionDeckCardShard"]
+[sub_resource type="Resource" id="PolicyDeckCardShard"]
 script = ExtResource("13_card_spec")
 title = "Shard"
 cost = 1
 tags = PackedStringArray("attack")
 
-[sub_resource type="Resource" id="PermissionDeckCardBeacon"]
+[sub_resource type="Resource" id="PolicyDeckCardBeacon"]
 script = ExtResource("13_card_spec")
 title = "Beacon"
 cost = 2
 tags = PackedStringArray("power")
 
-[sub_resource type="Resource" id="PermissionDeckCardMirror"]
+[sub_resource type="Resource" id="PolicyDeckCardMirror"]
 script = ExtResource("13_card_spec")
 title = "Mirror"
 cost = 2
 tags = PackedStringArray("skill")
 
-[sub_resource type="Resource" id="PermissionHandCardBloom"]
+[sub_resource type="Resource" id="PolicyHandCardBloom"]
 script = ExtResource("13_card_spec")
 title = "Bloom"
 cost = 2
 tags = PackedStringArray("power")
 
-[sub_resource type="Resource" id="PermissionHandCardTrace"]
+[sub_resource type="Resource" id="PolicyHandCardTrace"]
 script = ExtResource("13_card_spec")
 title = "Trace"
 cost = 1
 tags = PackedStringArray("skill")
 
-[sub_resource type="Resource" id="PermissionHandCardArc"]
+[sub_resource type="Resource" id="PolicyHandCardArc"]
 script = ExtResource("13_card_spec")
 title = "Arc"
 cost = 1
 tags = PackedStringArray("attack")
 
-[sub_resource type="StyleBoxFlat" id="PermissionDeckZonePanel"]
+[sub_resource type="StyleBoxFlat" id="PolicyDeckZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -96,7 +96,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[sub_resource type="StyleBoxFlat" id="PermissionHandZonePanel"]
+[sub_resource type="StyleBoxFlat" id="PolicyHandZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -108,7 +108,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[sub_resource type="StyleBoxFlat" id="PermissionBoardZonePanel"]
+[sub_resource type="StyleBoxFlat" id="PolicyBoardZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -120,7 +120,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[sub_resource type="StyleBoxFlat" id="PermissionSanctumZonePanel"]
+[sub_resource type="StyleBoxFlat" id="PolicySanctumZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -132,7 +132,7 @@ corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 
-[sub_resource type="StyleBoxFlat" id="PermissionDiscardZonePanel"]
+[sub_resource type="StyleBoxFlat" id="PolicyDiscardZonePanel"]
 bg_color = Color(0.08, 0.09, 0.12, 0.96)
 border_width_left = 2
 border_width_top = 2
@@ -153,8 +153,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("12_theme")
-deck_cards = [SubResource("PermissionDeckCardRune"), SubResource("PermissionDeckCardShard"), SubResource("PermissionDeckCardBeacon"), SubResource("PermissionDeckCardMirror")]
-hand_cards = [SubResource("PermissionHandCardBloom"), SubResource("PermissionHandCardTrace"), SubResource("PermissionHandCardArc")]
+deck_cards = [SubResource("PolicyDeckCardRune"), SubResource("PolicyDeckCardShard"), SubResource("PolicyDeckCardBeacon"), SubResource("PolicyDeckCardMirror")]
+hand_cards = [SubResource("PolicyHandCardBloom"), SubResource("PolicyHandCardTrace"), SubResource("PolicyHandCardArc")]
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -173,7 +173,7 @@ theme_type_variation = &"DemoRootVBox"
 layout_mode = 2
 size_flags_vertical = 3
 columns = 5
-theme_type_variation = &"DemoPermissionGrid"
+theme_type_variation = &"DemoPolicyGrid"
 
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -189,10 +189,10 @@ text = "牌库 / Deck"
 custom_minimum_size = Vector2(160, 220)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("PermissionDeckZonePanel")
+theme_override_styles/panel = SubResource("PolicyDeckZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("3_pile")
-layout_policy = SubResource("PermissionDeckPileLayout")
+layout_policy = SubResource("PolicyDeckPileLayout")
 
 [node name="HandColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -208,7 +208,7 @@ text = "手牌 / Hand"
 custom_minimum_size = Vector2(180, 220)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("PermissionHandZonePanel")
+theme_override_styles/panel = SubResource("PolicyHandZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("4_hand")
 
@@ -238,10 +238,10 @@ text = "容量 0 / 2 / Capacity 0 / 2"
 custom_minimum_size = Vector2(180, 220)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("PermissionBoardZonePanel")
+theme_override_styles/panel = SubResource("PolicyBoardZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("5_board")
-transfer_policy = SubResource("PermissionBoardCapacityPermission")
+transfer_policy = SubResource("PolicyBoardCapacityPolicy")
 
 [node name="SanctumColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -269,10 +269,10 @@ text = "容量 0 / 2 / Capacity 0 / 2"
 custom_minimum_size = Vector2(180, 220)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("PermissionSanctumZonePanel")
+theme_override_styles/panel = SubResource("PolicySanctumZonePanel")
 script = ExtResource("2_zone")
-layout_policy = SubResource("PermissionSanctumLayout")
-transfer_policy = SubResource("PermissionSanctumCompositePermission")
+layout_policy = SubResource("PolicySanctumLayout")
+transfer_policy = SubResource("PolicySanctumCompositePolicy")
 
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -288,7 +288,7 @@ text = "弃牌堆 / Discard"
 custom_minimum_size = Vector2(160, 220)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("PermissionDiscardZonePanel")
+theme_override_styles/panel = SubResource("PolicyDiscardZonePanel")
 script = ExtResource("2_zone")
 preset = ExtResource("6_discard")
 

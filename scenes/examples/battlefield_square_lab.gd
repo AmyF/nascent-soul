@@ -17,7 +17,7 @@ func _ready() -> void:
 	_space_model.columns = 4
 	_space_model.rows = 3
 	_source_zone = ExampleSupport.make_zone(source_panel, "SquareSourceZone", ZoneHBoxLayout.new())
-	var occupancy = ZoneOccupancyPermission.new()
+	var occupancy = ZoneOccupancyTransferPolicy.new()
 	_battlefield_zone = ExampleSupport.make_battlefield_zone(battlefield_panel, "SquareBattlefieldZone", _space_model, occupancy)
 	for spec in [
 		{"title": "Spark", "cost": 1, "tags": ["spell"]},

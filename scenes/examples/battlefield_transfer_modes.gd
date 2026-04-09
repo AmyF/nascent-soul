@@ -1,7 +1,7 @@
 extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
-const ZoneRuleTablePermissionScript = preload("res://addons/nascentsoul/impl/permissions/zone_rule_table_permission.gd")
+const ZoneRuleTableTransferPolicyScript = preload("res://addons/nascentsoul/impl/permissions/zone_rule_table_transfer_policy.gd")
 const ZoneTransferRuleScript = preload("res://addons/nascentsoul/impl/permissions/zone_transfer_rule.gd")
 const ZoneCardScript = preload("res://addons/nascentsoul/cards/zone_card.gd")
 const ZonePieceScript = preload("res://addons/nascentsoul/pieces/zone_piece.gd")
@@ -29,12 +29,12 @@ func _ready() -> void:
 	_summon_space = ZoneSquareGridSpaceModel.new()
 	_summon_space.columns = 3
 	_summon_space.rows = 2
-	var direct_composite = ZoneCompositePermission.new()
+	var direct_composite = ZoneCompositeTransferPolicy.new()
 	var direct_rules = _make_cards_only_rule_table(ExampleSupport.compact_bilingual("Direct Place 保持卡牌形态，棋子不能进入", "Direct Place keeps card form, so pieces cannot enter"))
-	var direct_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyPermission.new(), direct_rules]
+	var direct_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyTransferPolicy.new(), direct_rules]
 	direct_composite.policies = direct_policies
 	_direct_zone = ExampleSupport.make_battlefield_zone(direct_panel, "DirectBattlefieldZone", _direct_space, direct_composite)
-	var rule_table = ZoneRuleTablePermissionScript.new()
+	var rule_table = ZoneRuleTableTransferPolicyScript.new()
 	var rule = ZoneTransferRuleScript.new()
 	rule.source_item_script = ZoneCardScript
 	rule.target_kind = ZonePlacementTarget.TargetKind.SQUARE
@@ -46,8 +46,8 @@ func _ready() -> void:
 	rule.spawn_scene = piece_scene
 	var typed_rules: Array[ZoneTransferRule] = [rule]
 	rule_table.rules = typed_rules
-	var summon_composite = ZoneCompositePermission.new()
-	var typed_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyPermission.new(), rule_table]
+	var summon_composite = ZoneCompositeTransferPolicy.new()
+	var typed_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyTransferPolicy.new(), rule_table]
 	summon_composite.policies = typed_policies
 	_summon_zone = ExampleSupport.make_battlefield_zone(summon_panel, "SummonBattlefieldZone", _summon_space, summon_composite)
 	for spec in [
@@ -93,8 +93,8 @@ func _set_status(message: String, font_color: Color = NORMAL_STATUS_COLOR) -> vo
 	status_label.text = "%s: %s" % [ExampleSupport.compact_bilingual("最近", "Latest"), message]
 	status_label.add_theme_color_override("font_color", font_color)
 
-func _make_cards_only_rule_table(reject_reason: String) -> ZoneRuleTablePermission:
-	var rule_table = ZoneRuleTablePermissionScript.new()
+func _make_cards_only_rule_table(reject_reason: String) -> ZoneRuleTableTransferPolicy:
+	var rule_table = ZoneRuleTableTransferPolicyScript.new()
 	var rule = ZoneTransferRuleScript.new()
 	rule.source_item_script = ZonePieceScript
 	rule.allowed = false

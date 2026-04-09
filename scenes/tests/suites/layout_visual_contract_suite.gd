@@ -73,7 +73,7 @@ func _test_pile_preview_stays_inside_panel() -> void:
 	_check(session != null, "pile preview contract requires an active drag session")
 	if session == null:
 		return
-	pile_zone.get_runtime()._create_ghost(alpha)
+	pile_zone.get_runtime().create_ghost(alpha)
 	session.hover_zone = pile_zone
 	session.preview_target = ZonePlacementTarget.linear(1)
 	pile_zone.refresh()
