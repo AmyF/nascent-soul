@@ -7,6 +7,7 @@ const OVERLAY_LAYER_NAME := "__NascentSoulTargetingLayer"
 var active_session: ZoneTargetingSession = null
 var _overlay: Control = null
 var _overlay_layer: CanvasLayer = null
+var _overlay_style: ZoneTargetingStyle = null
 
 func _ready() -> void:
 	set_process(false)
@@ -122,6 +123,8 @@ func _update_overlay(source_zone: Zone) -> void:
 	if style == null:
 		_clear_overlay()
 		return
+	if _overlay != null and is_instance_valid(_overlay) and _overlay_style != style:
+		_clear_overlay()
 	var viewport = get_viewport()
 	if viewport == null:
 		return
@@ -132,6 +135,7 @@ func _update_overlay(source_zone: Zone) -> void:
 		_overlay = style.create_overlay(context, self)
 		if _overlay == null:
 			return
+		_overlay_style = style
 		_overlay.name = "__NascentSoulTargetingOverlay"
 		_overlay.visible = false
 		_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -156,19 +160,16 @@ func _resolve_style(source_zone: Zone) -> ZoneTargetingStyle:
 func _clear_overlay() -> void:
 	if _overlay == null or not is_instance_valid(_overlay):
 		_overlay = null
+		_overlay_style = null
 		_clear_overlay_layer()
 		return
-	var source_zone: Zone = null
-	if active_session != null and active_session.source_zone is Zone:
-		source_zone = active_session.source_zone as Zone
-	if source_zone != null:
-		var style = _resolve_style(source_zone)
-		if style != null:
-			style.clear_overlay(_overlay)
+	if _overlay_style != null:
+		_overlay_style.clear_overlay(_overlay)
 	if _overlay.get_parent() != null:
 		_overlay.get_parent().remove_child(_overlay)
 	_overlay.free()
 	_overlay = null
+	_overlay_style = null
 	_clear_overlay_layer()
 
 func _ensure_overlay_layer(viewport: Viewport) -> void:

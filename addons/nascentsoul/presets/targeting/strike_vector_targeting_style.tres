@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="ZoneLayeredTargetingStyle" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_layered_targeting_style.gd" id="1_style"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_trail_layer.gd" id="2_trail"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_path_layer.gd" id="3_path"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_head_layer.gd" id="4_head"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_endpoint_layer.gd" id="5_endpoint"]
+
+[sub_resource type="Resource" id="StrikeTrail"]
+script = ExtResource("2_trail")
+resource_name = "strike_trail"
+neutral_color = Color(0.92, 0.78, 0.54, 0.18)
+valid_color = Color(0.58, 0.96, 0.66, 0.20)
+invalid_color = Color(1, 0.46, 0.44, 0.22)
+path_mode = 2
+line_width = 12.0
+curvature = 0.08
+pulse_enabled = false
+afterimage_enabled = true
+afterimage_count = 3
+afterimage_radius = 7.0
+
+[sub_resource type="Resource" id="StrikePath"]
+script = ExtResource("3_path")
+resource_name = "strike_path"
+neutral_color = Color(0.98, 0.82, 0.60, 0.96)
+valid_color = Color(0.60, 0.96, 0.66, 0.96)
+invalid_color = Color(1, 0.46, 0.42, 0.96)
+path_mode = 2
+pattern_mode = 0
+line_width = 6.0
+curvature = 0.08
+taper_enabled = true
+taper_end_scale = 0.18
+
+[sub_resource type="Resource" id="StrikeHead"]
+script = ExtResource("4_head")
+resource_name = "strike_head"
+neutral_color = Color(0.98, 0.84, 0.64, 0.98)
+valid_color = Color(0.66, 0.98, 0.70, 0.98)
+invalid_color = Color(1, 0.52, 0.48, 0.98)
+head_shape = 2
+path_mode = 2
+head_size = 22.0
+width_scale = 0.62
+curvature = 0.08
+
+[sub_resource type="Resource" id="StrikeEndpoint"]
+script = ExtResource("5_endpoint")
+resource_name = "strike_endpoint"
+neutral_color = Color(0.98, 0.82, 0.62, 0.84)
+valid_color = Color(0.64, 0.98, 0.70, 0.88)
+invalid_color = Color(1, 0.52, 0.48, 0.88)
+endpoint_shape = 3
+radius = 20.0
+line_width = 2.5
+show_only_with_candidate = true
+pulse_enabled = false
+
+[resource]
+script = ExtResource("1_style")
+resource_name = "Strike Vector"
+layers = [SubResource("StrikeTrail"), SubResource("StrikePath"), SubResource("StrikeHead"), SubResource("StrikeEndpoint")]

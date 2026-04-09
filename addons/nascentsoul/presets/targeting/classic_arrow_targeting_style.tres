@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ZoneArrowTargetingStyle" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_arrow_targeting_style.gd" id="1_style"]
+
+[resource]
+script = ExtResource("1_style")
+resource_name = "Classic Arrow"
+neutral_color = Color(0.84, 0.88, 0.96, 0.85)
+valid_color = Color(0.42, 0.90, 0.62, 0.92)
+invalid_color = Color(1, 0.42, 0.42, 0.92)
+line_width = 6.0
+arrow_head_size = 18.0
+curvature = 0.16
+target_ring_radius = 24.0
+pulse_enabled = true
+pulse_speed = 4.0

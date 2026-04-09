@@ -10,5 +10,8 @@ func update_overlay(_context: ZoneContext, _overlay: Control, _session, _source_
 func clear_overlay(overlay: Control) -> void:
 	if overlay == null or not is_instance_valid(overlay):
 		return
+	if overlay.has_method("clear_overlay"):
+		overlay.call("clear_overlay")
+		return
 	if overlay.has_method("clear_state"):
 		overlay.call("clear_state")

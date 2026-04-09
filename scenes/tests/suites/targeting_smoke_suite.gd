@@ -3,7 +3,7 @@ extends "res://scenes/tests/shared/test_harness.gd"
 const TargetingSupport = preload("res://scenes/examples/shared/targeting_support.gd")
 const ZoneTargetRuleTablePolicyScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule_table_policy.gd")
 const ZoneTargetRuleScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule.gd")
-const ZoneArrowTargetingOverlayScript = preload("res://addons/nascentsoul/runtime/zone_arrow_targeting_overlay.gd")
+const ZoneTargetingOverlayHostScript = preload("res://addons/nascentsoul/runtime/zone_targeting_overlay_host.gd")
 
 func _init() -> void:
 	_suite_name = "targeting-smoke"
@@ -194,13 +194,14 @@ func _test_overlay_state_and_highlight_cleanup() -> void:
 	source_zone.update_targeting_session(session, ally_piece.global_position + ally_piece.size * 0.5)
 	var overlay = _find_targeting_overlay()
 	var ally_overlay = ally_piece.get_node_or_null("PieceOverlay") as ColorRect
-	_check(overlay != null and overlay.get_script() == ZoneArrowTargetingOverlayScript, "targeting should render through a dedicated arrow overlay")
+	_check(overlay != null and overlay.get_script() == ZoneTargetingOverlayHostScript, "targeting should render through a dedicated overlay host")
 	_check(overlay != null and overlay.visible, "active targeting should keep the overlay visible")
-	_check(overlay != null and int(overlay.get("_state")) == 2, "rejected hover candidates should switch the overlay into the invalid state")
+	_check(overlay != null and overlay.get_visual_state() == ZoneTargetingVisualFrame.VisualState.INVALID, "rejected hover candidates should switch the overlay host into the invalid state")
+	_check(overlay != null and overlay.get_debug_layer_keys().has("classic_path"), "classic targeting should expose the classic path layer through the overlay host")
 	_check(ally_overlay != null and ally_overlay.visible and ally_overlay.color.r > ally_overlay.color.g, "invalid item candidates should show the target highlight in an invalid color")
 	source_zone.update_targeting_session(session, enemy_piece.global_position + enemy_piece.size * 0.5)
 	var enemy_overlay = enemy_piece.get_node_or_null("PieceOverlay") as ColorRect
-	_check(overlay != null and int(overlay.get("_state")) == 1, "valid hover candidates should switch the overlay into the valid state")
+	_check(overlay != null and overlay.get_visual_state() == ZoneTargetingVisualFrame.VisualState.VALID, "valid hover candidates should switch the overlay host into the valid state")
 	_check(enemy_overlay != null and enemy_overlay.visible and enemy_overlay.color.g > enemy_overlay.color.r, "valid item candidates should show the target highlight in a valid color")
 	_check(ally_overlay != null and not ally_overlay.visible, "moving between candidates should clear the previous item highlight")
 	source_zone.cancel_targeting()

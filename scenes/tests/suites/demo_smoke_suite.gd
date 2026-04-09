@@ -348,18 +348,34 @@ func _test_targeting_example_load() -> void:
 	var content_row = scene.get_node_or_null("RootMargin/RootVBox/ContentRow") as HBoxContainer
 	var spell_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/SpellColumn/SpellHandPanel/SpellSourceZone") as Zone
 	var spell_targets = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/SpellColumn/SpellTargetPanel/SpellTargetZone") as Zone
+	var spell_style_option = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/SpellColumn/SpellToolbar/SpellStyleOption") as OptionButton
+	var ability_style_option = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityToolbar/AbilityStyleOption") as OptionButton
 	var ability_button = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityToolbar/AimAbilityButton") as Button
 	var ability_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityPanel/AbilityBattlefieldZone") as Zone
-	_check(status != null and status.text.contains("Meteor"), "targeting lab should explain the spell targeting entry path in its status label")
+	_check(status != null and (status.text.contains("style override") or status.text.contains("风格")), "targeting lab should explain the preset and style-override workflow in its status label")
 	_check(content_row != null, "targeting lab should serialize its main content row")
 	_check(spell_zone != null and spell_zone.get_item_count() == 1, "targeting lab should create a single spell source card")
 	_check(spell_targets != null and spell_targets.get_item_count() >= 2, "targeting lab should create multiple target pieces on the battlefield")
+	_check(spell_style_option != null and spell_style_option.item_count >= 4, "targeting lab should expose built-in spell preset options")
+	_check(ability_style_option != null and ability_style_option.item_count >= 4, "targeting lab should expose built-in ability override options")
 	_check(ability_button != null, "targeting lab should expose the explicit begin_targeting button")
 	_check(ability_zone != null and ability_zone.get_item_count() >= 1, "targeting lab should create the battlefield used for piece abilities")
+	if spell_style_option != null and spell_zone != null:
+		spell_style_option.select(1)
+		spell_style_option.item_selected.emit(1)
+		await _settle_frames(1)
+		var spell_style = ExampleSupport.get_zone_targeting_style(spell_zone)
+		_check(spell_style != null and spell_style.resource_name == "Arcane Bolt", "targeting lab spell preset menu should swap the zone targeting style resource")
 	if ability_button != null and ability_zone != null:
+		if ability_style_option != null:
+			ability_style_option.select(2)
+			ability_style_option.item_selected.emit(2)
+			await _settle_frames(1)
 		ability_button.pressed.emit()
 		await _settle_frames(1)
 		_check(ability_zone.is_targeting(), "targeting lab ability button should start an explicit targeting session")
+		var session = ability_zone.get_targeting_session()
+		_check(session != null and session.intent != null and session.intent.style_override != null and session.intent.style_override.resource_name == "Strike Vector", "targeting lab ability preset menu should drive the explicit style_override resource")
 		ability_zone.cancel_targeting()
 		await _settle_frames(1)
 		_check(not ability_zone.is_targeting(), "targeting lab cancel path should clear the explicit targeting session")

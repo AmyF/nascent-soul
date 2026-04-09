@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="ZoneLayeredTargetingStyle" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_layered_targeting_style.gd" id="1_style"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_trail_layer.gd" id="2_trail"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_path_layer.gd" id="3_path"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_head_layer.gd" id="4_head"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_endpoint_layer.gd" id="5_endpoint"]
+
+[sub_resource type="Resource" id="ArcaneTrail"]
+script = ExtResource("2_trail")
+resource_name = "arcane_trail"
+neutral_color = Color(0.64, 0.84, 1, 0.24)
+valid_color = Color(0.36, 1, 0.82, 0.28)
+invalid_color = Color(1, 0.48, 0.52, 0.28)
+line_width = 14.0
+curvature = 0.20
+pulse_enabled = true
+pulse_speed = 3.2
+afterimage_enabled = true
+afterimage_count = 5
+afterimage_radius = 6.0
+
+[sub_resource type="Resource" id="ArcanePath"]
+script = ExtResource("3_path")
+resource_name = "arcane_path"
+neutral_color = Color(0.84, 0.90, 1, 0.92)
+valid_color = Color(0.46, 1, 0.84, 0.94)
+invalid_color = Color(1, 0.46, 0.48, 0.94)
+path_mode = 0
+pattern_mode = 1
+line_width = 5.5
+curvature = 0.20
+dash_length = 18.0
+gap_length = 10.0
+taper_enabled = true
+taper_end_scale = 0.32
+
+[sub_resource type="Resource" id="ArcaneHead"]
+script = ExtResource("4_head")
+resource_name = "arcane_head"
+neutral_color = Color(0.92, 0.95, 1, 0.95)
+valid_color = Color(0.54, 1, 0.86, 0.96)
+invalid_color = Color(1, 0.56, 0.56, 0.96)
+head_shape = 3
+path_mode = 0
+head_size = 20.0
+width_scale = 0.60
+curvature = 0.20
+
+[sub_resource type="Resource" id="ArcaneEndpoint"]
+script = ExtResource("5_endpoint")
+resource_name = "arcane_endpoint"
+neutral_color = Color(0.92, 0.95, 1, 0.88)
+valid_color = Color(0.58, 1, 0.86, 0.92)
+invalid_color = Color(1, 0.58, 0.58, 0.92)
+endpoint_shape = 2
+radius = 24.0
+line_width = 3.0
+show_only_with_candidate = true
+pulse_enabled = true
+pulse_speed = 3.6
+rune_spokes = 7
+
+[resource]
+script = ExtResource("1_style")
+resource_name = "Arcane Bolt"
+layers = [SubResource("ArcaneTrail"), SubResource("ArcanePath"), SubResource("ArcaneHead"), SubResource("ArcaneEndpoint")]

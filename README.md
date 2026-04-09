@@ -30,10 +30,11 @@ flowchart LR
     Config --> Sort["ZoneSortPolicy"]
     Config --> TransferPolicy["ZoneTransferPolicy"]
     Config --> DragVisual["ZoneDragVisualFactory"]
-    Config --> TargetStyle["ZoneTargetingStyle"]
+    Config --> TargetStyle["ZoneTargetingStyle / ZoneLayeredTargetingStyle"]
     Config --> TargetPolicy["ZoneTargetingPolicy"]
     Transfer --> TransferCommand["ZoneTransferCommand"]
     Targeting --> TargetCommand["ZoneTargetingCommand"]
+    Targeting --> TargetHost["ZoneTargetingOverlayHost"]
     Zone --> CardFamily["CardZone"]
     Zone --> BattlefieldFamily["BattlefieldZone"]
     ZoneItem["ZoneItemControl"] --> Zone
@@ -51,7 +52,7 @@ The important split in `1.0.0` is:
 - Card zones and battlefield zones share one transfer and preview protocol without pretending they are the same spatial model.
 - Linear insertion and grid placement both flow through `ZonePlacementTarget`.
 - A transfer can keep a `ZoneCard` as-is or resolve into a spawned `ZonePiece`, depending on the target zone's transfer rules.
-- Targeting visuals are library-owned. `ZoneArrowTargetingStyle` and `ZoneArrowTargetingOverlay` live in the addon; demo scenes only configure them.
+- Targeting visuals are library-owned. `ZoneLayeredTargetingStyle`, `ZoneTargetingVisualLayer`, and `ZoneTargetingOverlayHost` live in the addon; demo scenes only configure built-in presets or per-intent overrides.
 
 ## Quick Start
 
@@ -128,6 +129,14 @@ battlefield.begin_targeting(
 
 `targeting_resolved` reports what the player chose, but it does not automatically consume the source card, cast the effect, or move the piece. Gameplay scripts stay in control of resolution.
 
+### Targeting Visuals
+
+- `ZoneArrowTargetingStyle` is the built-in classic preset and the compatibility path for the original arrow look.
+- `ZoneLayeredTargetingStyle` is the new extension point for layered visuals.
+- `ZoneTargetPathLayer`, `ZoneTargetHeadLayer`, `ZoneTargetEndpointLayer`, and `ZoneTargetTrailLayer` are the built-in primitives for custom effects.
+- The addon now ships four ready-to-use preset resources: `Classic Arrow`, `Arcane Bolt`, `Strike Vector`, and `Tactical Beam`.
+- `ZoneTargetingIntent.style_override` can swap the visual preset for one cast or ability without changing the zone's default style resource.
+
 ## Transfer vs Targeting
 
 - Use transfer when the source object should move or spawn into another zone.
@@ -145,6 +154,7 @@ battlefield.begin_targeting(
 - Battlefield layout: `ZoneBattlefieldLayout`
 - Transfer rules: allow-all, capacity, source, occupancy, composite, rule-table
 - Targeting rules: allow-all, composite, rule-table
+- Targeting visuals: `ZoneArrowTargetingStyle`, `ZoneLayeredTargetingStyle`, path/head/endpoint/trail layers, and built-in presets
 - Example items: `ZoneCard + CardData`, `ZonePiece + PieceData`
 
 ## Learn By Opening The Repo
@@ -156,7 +166,7 @@ battlefield.begin_targeting(
 - [`scenes/examples/battlefield_square_lab.tscn`](scenes/examples/battlefield_square_lab.tscn): square battlefield with direct card placement
 - [`scenes/examples/battlefield_hex_lab.tscn`](scenes/examples/battlefield_hex_lab.tscn): hex battlefield with spatial placement
 - [`scenes/examples/battlefield_transfer_modes.tscn`](scenes/examples/battlefield_transfer_modes.tscn): direct-place-card vs spawn-piece transfer rules
-- [`scenes/examples/targeting_lab.tscn`](scenes/examples/targeting_lab.tscn): drag-to-target spell flow and explicit piece ability targeting
+- [`scenes/examples/targeting_lab.tscn`](scenes/examples/targeting_lab.tscn): drag-to-target spell flow, preset switching, and explicit style overrides for abilities
 
 The editor plugin exposes:
 
@@ -168,7 +178,7 @@ The editor plugin exposes:
 
 Current repository validation on Godot 4.6.1:
 
-- Headless regression suite passes with `382` checks
+- Headless regression suite passes with `423` checks
 - Headless editor/plugin load passes without parse errors or preload failures
 - Transfer, battlefield, layout, and targeting suites all remain green on the current architecture
 

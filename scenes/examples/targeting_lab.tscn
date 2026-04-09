@@ -52,7 +52,18 @@ text = "Spell Targeting"
 [node name="SpellHint" type="Label" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
 layout_mode = 2
 autowrap_mode = 3
-text = "Drag the spell card to an enemy piece. Friendly pieces will show an invalid arrow state."
+text = "Drag the spell card to an enemy piece. Use the preset menu to preview built-in addon styles on drag-entry targeting."
+
+[node name="SpellToolbar" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
+layout_mode = 2
+
+[node name="SpellStyleLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/SpellColumn/SpellToolbar"]
+layout_mode = 2
+text = "Spell Preset"
+
+[node name="SpellStyleOption" type="OptionButton" parent="RootMargin/RootVBox/ContentRow/SpellColumn/SpellToolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="SpellHandPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
 custom_minimum_size = Vector2(360, 220)
@@ -74,10 +85,14 @@ text = "Piece Ability"
 [node name="AbilityHint" type="Label" parent="RootMargin/RootVBox/ContentRow/AbilityColumn"]
 layout_mode = 2
 autowrap_mode = 3
-text = "Use explicit begin_targeting() to aim a piece ability at empty or occupied square cells."
+text = "Use explicit begin_targeting() to aim a piece ability at empty or occupied square cells. The preset menu below drives intent.style_override."
 
 [node name="AbilityToolbar" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/AbilityColumn"]
 layout_mode = 2
+
+[node name="AbilityStyleOption" type="OptionButton" parent="RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityToolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="AimAbilityButton" type="Button" parent="RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityToolbar"]
 layout_mode = 2
