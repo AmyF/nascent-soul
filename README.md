@@ -75,12 +75,9 @@ The authored shape is simple:
 - [`scenes/examples/permission_lab.tscn`](scenes/examples/permission_lab.tscn): inspect capacity and source-based drop rules.
 - [`scenes/examples/zone_recipes.tscn`](scenes/examples/zone_recipes.tscn): copyable starter setup for deck, hand, board, and discard zones.
 
-The editor plugin exposes these entry points directly:
+The editor plugin exposes this entry point directly:
 
 - `Create Zone From Preset`
-- `Open NascentSoul Example Hub`
-- `Open NascentSoul Zone Recipes`
-- `Open NascentSoul README`
 
 ## Project Status
 
