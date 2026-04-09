@@ -117,7 +117,7 @@ func _update_overlay(source_zone: Zone) -> void:
 	if source_zone == null:
 		_clear_overlay()
 		return
-	var context = source_zone.get_context()
+	var context = source_zone._get_context()
 	var style = _resolve_style(source_zone)
 	if style == null:
 		_clear_overlay()
@@ -151,7 +151,7 @@ func _resolve_style(source_zone: Zone) -> ZoneTargetingStyle:
 		return null
 	if active_session.intent != null and active_session.intent.style_override != null:
 		return active_session.intent.style_override
-	return source_zone.get_context().get_targeting_style()
+	return source_zone.get_targeting_style()
 
 func _clear_overlay() -> void:
 	if _overlay == null or not is_instance_valid(_overlay):

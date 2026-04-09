@@ -198,31 +198,31 @@ static func set_zone_targeting_policy(zone: Zone, targeting_policy: ZoneTargetin
 	zone.config = duplicated
 
 static func get_zone_layout_policy(zone: Zone) -> ZoneLayoutPolicy:
-	return zone.get_context().get_layout_policy() if zone != null else null
+	return zone.get_layout_policy() if zone != null else null
 
 static func get_zone_display_style(zone: Zone) -> ZoneDisplayStyle:
-	return zone.get_context().get_display_style() if zone != null else null
+	return zone.get_display_style() if zone != null else null
 
 static func get_zone_interaction(zone: Zone) -> ZoneInteraction:
-	return zone.get_context().get_interaction() if zone != null else null
+	return zone.get_interaction() if zone != null else null
 
 static func get_zone_sort_policy(zone: Zone) -> ZoneSortPolicy:
-	return zone.get_context().get_sort_policy() if zone != null else null
+	return zone.get_sort_policy() if zone != null else null
 
 static func get_zone_transfer_policy(zone: Zone) -> ZoneTransferPolicy:
-	return zone.get_context().get_transfer_policy() if zone != null else null
+	return zone.get_transfer_policy() if zone != null else null
 
 static func get_zone_drag_visual_factory(zone: Zone) -> ZoneDragVisualFactory:
-	return zone.get_context().get_drag_visual_factory() if zone != null else null
+	return zone.get_drag_visual_factory() if zone != null else null
 
 static func get_zone_space_model(zone: Zone) -> ZoneSpaceModel:
-	return zone.get_context().get_space_model() if zone != null else null
+	return zone.get_space_model() if zone != null else null
 
 static func get_zone_targeting_style(zone: Zone) -> ZoneTargetingStyle:
-	return zone.get_context().get_targeting_style() if zone != null else null
+	return zone.get_targeting_style() if zone != null else null
 
 static func get_zone_targeting_policy(zone: Zone) -> ZoneTargetingPolicy:
-	return zone.get_context().get_targeting_policy() if zone != null else null
+	return zone.get_targeting_policy() if zone != null else null
 
 static func move_item(source_zone: Zone, item: Control, target_zone: Zone, placement_target: ZonePlacementTarget = null) -> bool:
 	if source_zone == null or target_zone == null or not is_instance_valid(item) or item is not ZoneItemControl:
@@ -260,11 +260,7 @@ static func begin_item_targeting(zone: Zone, item: Control, intent: ZoneTargetin
 static func get_first_open_target(zone: Zone, item: Control) -> ZonePlacementTarget:
 	if zone == null:
 		return ZonePlacementTarget.invalid()
-	var context = zone.get_context()
-	var space_model = context.get_space_model()
-	if space_model == null:
-		return ZonePlacementTarget.invalid()
-	return space_model.get_first_open_target(context, item)
+	return zone.get_first_open_target(item)
 
 static func make_card(title: String, cost: int, tags, face_up: bool = true, highlighted: bool = false) -> ZoneCard:
 	var normalized_tags := _normalize_tags(tags)

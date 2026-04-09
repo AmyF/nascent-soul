@@ -54,6 +54,20 @@ func _begin_item_targeting(zone: Zone, item: Control, intent: ZoneTargetingInten
 func _first_open_target(zone: Zone, item: Control) -> ZonePlacementTarget:
 	return ExampleSupport.get_first_open_target(zone, item)
 
+func _drag_session(zone: Zone) -> ZoneDragSession:
+	return zone.get_drag_session() if zone != null else null
+
+func _preview_transfer(target_zone: Zone, source_zone: Node, items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, global_position: Vector2, preview_source: ZoneItemControl = null) -> ZoneTransferDecision:
+	if target_zone == null:
+		return ZoneTransferDecision.new()
+	return target_zone.preview_transfer(items, source_zone, placement_target, global_position, preview_source)
+
+func _capture_transfer_snapshots(zone: Zone, moving_items: Array[ZoneItemControl], drop_position = null) -> Dictionary:
+	return zone.capture_transfer_snapshots(moving_items, drop_position) if zone != null else {}
+
+func _resolve_transfer_origin(zone: Zone, moving_items: Array[ZoneItemControl]):
+	return zone.resolve_transfer_origin(moving_items) if zone != null else Vector2.ZERO
+
 func _managed_control_names(container: Control) -> Array[String]:
 	var names: Array[String] = []
 	var resolved_container = _resolve_managed_container(container)

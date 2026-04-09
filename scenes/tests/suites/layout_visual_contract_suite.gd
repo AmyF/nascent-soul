@@ -68,15 +68,13 @@ func _test_pile_preview_stays_inside_panel() -> void:
 	pile_zone.add_item(beta)
 	await _settle_frames(2)
 	source_zone.start_drag([alpha])
-	var coordinator = source_zone.get_drag_coordinator(false)
-	var session = coordinator.get_session() if coordinator != null else null
+	var session = source_zone.get_drag_session()
 	_check(session != null, "pile preview contract requires an active drag session")
 	if session == null:
 		return
-	pile_zone.get_render_service().create_ghost(alpha)
+	_preview_transfer(pile_zone, source_zone, session.items, ZonePlacementTarget.linear(1), alpha.global_position, alpha)
 	session.hover_zone = pile_zone
 	session.preview_target = ZonePlacementTarget.linear(1)
-	pile_zone.refresh()
 	var ghost = _find_unmanaged_control(pile_zone)
 	_check(ghost != null, "pile preview should create a ghost control")
 	if ghost != null:

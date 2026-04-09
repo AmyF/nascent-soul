@@ -34,7 +34,7 @@ func _ready() -> void:
 func _on_source_card_double_clicked(item: Control) -> void:
 	if not _source_zone.has_item(item):
 		return
-	var target = _space_model.get_first_open_target(_battlefield_zone.get_context(), item)
+	var target = ExampleSupport.get_first_open_target(_battlefield_zone, item)
 	if target.is_valid():
 		ExampleSupport.move_item(_source_zone, item, _battlefield_zone, target)
 

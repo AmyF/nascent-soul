@@ -70,7 +70,7 @@ func _ready() -> void:
 		resized.connect(resized_callable)
 
 func _exit_tree() -> void:
-	var targeting_coordinator = get_targeting_coordinator(false)
+	var targeting_coordinator = _get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		var session = targeting_coordinator.get_session()
 		if session.source_zone == self or session.candidate.target_zone == self:
@@ -127,29 +127,41 @@ func refresh() -> void:
 	_render_service.refresh()
 	queue_redraw()
 
-func get_context() -> ZoneContext:
+func get_space_model() -> ZoneSpaceModel:
 	_ensure_services()
-	return _context
+	return _context.get_space_model()
 
-func get_store() -> ZoneStore:
+func get_layout_policy() -> ZoneLayoutPolicy:
 	_ensure_services()
-	return _store
+	return _context.get_layout_policy()
 
-func get_input_service() -> ZoneInputService:
+func get_display_style() -> ZoneDisplayStyle:
 	_ensure_services()
-	return _input_service
+	return _context.get_display_style()
 
-func get_render_service() -> ZoneRenderService:
+func get_interaction() -> ZoneInteraction:
 	_ensure_services()
-	return _render_service
+	return _context.get_interaction()
 
-func get_transfer_service() -> ZoneTransferService:
+func get_sort_policy() -> ZoneSortPolicy:
 	_ensure_services()
-	return _transfer_service
+	return _context.get_sort_policy()
 
-func get_targeting_service() -> ZoneTargetingService:
+func get_transfer_policy() -> ZoneTransferPolicy:
 	_ensure_services()
-	return _targeting_service
+	return _context.get_transfer_policy()
+
+func get_drag_visual_factory() -> ZoneDragVisualFactory:
+	_ensure_services()
+	return _context.get_drag_visual_factory()
+
+func get_targeting_style() -> ZoneTargetingStyle:
+	_ensure_services()
+	return _context.get_targeting_style()
+
+func get_targeting_policy() -> ZoneTargetingPolicy:
+	_ensure_services()
+	return _context.get_targeting_policy()
 
 func get_items_root() -> Control:
 	_ensure_internal_nodes()
@@ -162,6 +174,14 @@ func get_preview_root() -> Control:
 func get_items() -> Array[ZoneItemControl]:
 	_ensure_services()
 	return _context.get_items()
+
+func get_sorted_items() -> Array[ZoneItemControl]:
+	_ensure_services()
+	var items = _context.get_items_ordered()
+	var sort_policy = _context.get_sort_policy()
+	if sort_policy == null:
+		return items
+	return sort_policy.sort_items(_context, items)
 
 func get_item_count() -> int:
 	_ensure_services()
@@ -255,31 +275,49 @@ func has_transfer_handoff(item: ZoneItemControl) -> bool:
 	_ensure_services()
 	return _store.has_transfer_handoff(item)
 
-func make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
+func set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
 	_ensure_services()
-	return _transfer_service.make_transfer_request(target_zone, source_zone, items, placement_target, global_position)
+	_store.set_transfer_handoff(item, snapshot)
 
-func resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
+func clear_transfer_handoffs() -> void:
 	_ensure_services()
-	return _transfer_service.resolve_drop_decision(request)
+	_store.clear_transfer_handoffs()
 
-func apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferDecision, preview_target, preview_source: ZoneItemControl) -> bool:
-	_ensure_services()
-	return _render_service.apply_hover_feedback(items, decision, preview_target, preview_source)
-
-func build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null) -> Dictionary:
+func capture_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null) -> Dictionary:
 	_ensure_services()
 	return _transfer_service.build_transfer_snapshots(moving_items, drop_position)
 
-func resolve_programmatic_transfer_global_position(moving_items: Array[ZoneItemControl]):
+func resolve_transfer_origin(moving_items: Array[ZoneItemControl]):
 	_ensure_services()
 	return _transfer_service.resolve_programmatic_transfer_global_position(moving_items)
+
+func preview_transfer(items: Array[ZoneItemControl], source_zone: Node, placement_target: ZonePlacementTarget, global_position: Vector2, preview_source: ZoneItemControl = null) -> ZoneTransferDecision:
+	_ensure_services()
+	var request = _transfer_service.make_transfer_request(self, source_zone, items, placement_target, global_position)
+	var decision = _transfer_service.resolve_drop_decision(request)
+	var resolved_preview_source = preview_source
+	if resolved_preview_source == null and not items.is_empty():
+		resolved_preview_source = items[0]
+	if _render_service.apply_hover_feedback(items, decision, decision.resolved_target if decision.allowed else ZonePlacementTarget.invalid(), resolved_preview_source):
+		refresh()
+	return decision
 
 func is_targeting() -> bool:
 	return get_targeting_session() != null
 
+func get_drag_session() -> ZoneDragSession:
+	var coordinator = _get_drag_coordinator(false)
+	if coordinator == null:
+		return null
+	var session = coordinator.get_session()
+	if session == null:
+		return null
+	if session.source_zone == self or session.hover_zone == self:
+		return session
+	return null
+
 func get_targeting_session() -> ZoneTargetingSession:
-	var coordinator = get_targeting_coordinator(false)
+	var coordinator = _get_targeting_coordinator(false)
 	if coordinator == null:
 		return null
 	var session = coordinator.get_session()
@@ -290,6 +328,13 @@ func get_targeting_session() -> ZoneTargetingSession:
 func get_item_at_global_position(global_position: Vector2) -> ZoneItemControl:
 	_ensure_services()
 	return _context.get_item_at_global_position(global_position)
+
+func get_first_open_target(item: Control) -> ZonePlacementTarget:
+	_ensure_services()
+	var space_model = _context.get_space_model()
+	if space_model == null:
+		return ZonePlacementTarget.invalid()
+	return space_model.get_first_open_target(_context, item)
 
 func resolve_target_anchor(target: ZonePlacementTarget) -> Vector2:
 	_ensure_services()
@@ -315,7 +360,7 @@ func finalize_drag_session(session: ZoneDragSession = null) -> void:
 	_ensure_services()
 	_transfer_service.finalize_drag_session(session)
 
-func get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator:
+func _get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator:
 	if not is_inside_tree():
 		return null
 	if create_if_missing:
@@ -328,7 +373,7 @@ func get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator
 		return existing as ZoneDragCoordinator
 	return null
 
-func get_targeting_coordinator(create_if_missing: bool = true) -> ZoneTargetingCoordinator:
+func _get_targeting_coordinator(create_if_missing: bool = true) -> ZoneTargetingCoordinator:
 	if not is_inside_tree():
 		return null
 	if create_if_missing:
@@ -340,6 +385,50 @@ func get_targeting_coordinator(create_if_missing: bool = true) -> ZoneTargetingC
 	if existing is ZoneTargetingCoordinator:
 		return existing as ZoneTargetingCoordinator
 	return null
+
+func _get_context() -> ZoneContext:
+	_ensure_services()
+	return _context
+
+func _get_store() -> ZoneStore:
+	_ensure_services()
+	return _store
+
+func _get_input_service() -> ZoneInputService:
+	_ensure_services()
+	return _input_service
+
+func _get_render_service() -> ZoneRenderService:
+	_ensure_services()
+	return _render_service
+
+func _get_transfer_service() -> ZoneTransferService:
+	_ensure_services()
+	return _transfer_service
+
+func _get_targeting_service() -> ZoneTargetingService:
+	_ensure_services()
+	return _targeting_service
+
+func _make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
+	_ensure_services()
+	return _transfer_service.make_transfer_request(target_zone, source_zone, items, placement_target, global_position)
+
+func _resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
+	_ensure_services()
+	return _transfer_service.resolve_drop_decision(request)
+
+func _apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferDecision, preview_target, preview_source: ZoneItemControl) -> bool:
+	_ensure_services()
+	return _render_service.apply_hover_feedback(items, decision, preview_target, preview_source)
+
+func _build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null) -> Dictionary:
+	_ensure_services()
+	return _transfer_service.build_transfer_snapshots(moving_items, drop_position)
+
+func _resolve_programmatic_transfer_global_position(moving_items: Array[ZoneItemControl]):
+	_ensure_services()
+	return _transfer_service.resolve_programmatic_transfer_global_position(moving_items)
 
 func _ensure_services() -> void:
 	if _store != null and _context != null and _input_service != null and _render_service != null and _transfer_service != null and _targeting_service != null:
@@ -444,7 +533,7 @@ func _rebind_after_configuration_change() -> void:
 
 func _on_zone_resized() -> void:
 	refresh()
-	layout_changed.emit()
+	_emit_layout_changed()
 
 func _bind_items_root_signals() -> void:
 	if _items_root == null:
@@ -478,10 +567,10 @@ func _handle_items_root_structure_changed() -> void:
 	_ensure_services()
 	_transfer_service.rebuild_items_from_root()
 	_input_service.sync_item_bindings()
-	var coordinator = get_drag_coordinator(false)
+	var coordinator = _get_drag_coordinator(false)
 	if coordinator == null or coordinator.get_session() == null:
 		refresh()
-		layout_changed.emit()
+		_emit_layout_changed()
 
 func _coerce_placement_target(value):
 	if value == null:
@@ -489,3 +578,66 @@ func _coerce_placement_target(value):
 	if value is ZonePlacementTarget:
 		return (value as ZonePlacementTarget).duplicate_target()
 	return null
+
+func _emit_item_clicked(item: ZoneItemControl) -> void:
+	item_clicked.emit(item)
+
+func _emit_item_double_clicked(item: ZoneItemControl) -> void:
+	item_double_clicked.emit(item)
+
+func _emit_item_right_clicked(item: ZoneItemControl) -> void:
+	item_right_clicked.emit(item)
+
+func _emit_item_long_pressed(item: ZoneItemControl) -> void:
+	item_long_pressed.emit(item)
+
+func _emit_item_hover_entered(item: ZoneItemControl) -> void:
+	item_hover_entered.emit(item)
+
+func _emit_item_hover_exited(item: ZoneItemControl) -> void:
+	item_hover_exited.emit(item)
+
+func _emit_selection_changed() -> void:
+	selection_changed.emit(get_selected_items())
+
+func _emit_drag_started(items: Array[ZoneItemControl], source_zone: Zone) -> void:
+	drag_started.emit(items, source_zone)
+
+func _emit_drop_preview_changed(items: Array, target_zone: Zone, target) -> void:
+	drop_preview_changed.emit(items, target_zone, target)
+
+func _emit_drop_hover_state_changed(items: Array, target_zone: Zone, decision) -> void:
+	drop_hover_state_changed.emit(items, target_zone, decision)
+
+func _emit_item_added(item: ZoneItemControl, index: int) -> void:
+	item_added.emit(item, index)
+
+func _emit_item_removed(item: ZoneItemControl, from_index: int) -> void:
+	item_removed.emit(item, from_index)
+
+func _emit_item_reordered(item: ZoneItemControl, from_index: int, to_index: int) -> void:
+	item_reordered.emit(item, from_index, to_index)
+
+func _emit_item_transferred(item: ZoneItemControl, source_zone: Zone, target_zone: Zone, target) -> void:
+	item_transferred.emit(item, source_zone, target_zone, target)
+
+func _emit_drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reason: String) -> void:
+	drop_rejected.emit(items, source_zone, target_zone, reason)
+
+func _emit_targeting_started(source_item: ZoneItemControl, source_zone: Zone, intent: ZoneTargetingIntent) -> void:
+	targeting_started.emit(source_item, source_zone, intent)
+
+func _emit_target_preview_changed(source_item: ZoneItemControl, target_zone: Zone, candidate) -> void:
+	target_preview_changed.emit(source_item, target_zone, candidate)
+
+func _emit_target_hover_state_changed(source_item: ZoneItemControl, target_zone: Zone, decision) -> void:
+	target_hover_state_changed.emit(source_item, target_zone, decision)
+
+func _emit_targeting_resolved(source_item: ZoneItemControl, source_zone: Zone, candidate, decision) -> void:
+	targeting_resolved.emit(source_item, source_zone, candidate, decision)
+
+func _emit_targeting_cancelled(source_item: ZoneItemControl, source_zone: Zone) -> void:
+	targeting_cancelled.emit(source_item, source_zone)
+
+func _emit_layout_changed() -> void:
+	layout_changed.emit()

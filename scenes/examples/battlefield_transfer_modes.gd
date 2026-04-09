@@ -66,14 +66,14 @@ func _ready() -> void:
 func _send_to_direct(item: Control) -> void:
 	if not _source_zone.has_item(item):
 		return
-	var target = _direct_space.get_first_open_target(_direct_zone.get_context(), item)
+	var target = ExampleSupport.get_first_open_target(_direct_zone, item)
 	if target.is_valid():
 		ExampleSupport.move_item(_source_zone, item, _direct_zone, target)
 
 func _send_to_summon(item: Control) -> void:
 	if not _source_zone.has_item(item):
 		return
-	var target = _summon_space.get_first_open_target(_summon_zone.get_context(), item)
+	var target = ExampleSupport.get_first_open_target(_summon_zone, item)
 	if target.is_valid():
 		ExampleSupport.move_item(_source_zone, item, _summon_zone, target)
 

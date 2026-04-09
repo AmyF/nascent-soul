@@ -30,7 +30,7 @@ func try_start_drag_targeting(item: ZoneItemControl, global_position: Vector2) -
 	return start_targeting_internal(command)
 
 func cancel_targeting() -> void:
-	var coordinator = zone.get_targeting_coordinator(false)
+	var coordinator = zone._get_targeting_coordinator(false)
 	if coordinator == null:
 		return
 	var session = coordinator.get_session()
@@ -45,7 +45,7 @@ func update_targeting_session(session: ZoneTargetingSession, global_position: Ve
 	var next_candidate = resolve_target_candidate(session.intent, global_position)
 	var next_decision = resolve_target_decision(session.source_item, session.intent, next_candidate, global_position)
 	apply_targeting_feedback(session, next_candidate, next_decision)
-	var coordinator = zone.get_targeting_coordinator(false)
+	var coordinator = zone._get_targeting_coordinator(false)
 	if coordinator != null and coordinator.get_session() == session:
 		coordinator.refresh_overlay()
 
@@ -54,8 +54,8 @@ func finalize_targeting_session(session: ZoneTargetingSession) -> void:
 		return
 	if session.decision != null and session.decision.allowed and session.decision.resolved_candidate != null and session.decision.resolved_candidate.is_valid():
 		clear_targeting_feedback(true, session.source_item)
-		zone.targeting_resolved.emit(session.source_item, zone, session.decision.resolved_candidate, session.decision)
-		var coordinator = zone.get_targeting_coordinator(false)
+		zone._emit_targeting_resolved(session.source_item, zone, session.decision.resolved_candidate, session.decision)
+		var coordinator = zone._get_targeting_coordinator(false)
 		if coordinator != null:
 			coordinator.clear_session()
 		return
@@ -66,8 +66,8 @@ func cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) 
 		return
 	clear_targeting_feedback(emit_signal, session.source_item)
 	if emit_signal and is_instance_valid(session.source_item):
-		zone.targeting_cancelled.emit(session.source_item, zone)
-	var coordinator = zone.get_targeting_coordinator(false)
+		zone._emit_targeting_cancelled(session.source_item, zone)
+	var coordinator = zone._get_targeting_coordinator(false)
 	if coordinator != null:
 		coordinator.clear_session()
 
@@ -77,10 +77,10 @@ func start_targeting_internal(command: ZoneTargetingCommand) -> bool:
 	var resolved_intent = command.intent if command.intent != null else resolve_targeting_intent(command, command.entry_mode)
 	if resolved_intent == null:
 		return false
-	var coordinator = zone.get_targeting_coordinator(true)
+	var coordinator = zone._get_targeting_coordinator(true)
 	if coordinator == null:
 		return false
-	var drag_coordinator = zone.get_drag_coordinator(false)
+	var drag_coordinator = zone._get_drag_coordinator(false)
 	if drag_coordinator != null and drag_coordinator.get_session() != null:
 		return false
 	command.intent = resolved_intent
@@ -89,7 +89,7 @@ func start_targeting_internal(command: ZoneTargetingCommand) -> bool:
 	if session == null:
 		return false
 	update_targeting_session(session, command.pointer_global_position)
-	zone.targeting_started.emit(command.source_item, zone, resolved_intent)
+	zone._emit_targeting_started(command.source_item, zone, resolved_intent)
 	return true
 
 func resolve_targeting_intent(command: ZoneTargetingCommand, entry_mode: StringName) -> ZoneTargetingIntent:
@@ -116,7 +116,7 @@ func resolve_target_candidate(intent: ZoneTargetingIntent, global_position: Vect
 		for target_zone in zones:
 			if not target_zone.get_global_rect().has_point(global_position):
 				continue
-			var target_context = target_zone.get_context()
+			var target_context = target_zone._get_context()
 			var space_model = target_context.get_space_model()
 			if space_model == null:
 				continue
@@ -145,7 +145,7 @@ func resolve_target_decision(source_item: ZoneItemControl, intent: ZoneTargeting
 		request = ZoneTargetRequest.new(zone, source_item, intent, resolved_candidate, global_position)
 	var target_zone = resolved_candidate.target_zone as Zone
 	if target_zone != null:
-		var target_context = target_zone.get_context()
+		var target_context = target_zone._get_context()
 		var target_policy = target_context.get_targeting_policy()
 		if target_policy != null:
 			var target_decision = target_policy.evaluate_target(target_context, request)
@@ -177,7 +177,7 @@ func collect_targeting_zones() -> Array[Zone]:
 			continue
 		if target_zone.mouse_filter == Control.MOUSE_FILTER_IGNORE:
 			continue
-		if target_zone.get_context().get_targeting_policy() == null:
+		if target_zone.get_targeting_policy() == null:
 			continue
 		zones.append(target_zone)
 	zones.reverse()
@@ -191,7 +191,7 @@ func build_item_candidate(target_zone: Zone, item: ZoneItemControl, global_posit
 
 func build_placement_candidate(target_zone: Zone, placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTargetCandidate:
 	var metadata = build_candidate_metadata(null, placement_target)
-	var anchor = target_zone.get_context().resolve_target_anchor(placement_target)
+	var anchor = target_zone.resolve_target_anchor(placement_target)
 	return ZoneTargetCandidate.placement(target_zone, placement_target, anchor, global_position - target_zone.global_position, metadata)
 
 func build_candidate_metadata(item: ZoneItemControl, placement_target: ZonePlacementTarget) -> Dictionary:
@@ -219,9 +219,9 @@ func apply_targeting_feedback(session: ZoneTargetingSession, next_candidate: Zon
 		highlight_item = next_item
 		set_target_candidate_visual(highlight_item, highlight_item != null, next_allowed)
 	if not target_candidates_match(previous_candidate, session.candidate):
-		zone.target_preview_changed.emit(session.source_item, session.candidate.target_zone, session.candidate)
+		zone._emit_target_preview_changed(session.source_item, session.candidate.target_zone, session.candidate)
 	if not target_decisions_match(previous_decision, session.decision):
-		zone.target_hover_state_changed.emit(session.source_item, session.candidate.target_zone, session.decision)
+		zone._emit_target_hover_state_changed(session.source_item, session.candidate.target_zone, session.decision)
 
 func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
 	var had_candidate = candidate != null and candidate.is_valid()
@@ -229,8 +229,8 @@ func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemCon
 		set_target_candidate_visual(highlight_item, false, decision.allowed if decision != null else false)
 	highlight_item = null
 	if emit_clear_signals and had_candidate:
-		zone.target_preview_changed.emit(source_item, null, ZoneTargetCandidate.invalid())
-		zone.target_hover_state_changed.emit(source_item, null, ZoneTargetDecision.new())
+		zone._emit_target_preview_changed(source_item, null, ZoneTargetCandidate.invalid())
+		zone._emit_target_hover_state_changed(source_item, null, ZoneTargetDecision.new())
 	candidate = ZoneTargetCandidate.invalid()
 	decision = ZoneTargetDecision.new()
 

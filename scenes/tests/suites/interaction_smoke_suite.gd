@@ -61,8 +61,7 @@ func _test_drag_proxy_uses_pointer_position_and_stays_on_top() -> void:
 	var pointer_drag = alpha.global_position + Vector2(62, 46)
 	_emit_mouse_button(alpha, MOUSE_BUTTON_LEFT, true)
 	_emit_mouse_motion(alpha, pointer_drag)
-	var coordinator = zone.get_drag_coordinator(false)
-	var session = coordinator.get_session() if coordinator != null else null
+	var session = zone.get_drag_session()
 	_check(session != null, "pointer-driven pile drag should create an active session")
 	if session == null:
 		return
@@ -229,14 +228,11 @@ func _test_drop_preview_clear_signal() -> void:
 	source_zone.add_item(alpha)
 	await _settle_frames(2)
 	source_zone.start_drag([alpha])
-	var coordinator = source_zone.get_drag_coordinator(false)
-	var session = coordinator.get_session() if coordinator != null else null
+	var session = source_zone.get_drag_session()
 	_check(session != null, "preview clear smoke requires an active drag session")
 	if session == null:
 		return
-	var request = target_zone.make_transfer_request(target_zone, source_zone, session.items, ZonePlacementTarget.linear(0), alpha.global_position)
-	var decision = target_zone.resolve_drop_decision(request)
-	target_zone.apply_hover_feedback(session.items, decision, ZonePlacementTarget.linear(0), alpha)
+	_preview_transfer(target_zone, source_zone, session.items, ZonePlacementTarget.linear(0), alpha.global_position, alpha)
 	session.hover_zone = target_zone
 	session.preview_target = ZonePlacementTarget.linear(0)
 	source_zone.cancel_drag(session)

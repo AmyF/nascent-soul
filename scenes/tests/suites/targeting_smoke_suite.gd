@@ -41,7 +41,7 @@ func _test_drag_intent_enters_targeting() -> void:
 	_emit_mouse_button(spell, MOUSE_BUTTON_LEFT, true)
 	_emit_mouse_motion(spell, enemy.global_position + enemy.size * 0.5)
 	var session = source_zone.get_targeting_session()
-	var drag_session = source_zone.get_drag_coordinator(false).get_session() if source_zone.get_drag_coordinator(false) != null else null
+	var drag_session = source_zone.get_drag_session()
 	_check(signal_events == ["targeting"], "dragging a card with a targeting intent should emit targeting_started instead of drag_started")
 	_check(session != null and session.entry_mode == &"drag", "targeting session started from drag threshold should remember the drag entry mode")
 	_check(drag_session == null, "targeting drag entry should not leave an active drop drag session behind")
@@ -64,7 +64,7 @@ func _test_regular_card_keeps_drag_transfer() -> void:
 	)
 	_emit_mouse_button(regular_card, MOUSE_BUTTON_LEFT, true)
 	_emit_mouse_motion(regular_card, regular_card.global_position + Vector2(96, 48))
-	var drag_session = source_zone.get_drag_coordinator(false).get_session() if source_zone.get_drag_coordinator(false) != null else null
+	var drag_session = source_zone.get_drag_session()
 	_check(signal_events == ["drag"], "cards without a targeting intent should keep the normal drag-transfer flow")
 	_check(drag_session != null, "regular drag flow should still create a drag session")
 	_check(source_zone.get_targeting_session() == null, "regular drag flow should not create a targeting session")

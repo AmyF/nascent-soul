@@ -20,7 +20,7 @@ func refresh() -> void:
 	var display_style = context.get_display_style()
 	if zone.get_items_root() == null or layout_policy == null or display_style == null:
 		return
-	var coordinator = zone.get_drag_coordinator(false)
+	var coordinator = zone._get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
 	var layout_items := get_layout_items(session)
 	var sort_policy = context.get_sort_policy()
@@ -195,11 +195,11 @@ func clear_preview_for_session(session: ZoneDragSession) -> void:
 	var should_emit_preview_clear = (hover_preview_target != null and hover_preview_target.is_valid()) \
 		or (session != null and session.hover_zone == zone and session.preview_target != null and session.preview_target.is_valid())
 	if should_emit_preview_clear:
-		zone.drop_preview_changed.emit(items, zone, invalid_target)
+		zone._emit_drop_preview_changed(items, zone, invalid_target)
 	if is_instance_valid(ghost_instance):
 		clear_preview_internal()
 	if hover_active:
-		zone.drop_hover_state_changed.emit(items, zone, make_clear_hover_decision())
+		zone._emit_drop_hover_state_changed(items, zone, make_clear_hover_decision())
 	reset_hover_feedback_tracking()
 
 func apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferDecision, preview_target, preview_source: ZoneItemControl) -> bool:
@@ -221,10 +221,10 @@ func apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferD
 		clear_preview_internal()
 		refresh_needed = true
 	if hover_preview_target == null or not hover_preview_target.matches(next_target):
-		zone.drop_preview_changed.emit(items, zone, next_target)
+		zone._emit_drop_preview_changed(items, zone, next_target)
 		refresh_needed = true
 	if has_hover_state_changed(next_active, decision):
-		zone.drop_hover_state_changed.emit(items, zone, decision if decision != null else make_clear_hover_decision())
+		zone._emit_drop_hover_state_changed(items, zone, decision if decision != null else make_clear_hover_decision())
 		refresh_needed = true
 	hover_active = next_active
 	hover_allowed = next_allowed
@@ -239,10 +239,10 @@ func clear_hover_feedback(items: Array[ZoneItemControl]) -> bool:
 		clear_preview_internal()
 		refresh_needed = true
 	if hover_preview_target != null and hover_preview_target.is_valid():
-		zone.drop_preview_changed.emit(items, zone, ZonePlacementTarget.invalid())
+		zone._emit_drop_preview_changed(items, zone, ZonePlacementTarget.invalid())
 		refresh_needed = true
 	if hover_active:
-		zone.drop_hover_state_changed.emit(items, zone, make_clear_hover_decision())
+		zone._emit_drop_hover_state_changed(items, zone, make_clear_hover_decision())
 		refresh_needed = true
 	reset_hover_feedback_tracking()
 	return refresh_needed

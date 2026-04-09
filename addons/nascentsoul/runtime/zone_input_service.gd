@@ -98,10 +98,10 @@ func clear_selection() -> void:
 	var hovered = selection_state.hovered_item
 	if hovered != null and selection_state.set_hovered(null):
 		hover_changed = true
-		zone.item_hover_exited.emit(hovered)
+		zone._emit_item_hover_exited(hovered)
 	selection_changed = selection_state.clear_selection()
 	if selection_changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
+		zone._emit_selection_changed()
 	if hover_changed or selection_changed:
 		zone.refresh()
 
@@ -110,7 +110,7 @@ func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 		return
 	var changed = selection_state.toggle_item(item) if additive else selection_state.select_single(item)
 	if changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
+		zone._emit_selection_changed()
 		zone.refresh()
 
 func on_item_gui_input(event: InputEvent, item: ZoneItemControl) -> void:
@@ -125,7 +125,7 @@ func on_zone_gui_input(event: InputEvent) -> void:
 	var interaction = context.get_interaction()
 	if interaction == null:
 		return
-	var targeting_coordinator = zone.get_targeting_coordinator(false)
+	var targeting_coordinator = zone._get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if handle_keyboard_navigation(event, interaction):
@@ -137,7 +137,7 @@ func on_zone_gui_input(event: InputEvent) -> void:
 		return
 	if not interaction.clear_selection_on_background_click:
 		return
-	var coordinator = zone.get_drag_coordinator(false)
+	var coordinator = zone._get_drag_coordinator(false)
 	if coordinator != null and coordinator.get_session() != null:
 		return
 	if context.get_item_at_global_position(mouse_event.global_position) != null:
@@ -145,30 +145,30 @@ func on_zone_gui_input(event: InputEvent) -> void:
 	clear_background_interaction()
 
 func on_item_mouse_entered(item: ZoneItemControl) -> void:
-	var coordinator = zone.get_drag_coordinator(false)
+	var coordinator = zone._get_drag_coordinator(false)
 	if coordinator != null and coordinator.get_session() != null:
 		return
-	var targeting_coordinator = zone.get_targeting_coordinator(false)
+	var targeting_coordinator = zone._get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if selection_state.set_hovered(item):
-		zone.item_hover_entered.emit(item)
+		zone._emit_item_hover_entered(item)
 		zone.refresh()
 
 func on_item_mouse_exited(item: ZoneItemControl) -> void:
-	var coordinator = zone.get_drag_coordinator(false)
+	var coordinator = zone._get_drag_coordinator(false)
 	if coordinator != null and coordinator.get_session() != null:
 		return
-	var targeting_coordinator = zone.get_targeting_coordinator(false)
+	var targeting_coordinator = zone._get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if selection_state.hovered_item == item and selection_state.set_hovered(null):
-		zone.item_hover_exited.emit(item)
+		zone._emit_item_hover_exited(item)
 		zone.refresh()
 
 func handle_mouse_button(event: InputEventMouseButton, item: ZoneItemControl) -> void:
 	var interaction = context.get_interaction()
-	var targeting_coordinator = zone.get_targeting_coordinator(false)
+	var targeting_coordinator = zone._get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null and event.button_index == MOUSE_BUTTON_RIGHT:
 		return
 	if event.button_index == MOUSE_BUTTON_LEFT:
@@ -190,11 +190,11 @@ func handle_mouse_button(event: InputEventMouseButton, item: ZoneItemControl) ->
 			if should_activate:
 				apply_click_selection(item, event)
 				if event.double_click:
-					zone.item_double_clicked.emit(item)
+					zone._emit_item_double_clicked(item)
 				else:
-					zone.item_clicked.emit(item)
+					zone._emit_item_clicked(item)
 	elif event.button_index == MOUSE_BUTTON_RIGHT and not event.pressed:
-		zone.item_right_clicked.emit(item)
+		zone._emit_item_right_clicked(item)
 
 func handle_mouse_motion(event: InputEventMouseMotion, item: ZoneItemControl) -> void:
 	if not is_pressed or has_dragged or not is_instance_valid(pressed_item) or pressed_item != item:
@@ -226,7 +226,7 @@ func apply_click_selection(item: ZoneItemControl, event: InputEventMouseButton) 
 		else:
 			changed = selection_state.select_single(item)
 	if changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
+		zone._emit_selection_changed()
 		zone.refresh()
 
 func handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction) -> bool:
@@ -241,7 +241,7 @@ func handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction)
 	if matches_action(event, interaction.activate_item_action):
 		var active_item = get_keyboard_active_item()
 		if active_item != null:
-			zone.item_clicked.emit(active_item)
+			zone._emit_item_clicked(active_item)
 		return true
 	if matches_action(event, interaction.clear_selection_action):
 		clear_background_interaction()
@@ -275,7 +275,7 @@ func move_keyboard_selection(direction: int, wrap_navigation: bool) -> void:
 	if not is_instance_valid(next_item):
 		return
 	if selection_state.select_single(next_item):
-		zone.selection_changed.emit(selection_state.get_selected_items())
+		zone._emit_selection_changed()
 		zone.refresh()
 
 func get_keyboard_active_item() -> ZoneItemControl:
@@ -309,7 +309,7 @@ func on_long_press_timeout() -> void:
 	is_pressed = false
 	pressed_item = null
 	long_press_item = null
-	zone.item_long_pressed.emit(item)
+	zone._emit_item_long_pressed(item)
 
 func clear_hover_for_items(items_to_clear: Array[ZoneItemControl], emit_signal: bool) -> void:
 	var hovered_item = selection_state.hovered_item
@@ -325,7 +325,7 @@ func clear_hover_for_items(items_to_clear: Array[ZoneItemControl], emit_signal: 
 	if not found:
 		return
 	if selection_state.set_hovered(null) and emit_signal:
-		zone.item_hover_exited.emit(hovered_item)
+		zone._emit_item_hover_exited(hovered_item)
 
 func reset_press_state_for_item(item = null) -> void:
 	if item == null:
@@ -346,8 +346,8 @@ func clear_background_interaction() -> void:
 	var hover_changed = selection_state.clear_hover()
 	var selection_changed = selection_state.clear_selection()
 	if hover_changed and is_instance_valid(hovered_item):
-		zone.item_hover_exited.emit(hovered_item)
+		zone._emit_item_hover_exited(hovered_item)
 	if selection_changed:
-		zone.selection_changed.emit(selection_state.get_selected_items())
+		zone._emit_selection_changed()
 	if hover_changed or selection_changed:
 		zone.refresh()

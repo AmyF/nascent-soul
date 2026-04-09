@@ -1,53 +1,57 @@
 # NascentSoul
 
-NascentSoul is a Godot 4.6 zone toolkit for both card games and battlefield tactics. It keeps one shared `Zone` core for selection, drag/drop, display, preview, and runtime state, then lets each family swap in the right spatial model:
+NascentSoul is a Godot 4.6 zone toolkit for card games and battlefield tactics. It centers on a UI-native `Zone` control, a `ZoneConfig` resource, typed runtime services, and a managed `ZoneItemControl` base class.
+
+It ships with:
 
 - `CardZone` for ordered, linear card containers such as hand, deck, discard, shop, and board rows
-- `BattlefieldZone` for square and hex grids with cell occupancy, piece movement, and card-to-board transfer rules
+- `BattlefieldZone` for square and hex grids with occupancy, card-to-board transfer, and piece spawning
 - Built-in targeting for arrow-driven spell and ability selection across items and board cells
 
-`Zone` stays inspector-friendly through presets and composable resources. Layout, display, interaction, transfer rules, space resolution, sorting, and drag visuals are all resources instead of hardcoded branches.
+`Zone` stays inspector-friendly through `ZoneConfig` and composable resources. Layout, display, interaction, sorting, transfer rules, drag visuals, and targeting all remain resource-driven.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Zone["Zone (Control Core)"] --> Runtime["ZoneRuntime"]
-    Zone --> Items["ItemsRoot"]
-    Zone --> Preview["PreviewRoot"]
-    Zone --> Preset["ZonePreset"]
-    Preset --> Space["ZoneSpaceModel"]
-    Preset --> Layout["ZoneLayoutPolicy"]
-    Preset --> Display["ZoneDisplayStyle"]
-    Preset --> Interaction["ZoneInteraction"]
-    Preset --> Sort["ZoneSortPolicy"]
-    Preset --> Transfer["ZoneTransferPolicy"]
-    Preset --> DragVisual["ZoneDragVisualFactory"]
-    Preset --> TargetStyle["ZoneTargetingStyle"]
-    Preset --> TargetPolicy["ZoneTargetingPolicy"]
-    Runtime --> Placement["ZonePlacementTarget"]
-    Runtime --> Request["ZoneTransferRequest"]
-    Runtime --> Decision["ZoneTransferDecision"]
-    Runtime --> TargetRequest["ZoneTargetRequest"]
-    Runtime --> TargetDecision["ZoneTargetDecision"]
+    Zone["Zone"] --> Config["ZoneConfig"]
+    Zone --> Store["ZoneStore"]
+    Zone --> Input["ZoneInputService"]
+    Zone --> Render["ZoneRenderService"]
+    Zone --> Transfer["ZoneTransferService"]
+    Zone --> Targeting["ZoneTargetingService"]
+    Zone --> DragCoord["ZoneDragCoordinator"]
+    Zone --> TargetCoord["ZoneTargetingCoordinator"]
+    Zone --> Items["ItemsRoot / PreviewRoot"]
+    Config --> Space["ZoneSpaceModel"]
+    Config --> Layout["ZoneLayoutPolicy"]
+    Config --> Display["ZoneDisplayStyle"]
+    Config --> Interaction["ZoneInteraction"]
+    Config --> Sort["ZoneSortPolicy"]
+    Config --> TransferPolicy["ZoneTransferPolicy"]
+    Config --> DragVisual["ZoneDragVisualFactory"]
+    Config --> TargetStyle["ZoneTargetingStyle"]
+    Config --> TargetPolicy["ZoneTargetingPolicy"]
+    Transfer --> TransferCommand["ZoneTransferCommand"]
+    Targeting --> TargetCommand["ZoneTargetingCommand"]
     Zone --> CardFamily["CardZone"]
-    Zone --> BattleFamily["BattlefieldZone"]
-    Zone --> Targeting["ZoneTargetingCoordinator"]
+    Zone --> BattlefieldFamily["BattlefieldZone"]
+    ZoneItem["ZoneItemControl"] --> Zone
 ```
 
-The important split in `2.0.0` is:
+The important split in `1.0.0` is:
 
-- `ZoneSpaceModel` decides where a drop lands
-- `ZoneLayoutPolicy` decides how managed items render
-- `ZoneTransferPolicy` decides whether a move is allowed and whether it directly places the item or spawns a piece
-- `ZoneTargetingPolicy` decides whether a dragged or explicit targeting session can lock onto an item or a placement target
+- `ZoneConfig` owns composition and inspector-facing policy wiring
+- `ZoneStore` owns item order, placement, selection, and transfer handoff state
+- `ZoneInputService`, `ZoneRenderService`, `ZoneTransferService`, and `ZoneTargetingService` own runtime behavior
+- `Zone` is the public node API and the single owner of signals such as selection, drop preview, transfer, and targeting callbacks
 
 ## Why This Shape Works
 
-- Card zones and battlefield zones share the same drag/drop and preview core without pretending they are the same data model.
-- Linear index insertion and spatial cell placement both travel through a single `ZonePlacementTarget` protocol.
-- A card can move into a battlefield as a card or resolve into a `ZonePiece`, depending on the target zone's transfer rules.
-- Square and hex battlefields stay in one family. Geometry is a `ZoneSpaceModel`, not a new subsystem.
+- Card zones and battlefield zones share one transfer and preview protocol without pretending they are the same spatial model.
+- Linear insertion and grid placement both flow through `ZonePlacementTarget`.
+- A transfer can keep a `ZoneCard` as-is or resolve into a spawned `ZonePiece`, depending on the target zone's transfer rules.
+- Targeting visuals are library-owned. `ZoneArrowTargetingStyle` and `ZoneArrowTargetingOverlay` live in the addon; demo scenes only configure them.
 
 ## Quick Start
 
@@ -57,7 +61,7 @@ The important split in `2.0.0` is:
 var hand := CardZone.new()
 hand.custom_minimum_size = Vector2(360, 220)
 hand.size = hand.custom_minimum_size
-hand.preset = load("res://addons/nascentsoul/presets/hand_zone_preset.tres")
+hand.config = load("res://addons/nascentsoul/presets/hand_zone_config.tres")
 add_child(hand)
 
 var card := ZoneCard.new()
@@ -74,7 +78,7 @@ hand.add_item(card)
 var field := BattlefieldZone.new()
 field.custom_minimum_size = Vector2(560, 420)
 field.size = field.custom_minimum_size
-field.preset = load("res://addons/nascentsoul/presets/battlefield_square_zone_preset.tres")
+field.config = load("res://addons/nascentsoul/presets/battlefield_square_zone_config.tres")
 add_child(field)
 
 var card := ZoneCard.new()
@@ -88,8 +92,14 @@ field.add_item(card, ZonePlacementTarget.square(1, 1))
 ### Card To Battlefield
 
 ```gdscript
-var target := ZonePlacementTarget.hex(2, 1)
-hand.move_item_to(card, field, target)
+hand.perform_transfer(
+	ZoneTransferCommand.transfer_between(
+		hand,
+		field,
+		[card],
+		ZonePlacementTarget.hex(2, 1)
+	)
+)
 ```
 
 If the target battlefield uses a `ZoneTransferPolicy` that returns `SPAWN_PIECE`, the source card is consumed and the battlefield inserts a `ZonePiece` instead.
@@ -100,7 +110,7 @@ If the target battlefield uses a `ZoneTransferPolicy` that returns `SPAWN_PIECE`
 extends ZoneCard
 class_name MeteorCard
 
-func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -> ZoneTargetingIntent:
+func create_zone_targeting_intent(_command: ZoneTargetingCommand, _entry_mode: StringName) -> ZoneTargetingIntent:
 	var intent := ZoneTargetingIntent.new()
 	intent.allowed_candidate_kinds = PackedInt32Array([ZoneTargetCandidate.CandidateKind.ITEM])
 	intent.policy = ZoneTargetAllowAllPolicy.new()
@@ -111,7 +121,9 @@ func create_zone_targeting_intent(_source_zone: Zone, _entry_mode: StringName) -
 var piece_intent := ZoneTargetingIntent.new()
 piece_intent.allowed_candidate_kinds = PackedInt32Array([ZoneTargetCandidate.CandidateKind.PLACEMENT])
 
-battlefield.begin_targeting(piece, piece_intent)
+battlefield.begin_targeting(
+	ZoneTargetingCommand.explicit_for_item(battlefield, piece, piece_intent)
+)
 ```
 
 `targeting_resolved` reports what the player chose, but it does not automatically consume the source card, cast the effect, or move the piece. Gameplay scripts stay in control of resolution.
@@ -120,11 +132,12 @@ battlefield.begin_targeting(piece, piece_intent)
 
 - Use transfer when the source object should move or spawn into another zone.
 - Use targeting when the source object should stay where it is and only choose an entity or a cell.
-- A drag gesture can now branch into either system: items with `create_zone_targeting_intent()` enter arrow targeting, and everything else stays on normal drag/drop.
+- A drag gesture can branch into either system: items with `create_zone_targeting_intent()` enter arrow targeting, and everything else stays on normal drag/drop.
 - `begin_targeting()` is the explicit path for skills, buttons, long-press actions, and scripted abilities.
 
 ## Built-In Families
 
+- Managed item base: `ZoneItemControl`
 - Linear space: `ZoneLinearSpaceModel`
 - Square grid space: `ZoneSquareGridSpaceModel`
 - Hex grid space: `ZoneHexGridSpaceModel`
@@ -145,7 +158,7 @@ battlefield.begin_targeting(piece, piece_intent)
 - [`scenes/examples/battlefield_transfer_modes.tscn`](scenes/examples/battlefield_transfer_modes.tscn): direct-place-card vs spawn-piece transfer rules
 - [`scenes/examples/targeting_lab.tscn`](scenes/examples/targeting_lab.tscn): drag-to-target spell flow and explicit piece ability targeting
 
-The editor plugin now exposes:
+The editor plugin exposes:
 
 - `Create Card Zone`
 - `Create Square Battlefield Zone`
@@ -155,11 +168,10 @@ The editor plugin now exposes:
 
 Current repository validation on Godot 4.6.1:
 
-- Headless regression suite passes with `383` checks
-- Card-only demos still pass their previous smoke and regression coverage
-- Battlefield coverage now includes square and hex placement, occupancy rejection, spawn-piece transfer, and same-zone piece movement
-- Targeting coverage now includes drag-started targeting, explicit `begin_targeting()`, item-vs-cell resolution, policy merging, overlay state changes, and cleanup
+- Headless regression suite passes with `382` checks
+- Headless editor/plugin load passes without parse errors or preload failures
+- Transfer, battlefield, layout, and targeting suites all remain green on the current architecture
 
 ## Project Status
 
-NascentSoul `2.1.0` keeps the `2.0` card/battlefield runtime and adds a dedicated targeting layer on top of it. The public drop protocol is still `ZonePlacementTarget`-based, and the repository examples now cover direct transfers, piece spawning, and arrow-driven targeting for spells and unit abilities.
+NascentSoul `1.0.0` is the first stable release of the current architecture: `Zone` is a real `Control`, configuration lives in `ZoneConfig`, runtime state is split across typed services, and targeting is part of the addon itself instead of demo-only code.

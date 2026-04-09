@@ -225,8 +225,7 @@ func _test_policy_lab_deck_drag_paths() -> void:
 	var moved_card = deck_zone.get_items()[0]
 	var initial_deck_count = deck_zone.get_item_count()
 	deck_zone.start_drag([moved_card])
-	var coordinator = deck_zone.get_drag_coordinator(false)
-	var session = coordinator.get_session() if coordinator != null else null
+	var session = deck_zone.get_drag_session()
 	_check(session != null, "policy lab deck-to-board drag should create a drag session")
 	if session == null:
 		return
@@ -246,8 +245,7 @@ func _test_policy_lab_deck_drag_paths() -> void:
 	_check(deck_zone.get_item_count() == initial_deck_count - 1, "policy lab deck-to-board drag should remove one card from deck")
 	var rejected_card = deck_zone.get_items()[0]
 	deck_zone.start_drag([rejected_card])
-	coordinator = deck_zone.get_drag_coordinator(false)
-	session = coordinator.get_session() if coordinator != null else null
+	session = deck_zone.get_drag_session()
 	_check(session != null, "policy lab deck-to-sanctum drag should create a drag session")
 	if session == null:
 		return
@@ -297,8 +295,7 @@ func _test_layout_gallery_pile_drag_proxy_layering() -> void:
 		return
 	var pile_item = pile_zone.get_items()[pile_zone.get_item_count() - 1]
 	pile_zone.start_drag([pile_item])
-	var coordinator = pile_zone.get_drag_coordinator(false)
-	var session = coordinator.get_session() if coordinator != null else null
+	var session = pile_zone.get_drag_session()
 	_check(session != null, "layout gallery pile drag should create a drag session")
 	if session == null:
 		return
