@@ -1,7 +1,7 @@
 extends ZoneTweenDisplay
 
-@export var selected_scale: float = 1.01
-@export var selected_lift: float = 1.0
+@export var selected_scale: float = 1.0
+@export var selected_lift: float = 0.0
 
 func apply(context: ZoneContext, placements: Array[ZonePlacement]) -> void:
 	var adjusted: Array[ZonePlacement] = []
@@ -25,7 +25,7 @@ func apply(context: ZoneContext, placements: Array[ZonePlacement]) -> void:
 			visual_state.hovered = is_hovered
 			visual_state.selected = is_selected
 			(item as ZoneItemControl).apply_zone_visual_state(visual_state)
-		if not adjusted_placement.instant and is_selected:
+		if not adjusted_placement.instant and is_selected and (selected_scale != 1.0 or selected_lift != 0.0):
 			adjusted_placement.scale *= selected_scale
 			adjusted_placement.position += Vector2(0, -selected_lift)
 			adjusted_placement.z_index += 60

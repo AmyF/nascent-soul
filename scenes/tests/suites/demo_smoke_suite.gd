@@ -1,5 +1,6 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
+const MAIN_MENU_SCENE = preload("res://scenes/main_menu.tscn")
 const DEMO_SCENE = preload("res://scenes/demo.tscn")
 const TRANSFER_SCENE = preload("res://scenes/examples/transfer_playground.tscn")
 const POLICY_SCENE = preload("res://scenes/examples/policy_lab.tscn")
@@ -16,6 +17,8 @@ func _init() -> void:
 	_suite_name = "demo-smoke"
 
 func _run_suite() -> void:
+	await _test_main_menu_entry_points()
+	await _reset_root()
 	_test_demo_scene_resource_naming()
 	_test_static_demo_scene_configuration()
 	await _test_demo_hub_summary_panels()
@@ -139,7 +142,7 @@ func _test_static_demo_scene_configuration() -> void:
 	var recipes_hand_cards = recipes.get("hand_cards") as Array
 	var recipes_board_cards = recipes.get("board_cards") as Array
 	var freecell = FREECELL_SCENE.instantiate()
-	var freecell_status = freecell.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
+	var freecell_status = freecell.get_node_or_null("RootMargin/RootVBox/StatusBar/StatusLabel") as Label
 	var xiangqi = XIANGQI_SCENE.instantiate()
 	var xiangqi_turn = xiangqi.get_node_or_null("RootMargin/RootVBox/StateRow/TurnLabel") as Label
 	var xiangqi_board_host = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost") as Control
@@ -167,6 +170,25 @@ func _test_static_demo_scene_configuration() -> void:
 	recipes.free()
 	freecell.free()
 	xiangqi.free()
+
+func _test_main_menu_entry_points() -> void:
+	var scene = MAIN_MENU_SCENE.instantiate()
+	add_child(scene)
+	await _settle_frames(3)
+	var demo_button = scene.get_node_or_null("RootMargin/RootHBox/Sidebar/SidebarVBox/DemoHubButton") as Button
+	var freecell_button = scene.get_node_or_null("RootMargin/RootHBox/Sidebar/SidebarVBox/FreeCellButton") as Button
+	var content_host = scene.get_node_or_null("RootMargin/RootHBox/ContentColumn/ContentPanel/ContentHost") as Control
+	_check(scene.theme != null, "main menu should serialize the shared demo theme")
+	_check(demo_button != null and freecell_button != null, "main menu should expose separate Demo and FreeCell entry buttons")
+	_check(content_host != null, "main menu should include a content host for swapping scenes in place")
+	if demo_button != null:
+		demo_button.pressed.emit()
+		await _settle_frames(3)
+		_check(content_host != null and content_host.get_child_count() == 1 and content_host.get_child(0).name == "DemoHub", "main menu demo entry should mount the demo hub inside the content host")
+	if freecell_button != null:
+		freecell_button.pressed.emit()
+		await _settle_frames(3)
+		_check(content_host != null and content_host.get_child_count() == 1 and content_host.get_child(0).name == "FreeCellShowcase", "main menu freecell entry should mount the standalone FreeCell scene inside the content host")
 
 func _test_demo_hub_summary_panels() -> void:
 	var scene = DEMO_SCENE.instantiate()
@@ -394,10 +416,10 @@ func _test_showcase_examples_load() -> void:
 	var freecell = FREECELL_SCENE.instantiate()
 	add_child(freecell)
 	await _settle_frames(3)
-	var freecell_status = freecell.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
-	var freecell_seed = freecell.get_node_or_null("RootMargin/RootVBox/Toolbar/SeedLabel") as Label
+	var freecell_status = freecell.get_node_or_null("RootMargin/RootVBox/StatusBar/StatusLabel") as Label
+	var freecell_deal = freecell.get_node_or_null("RootMargin/RootVBox/Toolbar/ToolbarRow/SeedLabel") as Label
 	_check(freecell_status != null and freecell_status.text.contains("FreeCell"), "freecell showcase should report initial game guidance in the status label")
-	_check(freecell_seed != null and freecell_seed.text.contains("Seed"), "freecell showcase should expose the deal seed in the toolbar")
+	_check(freecell_deal != null and freecell_deal.text.contains("Game #"), "freecell showcase should expose the active deal number in the toolbar")
 	_check(freecell.call("get_tableau_zones").size() == 8, "freecell showcase should create eight tableau lanes")
 	_check(freecell.call("get_free_cell_zones").size() == 4, "freecell showcase should create four free cells")
 	_check(freecell.call("get_foundation_zones").size() == 4, "freecell showcase should create four foundations")
@@ -493,7 +515,7 @@ func _assert_freecell_tab_layout(tab_container: TabContainer, _visible_rect: Rec
 	var tableau_row = current_tab.get_node_or_null("Content/RootMargin/RootVBox/TableauScroll/TableauRow") as HBoxContainer
 	_check(top_row != null and tableau_scroll != null and top_row.get_global_rect().end.y <= tableau_scroll.get_global_rect().position.y + 1.0, "freecell tab should keep controls above the tableau scroll surface")
 	_check(tableau_scroll != null and _rect_inside(visible_rect, tableau_scroll.get_global_rect(), 4.0), "freecell tab should keep the tableau scroll surface inside the visible host")
-	_check(tableau_row != null and tableau_scroll != null and tableau_row.custom_minimum_size.x > tableau_scroll.size.x, "freecell compact layout should keep full-width tableau lanes inside a scroll surface")
+	_check(tableau_row != null and tableau_row.custom_minimum_size.x >= 700.0, "freecell compact layout should preserve readable tableau lane widths")
 	if scene == null:
 		return
 	var tableaus: Array = scene.call("get_tableau_zones")

@@ -36,7 +36,7 @@ The controller implements:
 - foundation building by suit from Ace to King
 - multi-card tableau moves constrained by open free cells and empty tableau columns
 - replayable seeded deals
-- auto-foundation for exposed legal cards
+- manual foundation moves for exposed legal cards, including double-click / right-click shortcuts
 - solved-state detection
 
 ## Why It Matters For The Library

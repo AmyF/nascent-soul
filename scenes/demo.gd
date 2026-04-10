@@ -3,12 +3,18 @@ extends Control
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 
 func _ready() -> void:
-	call_deferred("_schedule_headless_quit_if_root")
+	_schedule_headless_quit_if_root()
 
 func _schedule_headless_quit_if_root() -> void:
 	if DisplayServer.get_name() != "headless":
 		return
-	if get_tree().current_scene != self:
+	get_tree().process_frame.connect(_maybe_shutdown_headless_if_root, CONNECT_ONE_SHOT)
+
+func _maybe_shutdown_headless_if_root() -> void:
+	var tree = get_tree()
+	if tree == null:
+		return
+	if tree.current_scene != null and tree.current_scene != self:
 		return
 	call_deferred("_shutdown_headless")
 

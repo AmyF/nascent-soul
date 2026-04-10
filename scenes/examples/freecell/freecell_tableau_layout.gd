@@ -1,9 +1,9 @@
 @tool
 extends ZoneLayoutPolicy
 
-@export var reveal_y: float = 28.0
-@export var padding_left: float = 8.0
-@export var padding_top: float = 10.0
+@export var reveal_y: float = 18.0
+@export var padding_left: float = 1.0
+@export var padding_top: float = 1.0
 
 func calculate(_context: ZoneContext, items: Array[ZoneItemControl], container_size: Vector2, ghost_item: Control = null, ghost_hint = null) -> Array[ZonePlacement]:
 	var render_items: Array = []

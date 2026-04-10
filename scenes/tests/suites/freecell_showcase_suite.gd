@@ -8,11 +8,19 @@ func _init() -> void:
 func _run_suite() -> void:
 	await _test_initial_deal_and_zone_population()
 	await _reset_root()
+	await _test_classic_deal_number_one_layout()
+	await _reset_root()
 	await _test_legal_moves_between_tableau_free_cells_and_foundations()
 	await _reset_root()
-	await _test_safe_auto_foundation_after_player_move()
+	await _test_slot_layout_matches_classic_freecell()
 	await _reset_root()
-	await _test_unsafe_legal_cards_stay_out_of_foundations()
+	await _test_drag_drop_diamond_across_all_free_cells()
+	await _reset_root()
+	await _test_manual_free_cell_moves_do_not_auto_promote()
+	await _reset_root()
+	await _test_revealed_foundation_cards_wait_for_player_action()
+	await _reset_root()
+	await _test_manual_auto_foundation_moves_any_legal_card()
 	await _reset_root()
 	await _test_illegal_moves_and_multi_card_capacity_limits()
 	await _reset_root()
@@ -38,7 +46,7 @@ func _spawn_scene_in_host(host_size: Vector2) -> Control:
 
 func _test_initial_deal_and_zone_population() -> void:
 	var scene = await _spawn_scene()
-	scene.call("start_new_game", 20260410)
+	scene.call("start_new_game", 1)
 	await _settle_frames(3)
 	var tableaus: Array = scene.call("get_tableau_zones")
 	var free_cells: Array = scene.call("get_free_cell_zones")
@@ -60,8 +68,16 @@ func _test_initial_deal_and_zone_population() -> void:
 		if zone is Zone:
 			_check((zone as Zone).get_item_count() == 0, "freecell should start with empty foundations")
 	_check(total_cards == 52, "freecell initial deal should place all 52 cards into the tableau")
-	var seed_label = scene.get_node_or_null("RootMargin/RootVBox/Toolbar/SeedLabel") as Label
-	_check(seed_label != null and seed_label.text.contains("Seed"), "freecell should surface the active deal seed")
+	var deal_label = scene.get_node_or_null("RootMargin/RootVBox/Toolbar/ToolbarRow/SeedLabel") as Label
+	_check(deal_label != null and deal_label.text.contains("Game #1"), "freecell should surface the active deal number")
+
+func _test_classic_deal_number_one_layout() -> void:
+	var scene = await _spawn_scene()
+	scene.call("start_new_game", 1)
+	await _settle_frames(3)
+	var tableaus: Array = scene.call("get_tableau_zones")
+	_check(_zone_codes(tableaus[0] as Zone) == ["JD", "KD", "2S", "4C", "3S", "6D", "6S"], "freecell deal #1 should match the classic Microsoft first tableau")
+	_check(_zone_codes(tableaus[7] as Zone) == ["5H", "3H", "3C", "7S", "7D", "10C"], "freecell deal #1 should match the classic Microsoft eighth tableau")
 
 func _test_legal_moves_between_tableau_free_cells_and_foundations() -> void:
 	var scene = await _spawn_scene()
@@ -80,11 +96,15 @@ func _test_legal_moves_between_tableau_free_cells_and_foundations() -> void:
 		"foundations": {}
 	})
 	await _settle_frames(3)
-	_check(scene.call("try_auto_foundation", scene.call("get_card_by_code", "AH")), "freecell should auto-send an exposed ace to its foundation")
+	var foundations: Array = scene.call("get_foundation_zones")
+	_check(scene.call("try_move_cards", _card_array(scene, ["AH"]), foundations[0]), "freecell should let any ace start any empty foundation slot")
 	await _settle_frames(4)
-	_check(scene.call("foundation_total") == 2, "freecell should chain newly safe cards into the foundations after a manual auto-foundation move")
-	var hearts_foundation = (scene.call("get_foundation_zones")[2] as Zone)
-	_check(hearts_foundation != null and hearts_foundation.get_item_count() == 2, "freecell foundations should still build upward one rank at a time")
+	_check(scene.call("foundation_total") == 1, "freecell should place only the moved ace onto the chosen foundation")
+	var opened_foundation = foundations[0] as Zone
+	_check(opened_foundation != null and opened_foundation.get_item_count() == 1, "freecell should start exactly one foundation pile with the ace")
+	_check(scene.call("try_move_cards", _card_array(scene, ["2H"]), foundations[0]), "freecell should let the next suited rank build onto the started foundation")
+	await _settle_frames(2)
+	_check(opened_foundation != null and opened_foundation.get_item_count() == 2, "freecell should continue building the started foundation in the same slot")
 	var tableaus: Array = scene.call("get_tableau_zones")
 	var free_cells: Array = scene.call("get_free_cell_zones")
 	_check(scene.call("try_move_cards", _card_array(scene, ["7C"]), tableaus[3]), "freecell should allow descending alternating tableau moves")
@@ -94,8 +114,114 @@ func _test_legal_moves_between_tableau_free_cells_and_foundations() -> void:
 	_check(scene.call("try_move_cards", _card_array(scene, ["6S"]), free_cells[0]), "freecell should allow moving a single exposed card into an empty free cell")
 	await _settle_frames(2)
 	_check((free_cells[0] as Zone).get_item_count() == 1, "freecell should leave the moved card in the chosen free cell")
+	_check(scene.call("try_move_cards", _card_array(scene, ["5H"]), free_cells[1]), "freecell free cells should accept any suit, not just a pre-bound slot suit")
+	await _settle_frames(2)
+	_check((free_cells[1] as Zone).get_item_count() == 1, "freecell should allow a different-suit card into any other empty free cell")
 
-func _test_safe_auto_foundation_after_player_move() -> void:
+func _test_slot_layout_matches_classic_freecell() -> void:
+	var scene = await _spawn_scene()
+	scene.call("load_debug_state", {
+		"tableaus": [[], [], [], [], [], [], [], []],
+		"free_cells": ["AD", "2D", "", ""],
+		"foundations": {
+			"hearts": ["AH", "2H", "3H"]
+		}
+	})
+	await _settle_frames(3)
+	var free_cells: Array = scene.call("get_free_cell_zones")
+	var free_cell_card_a = scene.call("get_card_by_code", "AD") as Control
+	var free_cell_card_b = scene.call("get_card_by_code", "2D") as Control
+	var foundation_zone = _foundation_zone_with_suit(scene, &"hearts")
+	var heart_ace = scene.call("get_card_by_code", "AH") as Control
+	var heart_three = scene.call("get_card_by_code", "3H") as Control
+	_check(free_cell_card_a != null and (free_cells[0] as Zone).get_global_rect().has_point(free_cell_card_a.get_global_rect().get_center()), "freecell should keep a card visibly inside the first free cell slot")
+	_check(free_cell_card_b != null and (free_cells[1] as Zone).get_global_rect().has_point(free_cell_card_b.get_global_rect().get_center()), "freecell should keep a card visibly inside the second free cell slot")
+	_check(foundation_zone != null and foundation_zone.get_item_count() == 3, "freecell layout test should load three cards into one foundation")
+	_check(heart_ace != null and heart_three != null and abs(heart_ace.global_position.x - heart_three.global_position.x) <= 1.0, "freecell foundations should stack cards in one slot instead of spreading them horizontally")
+	_check(heart_ace != null and heart_three != null and abs(heart_ace.global_position.y - heart_three.global_position.y) <= 1.0, "freecell foundations should share the same stacked anchor position")
+
+func _test_drag_drop_diamond_across_all_free_cells() -> void:
+	for target_index in range(4):
+		var scene = await _spawn_scene()
+		scene.call("load_debug_state", {
+			"tableaus": [
+				["4D"],
+				[],
+				[],
+				[],
+				[],
+				[],
+				[],
+				[]
+			],
+			"free_cells": ["", "", "", ""],
+			"foundations": {}
+		})
+		await _settle_frames(3)
+		var tableaus: Array = scene.call("get_tableau_zones")
+		var free_cells: Array = scene.call("get_free_cell_zones")
+		var source_zone = tableaus[0] as Zone
+		var target_zone = free_cells[target_index] as Zone
+		var card = scene.call("get_card_by_code", "4D") as ZoneItemControl
+		source_zone.start_drag([card], card)
+		var session = source_zone.get_drag_session()
+		_check(session != null, "freecell should start a drag session for an exposed diamond card")
+		if session != null:
+			session.hover_zone = target_zone
+			session.preview_target = ZonePlacementTarget.linear(0)
+			_check(target_zone.perform_drop(session), "freecell should allow dragging a diamond card into free cell %d" % (target_index + 1))
+		await _settle_frames(3)
+		_check(scene.call("get_card_by_code", "4D") != null, "freecell drag-drop should not lose the diamond card when targeting free cell %d" % (target_index + 1))
+		_check((target_zone as Zone).get_item_count() == 1, "freecell drag-drop should place the diamond card into free cell %d" % (target_index + 1))
+		_check((source_zone as Zone).get_item_count() == 0, "freecell drag-drop should clear the source tableau after moving to free cell %d" % (target_index + 1))
+		await _reset_root()
+
+	var scene = await _spawn_scene()
+	scene.call("load_debug_state", {
+		"tableaus": [[], [], [], [], [], [], [], []],
+		"free_cells": ["", "", "4D", ""],
+		"foundations": {}
+	})
+	await _settle_frames(3)
+	var free_cells: Array = scene.call("get_free_cell_zones")
+	var source_cell = free_cells[2] as Zone
+	var target_cell = free_cells[3] as Zone
+	var moved_card = scene.call("get_card_by_code", "4D") as ZoneItemControl
+	source_cell.start_drag([moved_card], moved_card)
+	var cell_session = source_cell.get_drag_session()
+	_check(cell_session != null, "freecell should start dragging a diamond card from a free cell")
+	if cell_session != null:
+		cell_session.hover_zone = target_cell
+		cell_session.preview_target = ZonePlacementTarget.linear(0)
+		_check(target_cell.perform_drop(cell_session), "freecell should allow dragging a diamond card between the later free cells")
+	await _settle_frames(3)
+	_check(scene.call("get_card_by_code", "4D") != null, "freecell should not lose a diamond card when dragging between free cells")
+	_check(target_cell.get_item_count() == 1 and source_cell.get_item_count() == 0, "freecell should move the diamond card between free cells without making it disappear")
+
+func _test_manual_free_cell_moves_do_not_auto_promote() -> void:
+	var scene = await _spawn_scene()
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["AH"],
+			["8D"],
+			["7C"],
+			[],
+			[],
+			[],
+			[],
+			[]
+		],
+		"free_cells": ["", "", "", ""],
+		"foundations": {}
+	})
+	await _settle_frames(3)
+	var free_cells: Array = scene.call("get_free_cell_zones")
+	_check(scene.call("try_move_cards", _card_array(scene, ["AH"]), free_cells[0]), "freecell should allow manually parking an ace in a free cell")
+	await _settle_frames(4)
+	_check((free_cells[0] as Zone).get_item_count() == 1, "freecell should keep the manually parked card in the free cell instead of auto-promoting it immediately")
+	_check(scene.call("foundation_total") == 0, "freecell should not auto-send a card to the foundations on the same move that parks it in a free cell")
+
+func _test_revealed_foundation_cards_wait_for_player_action() -> void:
 	var scene = await _spawn_scene()
 	scene.call("load_debug_state", {
 		"tableaus": [
@@ -119,12 +245,14 @@ func _test_safe_auto_foundation_after_player_move() -> void:
 	var tableaus: Array = scene.call("get_tableau_zones")
 	_check(scene.call("try_move_cards", _card_array(scene, ["7C"]), tableaus[1]), "freecell should still allow the player move that reveals a safe foundation card")
 	await _settle_frames(4)
-	_check((tableaus[0] as Zone).get_item_count() == 0, "freecell should remove the revealed safe card from its tableau during auto-foundation")
-	_check(scene.call("foundation_total") == 5, "freecell should auto-move a newly exposed safe card to the foundations after a successful move")
-	var hearts_foundation = (scene.call("get_foundation_zones")[2] as Zone)
-	_check(hearts_foundation != null and hearts_foundation.get_item_count() == 3, "freecell should extend the matching suit foundation when auto-foundation is safe")
+	_check((tableaus[0] as Zone).get_item_count() == 1, "freecell should leave the newly revealed foundation card in place until the player acts")
+	_check(scene.call("foundation_total") == 4, "freecell should not auto-move newly revealed cards after a normal transfer")
+	_check(scene.call("try_auto_foundation", scene.call("get_card_by_code", "3H")), "freecell double-click style auto-foundation should still move an exposed legal card")
+	await _settle_frames(2)
+	var hearts_foundation = _foundation_zone_with_suit(scene, &"hearts")
+	_check(hearts_foundation != null and hearts_foundation.get_item_count() == 3, "freecell should extend the matching suit foundation when the player requests auto-foundation")
 
-func _test_unsafe_legal_cards_stay_out_of_foundations() -> void:
+func _test_manual_auto_foundation_moves_any_legal_card() -> void:
 	var scene = await _spawn_scene()
 	scene.call("load_debug_state", {
 		"tableaus": [
@@ -149,8 +277,10 @@ func _test_unsafe_legal_cards_stay_out_of_foundations() -> void:
 	_check(scene.call("try_move_cards", _card_array(scene, ["7D"]), tableaus[1]), "freecell should still allow revealing a legal-but-unsafe foundation candidate")
 	await _settle_frames(4)
 	_check((tableaus[0] as Zone).get_item_count() == 1, "freecell should leave an exposed but unsafe card in the tableau")
-	_check(scene.call("foundation_total") == 6, "freecell should not auto-move legal cards that fail the safe auto-foundation rule")
-	_check(not scene.call("try_auto_foundation", scene.call("get_card_by_code", "5C")), "freecell manual auto-foundation should also respect the safe move rule")
+	_check(scene.call("foundation_total") == 6, "freecell should not move any newly revealed card until the player asks for it")
+	_check(scene.call("try_auto_foundation", scene.call("get_card_by_code", "5C")), "freecell manual auto-foundation should move any exposed legal card, even when it is strategically risky")
+	await _settle_frames(2)
+	_check(scene.call("foundation_total") == 7, "freecell manual auto-foundation should increase the foundation count by one successful move")
 
 func _test_illegal_moves_and_multi_card_capacity_limits() -> void:
 	var scene = await _spawn_scene()
@@ -298,7 +428,7 @@ func _test_drag_start_rules_and_group_drag_visuals() -> void:
 	if session != null:
 		free_cell_zone.cancel_drag(session)
 		await _settle_frames(2)
-	var foundation_zone = foundations[2] as Zone
+	var foundation_zone = _foundation_zone_with_suit(scene, &"hearts")
 	var foundation_top = scene.call("get_card_by_code", "3H") as ZoneItemControl
 	foundation_zone.start_drag(_card_array(scene, ["AH", "2H", "3H"]), foundation_top)
 	session = foundation_zone.get_drag_session()
@@ -366,7 +496,7 @@ func _test_compact_layout_keeps_tableau_operable() -> void:
 	var tableau_scroll = scene.get_node_or_null("RootMargin/RootVBox/TableauScroll") as ScrollContainer
 	var tableau_row = scene.get_node_or_null("RootMargin/RootVBox/TableauScroll/TableauRow") as HBoxContainer
 	_check(top_row != null and tableau_scroll != null and top_row.get_global_rect().end.y <= tableau_scroll.get_global_rect().position.y + 1.0, "freecell compact layout should keep top controls above the tableau surface")
-	_check(tableau_row != null and tableau_scroll != null and tableau_row.custom_minimum_size.x > tableau_scroll.size.x, "freecell compact layout should preserve lane width via scrolling")
+	_check(tableau_row != null and tableau_row.custom_minimum_size.x >= 700.0, "freecell compact layout should preserve readable tableau lane widths")
 	scene.call("load_debug_state", {
 		"tableaus": [
 			["7C"],
@@ -405,3 +535,17 @@ func _card_codes(items: Array) -> Array[String]:
 		if item is ZoneItemControl:
 			codes.append((item as ZoneItemControl).name)
 	return codes
+
+func _zone_codes(zone: Zone) -> Array[String]:
+	return _card_codes(zone.get_items()) if zone != null else []
+
+func _foundation_zone_with_suit(scene: Control, suit: StringName) -> Zone:
+	var foundations: Array = scene.call("get_foundation_zones")
+	for foundation in foundations:
+		if foundation is not Zone:
+			continue
+		var zone = foundation as Zone
+		for item in zone.get_items():
+			if item.get("suit") == suit or StringName(str(item.get("suit"))) == suit:
+				return zone
+	return null

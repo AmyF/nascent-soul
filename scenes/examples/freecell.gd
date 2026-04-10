@@ -1,17 +1,25 @@
 extends Control
 
-const DemoLayoutSupport = preload("res://scenes/examples/shared/demo_layout_support.gd")
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card.gd")
 const FreeCellCardDisplayScript = preload("res://scenes/examples/freecell/freecell_card_display.gd")
+const FreeCellRulesScript = preload("res://scenes/examples/freecell/freecell_rules.gd")
+const FreeCellSlotLayoutScript = preload("res://scenes/examples/freecell/freecell_slot_layout.gd")
 const FreeCellTableauLayoutScript = preload("res://scenes/examples/freecell/freecell_tableau_layout.gd")
 const FreeCellZonePolicyScript = preload("res://scenes/examples/freecell/freecell_zone_policy.gd")
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
-const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
-const REJECT_STATUS_COLOR := Color(0.96, 0.60, 0.56)
-const WIN_STATUS_COLOR := Color(0.93, 0.88, 0.62)
-const SUIT_ORDER := [&"clubs", &"diamonds", &"hearts", &"spades"]
+const GAME_MENU_NEW := 1
+const GAME_MENU_SELECT := 2
+const GAME_MENU_RESTART := 3
+const HELP_MENU_RULES := 11
+const HELP_MENU_ABOUT := 12
+
+const NORMAL_STATUS_COLOR := Color(0.10, 0.10, 0.10, 1.0)
+const REJECT_STATUS_COLOR := Color(0.72, 0.09, 0.12, 1.0)
+const WIN_STATUS_COLOR := Color(0.20, 0.42, 0.12, 1.0)
+const SUIT_ORDER := FreeCellRulesScript.SUIT_ORDER
+const DEAL_MAX := FreeCellRulesScript.DEAL_MAX
 const SUIT_SYMBOLS := {
 	&"clubs": "♣",
 	&"diamonds": "♦",
@@ -30,50 +38,36 @@ const SUIT_CODE_TO_NAME := {
 	"H": &"hearts",
 	"S": &"spades"
 }
-const RANK_LABELS := {
-	1: "A",
-	2: "2",
-	3: "3",
-	4: "4",
-	5: "5",
-	6: "6",
-	7: "7",
-	8: "8",
-	9: "9",
-	10: "10",
-	11: "J",
-	12: "Q",
-	13: "K"
-}
+const RANK_LABELS := FreeCellRulesScript.RANK_LABELS
 
 @onready var root_vbox: VBoxContainer = $RootMargin/RootVBox
-@onready var toolbar: Control = $RootMargin/RootVBox/Toolbar
-@onready var new_game_button: Button = $RootMargin/RootVBox/Toolbar/NewGameButton
-@onready var replay_seed_button: Button = $RootMargin/RootVBox/Toolbar/ReplaySeedButton
-@onready var seed_label: Label = $RootMargin/RootVBox/Toolbar/SeedLabel
-@onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
-@onready var victory_label: Label = $RootMargin/RootVBox/VictoryLabel
-@onready var top_row: HFlowContainer = $RootMargin/RootVBox/TopRow
-@onready var free_cells_column: VBoxContainer = $RootMargin/RootVBox/TopRow/FreeCellsColumn
-@onready var foundations_column: VBoxContainer = $RootMargin/RootVBox/TopRow/FoundationsColumn
-@onready var free_cells_slots_row: HFlowContainer = $RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow
-@onready var foundations_slots_row: HFlowContainer = $RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow
+@onready var title_bar: PanelContainer = $RootMargin/RootVBox/TitleBar
+@onready var window_title_label: Label = $RootMargin/RootVBox/TitleBar/TitleBarRow/WindowTitleLabel
+@onready var toolbar: PanelContainer = $RootMargin/RootVBox/Toolbar
+@onready var game_menu_button: MenuButton = $RootMargin/RootVBox/Toolbar/ToolbarRow/GameMenuButton
+@onready var help_menu_button: MenuButton = $RootMargin/RootVBox/Toolbar/ToolbarRow/HelpMenuButton
+@onready var deal_label: Label = $RootMargin/RootVBox/Toolbar/ToolbarRow/SeedLabel
+@onready var top_row: HBoxContainer = $RootMargin/RootVBox/TopRow
+@onready var free_cells_slots_row: HBoxContainer = $RootMargin/RootVBox/TopRow/FreeCellsSlotsRow
+@onready var foundations_slots_row: HBoxContainer = $RootMargin/RootVBox/TopRow/FoundationsSlotsRow
 @onready var tableau_scroll: ScrollContainer = $RootMargin/RootVBox/TableauScroll
 @onready var tableau_row: HBoxContainer = $RootMargin/RootVBox/TableauScroll/TableauRow
+@onready var victory_label: Label = $RootMargin/RootVBox/VictoryLabel
+@onready var status_bar: PanelContainer = $RootMargin/RootVBox/StatusBar
+@onready var status_label: Label = $RootMargin/RootVBox/StatusBar/StatusLabel
+@onready var select_game_overlay: Control = $SelectGameOverlay
+@onready var select_game_spin_box: SpinBox = $SelectGameOverlay/DialogPanel/DialogVBox/SelectGameSpinBox
+@onready var select_game_ok_button: Button = $SelectGameOverlay/DialogPanel/DialogVBox/ButtonRow/SelectGameOkButton
+@onready var select_game_cancel_button: Button = $SelectGameOverlay/DialogPanel/DialogVBox/ButtonRow/SelectGameCancelButton
 
 var _tableau_zones: Array[Zone] = []
 var _free_cell_zones: Array[Zone] = []
 var _foundation_zones: Array[Zone] = []
-var _foundation_by_suit: Dictionary = {}
 var _zone_info: Dictionary = {}
-var _card_bindings: Dictionary = {}
 
 var _rng := RandomNumberGenerator.new()
-var _last_seed: int = 0
+var _last_deal_number: int = 1
 var _game_won: bool = false
-var _auto_foundation_pending: bool = false
-var _auto_foundation_running: bool = false
-var _auto_foundation_generation: int = 0
 
 func _ready() -> void:
 	_build_zones()
@@ -84,28 +78,51 @@ func _ready() -> void:
 	start_new_game()
 
 func _exit_tree() -> void:
-	_reset_auto_foundation_state()
 	for policy in _collect_zone_policies():
 		policy.controller = null
-	_disconnect_card_bindings()
 
-func start_new_game(seed: int = -1) -> void:
-	_reset_auto_foundation_state()
-	_last_seed = seed if seed >= 0 else int(Time.get_unix_time_from_system()) ^ int(Time.get_ticks_usec())
+func _unhandled_input(event: InputEvent) -> void:
+	if event is not InputEventKey or not event.pressed or event.echo:
+		return
+	var key_event := event as InputEventKey
+	if select_game_overlay.visible:
+		if key_event.keycode == KEY_ESCAPE:
+			_hide_select_game_overlay()
+			get_viewport().set_input_as_handled()
+			return
+		if key_event.keycode == KEY_ENTER or key_event.keycode == KEY_KP_ENTER:
+			_on_select_game_confirmed()
+			get_viewport().set_input_as_handled()
+			return
+	if key_event.keycode == KEY_F2:
+		start_new_game()
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_F5:
+		start_new_game(_last_deal_number)
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.ctrl_pressed and key_event.keycode == KEY_G:
+		_show_select_game_overlay()
+		get_viewport().set_input_as_handled()
+
+func start_new_game(deal_number: int = -1) -> void:
+	_last_deal_number = deal_number if deal_number > 0 else _random_deal_number()
 	_game_won = false
 	victory_label.visible = false
+	_hide_select_game_overlay()
 	_clear_all_cards()
-	var deck_codes = _shuffled_deck_codes(_last_seed)
+	var deck_codes = FreeCellRulesScript.deal_codes(_last_deal_number)
 	for index in range(deck_codes.size()):
 		var zone = _tableau_zones[index % _tableau_zones.size()]
 		zone.add_item(_make_card_from_code(deck_codes[index]))
-	_refresh_summary()
-	_set_status("New FreeCell game ready. Drag cards between tableau columns, free cells, and foundations.")
+	_refresh_chrome()
+	_set_status("Classic FreeCell ready. Drag cards or double-click to send exposed cards home.")
 
 func load_debug_state(state: Dictionary) -> void:
-	_reset_auto_foundation_state()
 	_game_won = false
 	victory_label.visible = false
+	_hide_select_game_overlay()
 	_clear_all_cards()
 	var tableaus: Array = state.get("tableaus", [])
 	for index in range(min(tableaus.size(), _tableau_zones.size())):
@@ -119,14 +136,15 @@ func load_debug_state(state: Dictionary) -> void:
 	var foundations = state.get("foundations", {})
 	for suit_name in foundations.keys():
 		var suit = StringName(str(suit_name))
-		var zone = _foundation_by_suit.get(suit, null) as Zone
+		var zone = _preferred_foundation_zone_for_suit(suit)
 		if zone == null:
 			continue
 		for code in foundations[suit_name]:
 			zone.add_item(_make_card_from_code(str(code)))
-	_refresh_summary()
+	_refresh_chrome()
 	_update_victory_state()
-	_set_status("FreeCell debug state loaded.")
+	if not _game_won:
+		_set_status("Loaded a FreeCell position for debugging.")
 
 func get_tableau_zones() -> Array[Zone]:
 	return _tableau_zones.duplicate()
@@ -165,7 +183,15 @@ func try_auto_foundation(card: Control) -> bool:
 	if card is not FreeCellCardScript:
 		return false
 	var freecell_card := card as FreeCellCardScript
-	if not _is_safe_auto_foundation_card(freecell_card):
+	var source_zone = _zone_for_item(freecell_card)
+	if source_zone == null:
+		return false
+	var source_role = StringName(_zone_info.get(source_zone, {}).get("role", &""))
+	if source_role == &"foundation":
+		return false
+	if not _is_exposed_card(freecell_card):
+		return false
+	if not _is_foundation_move_legal(freecell_card):
 		return false
 	return _move_card_to_foundation(freecell_card)
 
@@ -182,8 +208,8 @@ func evaluate_freecell_transfer(zone_role: StringName, zone_index: int, _context
 	if cards.is_empty() or cards.size() != request.items.size():
 		return ZoneTransferDecision.new(false, "Only FreeCell cards can move here.", ZonePlacementTarget.invalid())
 	var source_info = _zone_info.get(source_zone, {})
-	var source_role = source_info.get("role", &"")
-	var source_validation = _validate_source_cards(source_zone, StringName(source_role), cards)
+	var source_role = StringName(source_info.get("role", &""))
+	var source_validation = _validate_source_cards(source_zone, source_role, cards)
 	if not source_validation.allowed:
 		return ZoneTransferDecision.new(false, source_validation.reason, ZonePlacementTarget.invalid())
 	match zone_role:
@@ -231,23 +257,18 @@ func _build_zones() -> void:
 	interaction.shift_range_select_enabled = false
 	interaction.keyboard_navigation_enabled = false
 	var display_style := FreeCellCardDisplayScript.new()
-	display_style.selected_scale = 1.01
-	display_style.selected_lift = 1.0
 	var drag_factory := ZoneConfigurableDragVisualFactory.new()
-	drag_factory.ghost_fill_color = Color(0.98, 0.95, 0.82, 0.08)
-	drag_factory.ghost_border_color = Color(0.93, 0.78, 0.46, 0.75)
-	drag_factory.proxy_modulate = Color(1, 1, 1, 0.94)
-	var single_slot_layout := ZoneHBoxLayout.new()
-	single_slot_layout.item_spacing = 0.0
-	single_slot_layout.padding_left = 6.0
-	single_slot_layout.padding_top = 8.0
+	drag_factory.ghost_fill_color = Color(1.0, 1.0, 1.0, 0.10)
+	drag_factory.ghost_border_color = Color(0.08, 0.09, 0.11, 0.75)
+	drag_factory.proxy_modulate = Color(1.0, 1.0, 1.0, 0.96)
 	for index in range(free_cells_slots_row.get_child_count()):
 		var host = free_cells_slots_row.get_child(index).get_node("ZoneHost") as Control
 		var policy = FreeCellZonePolicyScript.new()
 		policy.controller = self
 		policy.zone_role = &"freecell"
 		policy.zone_index = index
-		var zone = ExampleSupport.make_zone(host, "FreeCellSlot%d" % index, single_slot_layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
+		var layout := FreeCellSlotLayoutScript.new()
+		var zone = ExampleSupport.make_zone(host, "FreeCell%d" % (index + 1), layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
 		_register_zone(zone, &"freecell", index)
 		_bind_zone_events(zone)
 		_free_cell_zones.append(zone)
@@ -257,40 +278,56 @@ func _build_zones() -> void:
 		policy.controller = self
 		policy.zone_role = &"foundation"
 		policy.zone_index = index
-		var zone = ExampleSupport.make_zone(host, "Foundation%s" % String(SUIT_ORDER[index]).capitalize(), single_slot_layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
-		_register_zone(zone, &"foundation", index, SUIT_ORDER[index])
+		var layout := FreeCellSlotLayoutScript.new()
+		var zone = ExampleSupport.make_zone(host, "Foundation%d" % (index + 1), layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
+		_register_zone(zone, &"foundation", index)
 		_bind_zone_events(zone)
 		_foundation_zones.append(zone)
-		_foundation_by_suit[SUIT_ORDER[index]] = zone
 	for index in range(tableau_row.get_child_count()):
-		var host = tableau_row.get_child(index).get_node("ZonePanel/ZoneHost") as Control
+		var host = tableau_row.get_child(index).get_node("ZoneHost") as Control
 		var policy = FreeCellZonePolicyScript.new()
 		policy.controller = self
 		policy.zone_role = &"tableau"
 		policy.zone_index = index
 		var layout = FreeCellTableauLayoutScript.new()
-		var zone = ExampleSupport.make_zone(host, "Tableau%d" % index, layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
+		var zone = ExampleSupport.make_zone(host, "Tableau%d" % (index + 1), layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
 		_register_zone(zone, &"tableau", index)
 		_bind_zone_events(zone)
 		_tableau_zones.append(zone)
 
 func _wire_controls() -> void:
-	new_game_button.pressed.connect(_on_new_game_pressed)
-	replay_seed_button.pressed.connect(_on_replay_seed_pressed)
+	select_game_overlay.visible = false
+	select_game_spin_box.min_value = 1
+	select_game_spin_box.max_value = DEAL_MAX
+	select_game_spin_box.step = 1
+	select_game_ok_button.pressed.connect(_on_select_game_confirmed)
+	select_game_cancel_button.pressed.connect(_hide_select_game_overlay)
+
+	var game_popup = game_menu_button.get_popup()
+	game_popup.clear()
+	game_popup.add_item("New Game\tF2", GAME_MENU_NEW)
+	game_popup.add_item("Select Game...\tCtrl+G", GAME_MENU_SELECT)
+	game_popup.add_item("Restart This Game\tF5", GAME_MENU_RESTART)
+	game_popup.id_pressed.connect(_on_game_menu_id_pressed)
+
+	var help_popup = help_menu_button.get_popup()
+	help_popup.clear()
+	help_popup.add_item("How to Play", HELP_MENU_RULES)
+	help_popup.add_item("About This Showcase", HELP_MENU_ABOUT)
+	help_popup.id_pressed.connect(_on_help_menu_id_pressed)
 
 func _bind_zone_events(zone: Zone) -> void:
 	zone.item_transferred.connect(_on_item_transferred.bind(zone))
 	zone.drop_rejected.connect(_on_drop_rejected.bind(zone))
 	zone.drag_start_rejected.connect(_on_drag_start_rejected.bind(zone))
 	zone.item_double_clicked.connect(_on_item_double_clicked.bind(zone))
-	if _zone_info.get(zone, {}).get("role", &"") == &"tableau":
-		zone.item_clicked.connect(_on_tableau_item_clicked.bind(zone))
+	zone.item_right_clicked.connect(_on_item_right_clicked.bind(zone))
+	zone.item_clicked.connect(_on_zone_item_clicked.bind(zone))
 
-func _register_zone(zone: Zone, role: StringName, index: int, suit: StringName = &"") -> void:
+func _register_zone(zone: Zone, role: StringName, index: int) -> void:
 	_zone_info[zone] = {
 		"role": role,
-		"index": index,
-		"suit": suit
+		"index": index
 	}
 
 func _collect_zone_policies() -> Array:
@@ -309,21 +346,11 @@ func _all_zones() -> Array[Zone]:
 	return zones
 
 func _clear_all_cards() -> void:
-	_disconnect_card_bindings()
 	for zone in _all_zones():
 		zone.clear_selection()
 		for item in zone.get_items():
 			if zone.remove_item(item):
 				item.queue_free()
-
-func _disconnect_card_bindings() -> void:
-	for item in _card_bindings.keys():
-		if not is_instance_valid(item):
-			continue
-		var callable = _card_bindings[item]
-		if item.gui_input.is_connected(callable):
-			item.gui_input.disconnect(callable)
-	_card_bindings.clear()
 
 func _make_card_from_code(code: String) -> Control:
 	var parsed = _parse_card_code(code)
@@ -341,52 +368,35 @@ func _make_card_from_code(code: String) -> Control:
 	)
 	card.custom_minimum_size = FreeCellCardScript.CARD_SIZE
 	card.size = card.custom_minimum_size
-	_bind_card(card)
 	return card
 
-func _bind_card(card: Control) -> void:
-	if not is_instance_valid(card) or _card_bindings.has(card):
-		return
-	var callable = Callable(self, "_on_card_gui_input").bind(card)
-	card.gui_input.connect(callable)
-	_card_bindings[card] = callable
-
-func _on_card_gui_input(event: InputEvent, card: Control) -> void:
-	if event is not InputEventMouseButton:
-		return
-	var mouse_event := event as InputEventMouseButton
-	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed:
-		return
-	var zone = _zone_for_item(card)
-	if zone == null:
-		return
-	var role = _zone_info.get(zone, {}).get("role", &"")
-	if role == &"tableau":
-		_select_movable_tail(zone, card)
-	else:
-		_select_single_card(zone, card)
-
-func _on_tableau_item_clicked(item: Control, zone: Zone) -> void:
+func _on_zone_item_clicked(item: Control, zone: Zone) -> void:
 	if zone == null or item == null:
 		return
-	_select_movable_tail(zone, item)
+	var role = StringName(_zone_info.get(zone, {}).get("role", &""))
+	if role == &"tableau":
+		_select_movable_tail(zone, item)
+		return
+	_select_single_card(zone, item)
 
 func _on_item_double_clicked(item: Control, _zone: Zone) -> void:
 	if try_auto_foundation(item):
 		return
-	_set_status("%s cannot move to a foundation yet." % _card_label(item), REJECT_STATUS_COLOR)
+	_set_status("%s cannot move to the foundations yet." % _card_label(item), REJECT_STATUS_COLOR)
+
+func _on_item_right_clicked(item: Control, _zone: Zone) -> void:
+	if try_auto_foundation(item):
+		return
+	_set_status("%s stays where it is." % _card_label(item), REJECT_STATUS_COLOR)
 
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, _target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:
 		return
-	_refresh_summary()
+	_refresh_chrome()
 	_update_victory_state()
-	if _auto_foundation_running:
+	if _game_won:
 		return
-	_set_status("%s moved from %s to %s." % [_card_label(item), source_zone.name, target_zone.name])
-	var source_role = StringName(_zone_info.get(source_zone, {}).get("role", &""))
-	if source_role != &"foundation":
-		_queue_auto_foundation_pass()
+	_set_status("%s moved from %s to %s." % [_card_label(item), _zone_display_name(source_zone), _zone_display_name(target_zone)])
 
 func _on_drop_rejected(items: Array, _source_zone: Zone, _target_zone: Zone, reason: String, _emitter_zone: Zone) -> void:
 	if items.is_empty():
@@ -400,11 +410,34 @@ func _on_drag_start_rejected(items: Array, _source_zone: Zone, reason: String, _
 		return
 	_set_status("%s: %s" % [_card_label(items[0]), reason], REJECT_STATUS_COLOR)
 
-func _on_new_game_pressed() -> void:
-	start_new_game()
+func _on_game_menu_id_pressed(id: int) -> void:
+	match id:
+		GAME_MENU_NEW:
+			start_new_game()
+		GAME_MENU_SELECT:
+			_show_select_game_overlay()
+		GAME_MENU_RESTART:
+			start_new_game(_last_deal_number)
 
-func _on_replay_seed_pressed() -> void:
-	start_new_game(_last_seed)
+func _on_help_menu_id_pressed(id: int) -> void:
+	match id:
+		HELP_MENU_RULES:
+			_set_status("Build down by alternating color. Build the foundations up from Ace to King in suit.")
+		HELP_MENU_ABOUT:
+			_set_status("Windows XP style FreeCell showcase built on NascentSoul card zones.")
+
+func _on_select_game_confirmed() -> void:
+	var next_deal = int(select_game_spin_box.value)
+	_hide_select_game_overlay()
+	start_new_game(next_deal)
+
+func _show_select_game_overlay() -> void:
+	select_game_spin_box.value = _last_deal_number
+	select_game_overlay.visible = true
+	select_game_spin_box.grab_focus()
+
+func _hide_select_game_overlay() -> void:
+	select_game_overlay.visible = false
 
 func _select_single_card(zone: Zone, card: Control) -> void:
 	if zone == null or card == null:
@@ -446,34 +479,33 @@ func _evaluate_transfer_to_free_cell(target_zone: Zone, cards: Array) -> ZoneTra
 		return ZoneTransferDecision.new(false, "That free cell is already occupied.", ZonePlacementTarget.invalid())
 	return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(0))
 
-func _evaluate_transfer_to_foundation(zone_index: int, target_zone: Zone, cards: Array) -> ZoneTransferDecision:
+func _evaluate_transfer_to_foundation(_zone_index: int, target_zone: Zone, cards: Array) -> ZoneTransferDecision:
 	if cards.size() != 1:
 		return ZoneTransferDecision.new(false, "Foundations only accept one card at a time.", ZonePlacementTarget.invalid())
 	var card = cards[0] as FreeCellCardScript
-	var required_suit = SUIT_ORDER[clampi(zone_index, 0, SUIT_ORDER.size() - 1)]
-	if card.suit != required_suit:
-		return ZoneTransferDecision.new(false, "Each foundation only accepts its own suit.", ZonePlacementTarget.invalid())
-	var next_rank = target_zone.get_item_count() + 1
-	if card.rank_value != next_rank:
+	var foundation_cards = _typed_cards(target_zone.get_items())
+	if not FreeCellRulesScript.foundation_accepts_card(foundation_cards, card):
+		if foundation_cards.is_empty():
+			return ZoneTransferDecision.new(false, "Empty foundations open with aces.", ZonePlacementTarget.invalid())
+		var foundation_top = foundation_cards[foundation_cards.size() - 1] as FreeCellCardScript
+		if foundation_top == null or foundation_top.suit != card.suit:
+			return ZoneTransferDecision.new(false, "Started foundations continue in the same suit.", ZonePlacementTarget.invalid())
 		return ZoneTransferDecision.new(false, "Foundations build upward from Ace to King.", ZonePlacementTarget.invalid())
 	return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(target_zone.get_item_count()))
 
 func _evaluate_transfer_to_tableau(source_zone: Zone, target_zone: Zone, cards: Array) -> ZoneTransferDecision:
 	var moving_head = cards[0] as FreeCellCardScript
 	var target_cards = _typed_cards(target_zone.get_items())
-	if target_cards.is_empty():
-		var capacity = _tableau_stack_capacity(source_zone, target_zone)
-		if cards.size() > capacity:
-			return ZoneTransferDecision.new(false, "Not enough free cells and empty tableaus to move that whole run.", ZonePlacementTarget.invalid())
-		return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(target_zone.get_item_count()))
-	var target_top = target_cards[target_cards.size() - 1] as FreeCellCardScript
-	if moving_head.is_red == target_top.is_red:
-		return ZoneTransferDecision.new(false, "Tableau runs must alternate colors.", ZonePlacementTarget.invalid())
-	if moving_head.rank_value + 1 != target_top.rank_value:
-		return ZoneTransferDecision.new(false, "Tableau runs must descend by exactly one rank.", ZonePlacementTarget.invalid())
 	var capacity = _tableau_stack_capacity(source_zone, target_zone)
 	if cards.size() > capacity:
 		return ZoneTransferDecision.new(false, "Not enough free cells and empty tableaus to move that whole run.", ZonePlacementTarget.invalid())
+	if target_cards.is_empty():
+		return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(target_zone.get_item_count()))
+	var target_top = target_cards[target_cards.size() - 1] as FreeCellCardScript
+	if not FreeCellRulesScript.can_build_on_tableau(moving_head, target_top):
+		if moving_head.is_red == target_top.is_red:
+			return ZoneTransferDecision.new(false, "Tableau runs must alternate colors.", ZonePlacementTarget.invalid())
+		return ZoneTransferDecision.new(false, "Tableau runs must descend by exactly one rank.", ZonePlacementTarget.invalid())
 	return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(target_zone.get_item_count()))
 
 func _validate_source_cards(source_zone: Zone, source_role: StringName, cards: Array) -> Dictionary:
@@ -514,7 +546,7 @@ func _tableau_stack_capacity(source_zone: Zone, target_zone: Zone) -> int:
 			continue
 		if zone.get_item_count() == 0:
 			empty_tableaus += 1
-	return (empty_free_cells + 1) * (1 << empty_tableaus)
+	return FreeCellRulesScript.movable_run_capacity(empty_free_cells, empty_tableaus)
 
 func _typed_cards(items: Array) -> Array:
 	var cards: Array = []
@@ -524,16 +556,7 @@ func _typed_cards(items: Array) -> Array:
 	return cards
 
 func _is_descending_alternating_run(cards: Array) -> bool:
-	if cards.is_empty():
-		return false
-	for index in range(cards.size() - 1):
-		var upper = cards[index] as FreeCellCardScript
-		var lower = cards[index + 1] as FreeCellCardScript
-		if upper.is_red == lower.is_red:
-			return false
-		if upper.rank_value != lower.rank_value + 1:
-			return false
-	return true
+	return FreeCellRulesScript.is_descending_alternating_run(cards)
 
 func _find_card_index(cards: Array, target: Control) -> int:
 	for index in range(cards.size()):
@@ -581,97 +604,13 @@ func _rank_value_from_text(rank_text: String) -> int:
 		_:
 			return int(rank_text)
 
-func _shuffled_deck_codes(seed: int) -> Array[String]:
-	_rng.seed = seed
-	var deck: Array[String] = []
-	for suit_code in ["C", "D", "H", "S"]:
-		for rank_value in range(1, 14):
-			deck.append("%s%s" % [RANK_LABELS[rank_value], suit_code])
-	for index in range(deck.size() - 1, 0, -1):
-		var swap_index = _rng.randi_range(0, index)
-		var card_code = deck[index]
-		deck[index] = deck[swap_index]
-		deck[swap_index] = card_code
-	return deck
+func _refresh_chrome() -> void:
+	window_title_label.text = "FreeCell Game #%d" % _last_deal_number
+	deal_label.text = "Game #%d" % _last_deal_number
 
-func _refresh_summary() -> void:
-	seed_label.text = "Seed %d  |  Foundations %d / 52  |  Free cells open %d" % [_last_seed, foundation_total(), _count_open_free_cells()]
-
-func _count_open_free_cells() -> int:
-	var open_cells := 0
-	for zone in _free_cell_zones:
-		if zone.get_item_count() == 0:
-			open_cells += 1
-	return open_cells
-
-func _queue_auto_foundation_pass() -> void:
-	if _auto_foundation_pending or _auto_foundation_running or not is_inside_tree():
-		return
-	_auto_foundation_pending = true
-	call_deferred("_run_auto_foundation_pass", _auto_foundation_generation)
-
-func _run_auto_foundation_pass(generation: int) -> void:
-	_auto_foundation_pending = false
-	if generation != _auto_foundation_generation:
-		return
-	if _auto_foundation_running or _game_won or not is_inside_tree():
-		return
-	_auto_foundation_running = true
-	var moved_labels: Array[String] = []
-	var safety_guard := 0
-	while safety_guard < 52:
-		var candidate = _next_safe_auto_foundation_card()
-		if candidate == null:
-			break
-		var moved_label = _card_label(candidate)
-		if not _move_card_to_foundation(candidate):
-			break
-		moved_labels.append(moved_label)
-		safety_guard += 1
-	_auto_foundation_running = false
-	if moved_labels.is_empty():
-		return
-	_refresh_summary()
-	_update_victory_state()
-	if _game_won:
-		return
-	if moved_labels.size() == 1:
-		_set_status("Auto-moved %s to the foundations." % moved_labels[0])
-	else:
-		_set_status("Auto-moved %d safe cards to the foundations." % moved_labels.size())
-
-func _next_safe_auto_foundation_card() -> FreeCellCardScript:
-	var candidates: Array[FreeCellCardScript] = []
-	for zone in _free_cell_zones:
-		var top_card = _top_exposed_card(zone)
-		if _is_safe_auto_foundation_card(top_card):
-			candidates.append(top_card)
-	for zone in _tableau_zones:
-		var top_card = _top_exposed_card(zone)
-		if _is_safe_auto_foundation_card(top_card):
-			candidates.append(top_card)
-	if candidates.is_empty():
-		return null
-	var best = candidates[0]
-	for index in range(1, candidates.size()):
-		var candidate = candidates[index]
-		if candidate.rank_value < best.rank_value:
-			best = candidate
-			continue
-		if candidate.rank_value == best.rank_value and String(candidate.code) < String(best.code):
-			best = candidate
-	return best
-
-func _top_exposed_card(zone: Zone) -> FreeCellCardScript:
-	if zone == null:
-		return null
-	var cards = _typed_cards(zone.get_items())
-	if cards.is_empty():
-		return null
-	var top_card = cards[cards.size() - 1]
-	if top_card is FreeCellCardScript:
-		return top_card as FreeCellCardScript
-	return null
+func _random_deal_number() -> int:
+	_rng.seed = int(Time.get_unix_time_from_system()) ^ int(Time.get_ticks_usec())
+	return _rng.randi_range(1, DEAL_MAX)
 
 func _move_card_to_foundation(card: FreeCellCardScript) -> bool:
 	if not is_instance_valid(card):
@@ -679,112 +618,100 @@ func _move_card_to_foundation(card: FreeCellCardScript) -> bool:
 	var source_zone = _zone_for_item(card)
 	if source_zone == null:
 		return false
-	var target_zone = _foundation_by_suit.get(card.suit, null) as Zone
+	var target_zone = _foundation_zone_for_card(card)
 	if target_zone == null:
 		return false
 	return ExampleSupport.move_item(source_zone, card, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
 
-func _is_safe_auto_foundation_card(card: FreeCellCardScript) -> bool:
+func _is_exposed_card(card: FreeCellCardScript) -> bool:
 	if not is_instance_valid(card):
 		return false
 	var source_zone = _zone_for_item(card)
 	if source_zone == null:
 		return false
-	var source_role = StringName(_zone_info.get(source_zone, {}).get("role", &""))
-	if source_role != &"tableau" and source_role != &"freecell":
-		return false
-	if not _is_foundation_move_legal(card):
-		return false
-	var opposite_requirement = card.rank_value - 2
-	for suit in _opposite_color_suits(card.suit):
-		if _foundation_rank(suit) < opposite_requirement:
-			return false
-	var partner_requirement = card.rank_value - 3
-	if _foundation_rank(_same_color_partner_suit(card.suit)) < partner_requirement:
-		return false
-	return true
+	var source_cards = _typed_cards(source_zone.get_items())
+	return not source_cards.is_empty() and source_cards[source_cards.size() - 1] == card
 
 func _is_foundation_move_legal(card: FreeCellCardScript) -> bool:
 	if not is_instance_valid(card):
 		return false
-	var target_zone = _foundation_by_suit.get(card.suit, null) as Zone
+	var target_zone = _foundation_zone_for_card(card)
 	if target_zone == null:
 		return false
-	return target_zone.get_item_count() + 1 == card.rank_value
+	return FreeCellRulesScript.foundation_accepts_card(_typed_cards(target_zone.get_items()), card)
 
-func _foundation_rank(suit: StringName) -> int:
-	var zone = _foundation_by_suit.get(suit, null) as Zone
-	if zone == null:
-		return 0
-	var cards = _typed_cards(zone.get_items())
-	if cards.is_empty():
-		return 0
-	var top_card = cards[cards.size() - 1]
-	return (top_card as FreeCellCardScript).rank_value if top_card is FreeCellCardScript else 0
+func _foundation_zone_for_card(card: FreeCellCardScript) -> Zone:
+	if not is_instance_valid(card):
+		return null
+	var started_zone = _foundation_zone_for_suit(card.suit)
+	if started_zone != null:
+		return started_zone
+	if card.rank_value != 1:
+		return null
+	return _first_empty_foundation_zone()
 
-func _opposite_color_suits(suit: StringName) -> Array[StringName]:
-	var suits: Array[StringName] = []
-	if _is_red_suit(suit):
-		suits.append(&"clubs")
-		suits.append(&"spades")
-	else:
-		suits.append(&"diamonds")
-		suits.append(&"hearts")
-	return suits
+func _foundation_zone_for_suit(suit: StringName) -> Zone:
+	for zone in _foundation_zones:
+		var cards = _typed_cards(zone.get_items())
+		if cards.is_empty():
+			continue
+		var top_card = cards[cards.size() - 1] as FreeCellCardScript
+		if top_card != null and top_card.suit == suit:
+			return zone
+	return null
 
-func _same_color_partner_suit(suit: StringName) -> StringName:
-	match suit:
-		&"clubs":
-			return &"spades"
-		&"spades":
-			return &"clubs"
-		&"diamonds":
-			return &"hearts"
-		&"hearts":
-			return &"diamonds"
-		_:
-			return &"diamonds"
+func _first_empty_foundation_zone() -> Zone:
+	for zone in _foundation_zones:
+		if zone.get_item_count() == 0:
+			return zone
+	return null
 
-func _is_red_suit(suit: StringName) -> bool:
-	return suit == &"diamonds" or suit == &"hearts"
-
-func _reset_auto_foundation_state() -> void:
-	_auto_foundation_pending = false
-	_auto_foundation_running = false
-	_auto_foundation_generation += 1
+func _preferred_foundation_zone_for_suit(suit: StringName) -> Zone:
+	var suit_index = SUIT_ORDER.find(suit)
+	if suit_index < 0 or suit_index >= _foundation_zones.size():
+		return null
+	return _foundation_zones[suit_index]
 
 func _update_victory_state() -> void:
 	_game_won = foundation_total() == 52
 	victory_label.visible = _game_won
 	if _game_won:
-		victory_label.text = "All 52 cards reached the foundations. This deal is solved."
-		_set_status("FreeCell solved. All foundations are complete.", WIN_STATUS_COLOR)
+		victory_label.text = "You won."
+		_set_status("Every card reached the foundations. Press F2 for a new game.", WIN_STATUS_COLOR)
 
 func _card_label(item: Control) -> String:
 	if item is FreeCellCardScript:
 		return (item as FreeCellCardScript).display_name()
 	return item.name if item != null else "Card"
 
+func _zone_display_name(zone: Zone) -> String:
+	if zone == null:
+		return "Unknown"
+	var info = _zone_info.get(zone, {})
+	var role = StringName(info.get("role", &""))
+	var index = int(info.get("index", 0)) + 1
+	match role:
+		&"freecell":
+			return "Free Cell %d" % index
+		&"foundation":
+			return "Foundation %d" % index
+		&"tableau":
+			return "Tableau %d" % index
+		_:
+			return zone.name
+
 func _set_status(message: String, font_color: Color = NORMAL_STATUS_COLOR) -> void:
-	status_label.text = "Latest: %s" % message
+	status_label.text = message
 	status_label.add_theme_color_override("font_color", font_color)
 
 func _queue_layout_refresh() -> void:
 	call_deferred("_apply_responsive_layout")
 
 func _apply_responsive_layout() -> void:
-	var mode = DemoLayoutSupport.mode_for(self)
-	var content_width = max(root_vbox.size.x, DemoLayoutSupport.resolved_width(self) - 40.0)
-	var row_spacing = float(top_row.get_theme_constant("h_separation"))
-	var compact_column_width = max(420.0, floor((content_width - row_spacing) * 0.5))
-	var narrow_column_width = max(0.0, content_width)
-	DemoLayoutSupport.set_minimum_width(free_cells_column, mode, 528.0, compact_column_width, narrow_column_width)
-	DemoLayoutSupport.set_minimum_width(foundations_column, mode, 528.0, compact_column_width, narrow_column_width)
-	var root_spacing = float(root_vbox.get_theme_constant("separation"))
-	var reserved_height = _control_height(toolbar) + _control_height(status_label) + (_control_height(victory_label) if victory_label.visible else 0.0) + _control_height(top_row) + root_spacing * 4.0
-	var available_scroll_height = clamp(root_vbox.size.y - reserved_height, 240.0, 440.0)
-	tableau_scroll.custom_minimum_size = Vector2(0.0, available_scroll_height)
 	tableau_row.custom_minimum_size = Vector2(_tableau_content_width(), 0.0)
+	var reserved_height = _control_height(title_bar) + _control_height(toolbar) + _control_height(top_row) + _control_height(status_bar) + (_control_height(victory_label) if victory_label.visible else 0.0) + 28.0
+	var available_height = clamp(size.y - reserved_height, 260.0, 520.0)
+	tableau_scroll.custom_minimum_size = Vector2(0.0, available_height)
 	for zone in _all_zones():
 		zone.refresh()
 

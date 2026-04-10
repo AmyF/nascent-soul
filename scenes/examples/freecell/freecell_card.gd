@@ -1,6 +1,25 @@
 extends ZoneItemControl
 
-const CARD_SIZE := Vector2(116, 164)
+const CARD_SIZE := Vector2(80, 112)
+const CARD_FILL := Color(0.99, 0.99, 0.97, 1.0)
+const CARD_BORDER := Color(0.10, 0.10, 0.10, 1.0)
+const CARD_INNER_BORDER := Color(0.82, 0.84, 0.86, 1.0)
+const RED_INK := Color(0.71, 0.08, 0.12, 1.0)
+const BLACK_INK := Color(0.08, 0.09, 0.11, 1.0)
+const FACE_FILL := Color(0.94, 0.95, 0.98, 1.0)
+const FACE_BORDER := Color(0.72, 0.76, 0.82, 1.0)
+const PIP_LAYOUTS := {
+	1: [Vector2(0.50, 0.50)],
+	2: [Vector2(0.50, 0.24), Vector2(0.50, 0.76)],
+	3: [Vector2(0.50, 0.20), Vector2(0.50, 0.50), Vector2(0.50, 0.80)],
+	4: [Vector2(0.31, 0.24), Vector2(0.69, 0.24), Vector2(0.31, 0.76), Vector2(0.69, 0.76)],
+	5: [Vector2(0.31, 0.24), Vector2(0.69, 0.24), Vector2(0.50, 0.50), Vector2(0.31, 0.76), Vector2(0.69, 0.76)],
+	6: [Vector2(0.31, 0.20), Vector2(0.69, 0.20), Vector2(0.31, 0.50), Vector2(0.69, 0.50), Vector2(0.31, 0.80), Vector2(0.69, 0.80)],
+	7: [Vector2(0.31, 0.20), Vector2(0.69, 0.20), Vector2(0.50, 0.36), Vector2(0.31, 0.50), Vector2(0.69, 0.50), Vector2(0.31, 0.80), Vector2(0.69, 0.80)],
+	8: [Vector2(0.31, 0.20), Vector2(0.69, 0.20), Vector2(0.50, 0.35), Vector2(0.31, 0.50), Vector2(0.69, 0.50), Vector2(0.50, 0.65), Vector2(0.31, 0.80), Vector2(0.69, 0.80)],
+	9: [Vector2(0.31, 0.20), Vector2(0.69, 0.20), Vector2(0.50, 0.32), Vector2(0.31, 0.50), Vector2(0.69, 0.50), Vector2(0.50, 0.50), Vector2(0.31, 0.80), Vector2(0.69, 0.80), Vector2(0.50, 0.68)],
+	10: [Vector2(0.31, 0.18), Vector2(0.69, 0.18), Vector2(0.31, 0.34), Vector2(0.69, 0.34), Vector2(0.31, 0.50), Vector2(0.69, 0.50), Vector2(0.31, 0.66), Vector2(0.69, 0.66), Vector2(0.31, 0.82), Vector2(0.69, 0.82)]
+}
 
 var code: String = ""
 var suit: StringName = &""
@@ -12,12 +31,6 @@ var is_red: bool = false
 
 var _hovered_visual: bool = false
 var _selected_visual: bool = false
-var _panel: Panel = null
-var _rank_top_label: Label = null
-var _rank_bottom_label: Label = null
-var _suit_top_label: Label = null
-var _suit_bottom_label: Label = null
-var _center_suit_label: Label = null
 var _overlay: ColorRect = null
 
 func _ready() -> void:
@@ -26,7 +39,7 @@ func _ready() -> void:
 		custom_minimum_size = CARD_SIZE
 	if size == Vector2.ZERO:
 		size = custom_minimum_size
-	_ensure_nodes()
+	_ensure_overlay()
 	_refresh_visuals()
 
 func configure(p_code: String, p_suit: StringName, p_rank_value: int, p_rank_label: String, p_suit_symbol: String, p_suit_name: String, p_is_red: bool) -> void:
@@ -52,16 +65,16 @@ func create_zone_drag_ghost(_context: ZoneContext) -> Control:
 	ghost.custom_minimum_size = _resolved_card_size()
 	ghost.size = ghost.custom_minimum_size
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(1, 1, 1, 0.08)
-	style.border_color = _accent_color()
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.corner_radius_top_left = 16
-	style.corner_radius_top_right = 16
-	style.corner_radius_bottom_right = 16
-	style.corner_radius_bottom_left = 16
+	style.bg_color = Color(1.0, 1.0, 1.0, 0.10)
+	style.border_color = _ink_color()
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_bottom_left = 4
 	ghost.add_theme_stylebox_override("panel", style)
 	return ghost
 
@@ -72,12 +85,11 @@ func create_zone_group_drag_ghost(context: ZoneContext, source_items: Array[Zone
 	return _build_group_visual(context, cards, anchor_item, false)
 
 func create_zone_drag_proxy(_context: ZoneContext) -> Control:
-	var proxy = duplicate(0)
+	var proxy = _duplicate_card()
 	if proxy is Control:
-		var control_proxy := proxy as Control
-		control_proxy.modulate.a = 0.96
-		control_proxy.global_position = global_position
-		return control_proxy
+		var proxy_control := proxy as Control
+		proxy_control.modulate.a = 0.96
+		return proxy_control
 	return super.create_zone_drag_proxy(_context)
 
 func create_zone_group_drag_proxy(context: ZoneContext, source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
@@ -98,127 +110,98 @@ func apply_zone_visual_state(state: ZoneItemVisualState) -> void:
 func display_name() -> String:
 	return "%s%s" % [rank_label, suit_symbol]
 
-func _ensure_nodes() -> void:
-	if _panel == null or not is_instance_valid(_panel):
-		_panel = Panel.new()
-		_panel.name = "CardPanel"
-		_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-		_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_panel)
-	if _rank_top_label == null or not is_instance_valid(_rank_top_label):
-		_rank_top_label = Label.new()
-		_rank_top_label.name = "RankTopLabel"
-		_rank_top_label.offset_left = 10.0
-		_rank_top_label.offset_top = 8.0
-		_rank_top_label.offset_right = 40.0
-		_rank_top_label.offset_bottom = 30.0
-		_rank_top_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		_rank_top_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_rank_top_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_rank_top_label)
-	if _suit_top_label == null or not is_instance_valid(_suit_top_label):
-		_suit_top_label = Label.new()
-		_suit_top_label.name = "SuitTopLabel"
-		_suit_top_label.offset_left = 10.0
-		_suit_top_label.offset_top = 28.0
-		_suit_top_label.offset_right = 40.0
-		_suit_top_label.offset_bottom = 50.0
-		_suit_top_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		_suit_top_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_suit_top_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_suit_top_label)
-	if _rank_bottom_label == null or not is_instance_valid(_rank_bottom_label):
-		_rank_bottom_label = Label.new()
-		_rank_bottom_label.name = "RankBottomLabel"
-		_rank_bottom_label.anchor_left = 1.0
-		_rank_bottom_label.anchor_right = 1.0
-		_rank_bottom_label.anchor_top = 1.0
-		_rank_bottom_label.anchor_bottom = 1.0
-		_rank_bottom_label.offset_left = -40.0
-		_rank_bottom_label.offset_top = -50.0
-		_rank_bottom_label.offset_right = -10.0
-		_rank_bottom_label.offset_bottom = -28.0
-		_rank_bottom_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		_rank_bottom_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_rank_bottom_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_rank_bottom_label)
-	if _suit_bottom_label == null or not is_instance_valid(_suit_bottom_label):
-		_suit_bottom_label = Label.new()
-		_suit_bottom_label.name = "SuitBottomLabel"
-		_suit_bottom_label.anchor_left = 1.0
-		_suit_bottom_label.anchor_right = 1.0
-		_suit_bottom_label.anchor_top = 1.0
-		_suit_bottom_label.anchor_bottom = 1.0
-		_suit_bottom_label.offset_left = -40.0
-		_suit_bottom_label.offset_top = -30.0
-		_suit_bottom_label.offset_right = -10.0
-		_suit_bottom_label.offset_bottom = -8.0
-		_suit_bottom_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		_suit_bottom_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_suit_bottom_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_suit_bottom_label)
-	if _center_suit_label == null or not is_instance_valid(_center_suit_label):
-		_center_suit_label = Label.new()
-		_center_suit_label.name = "CenterSuitLabel"
-		_center_suit_label.anchor_right = 1.0
-		_center_suit_label.anchor_bottom = 1.0
-		_center_suit_label.offset_left = 12.0
-		_center_suit_label.offset_top = 34.0
-		_center_suit_label.offset_right = -12.0
-		_center_suit_label.offset_bottom = -34.0
-		_center_suit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_center_suit_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_center_suit_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_center_suit_label)
-	if _overlay == null or not is_instance_valid(_overlay):
-		_overlay = ColorRect.new()
-		_overlay.name = "CardOverlay"
-		_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-		_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_overlay)
+func _draw() -> void:
+	var rect = Rect2(Vector2.ZERO, _resolved_card_size())
+	if rect.size == Vector2.ZERO:
+		return
+	draw_rect(rect, CARD_FILL)
+	draw_rect(rect.grow(-1.0), Color(1.0, 1.0, 1.0, 0.55), false, 1.0)
+	draw_rect(rect, _border_color(), false, 1.0)
+	_draw_corners(rect)
+	if rank_value >= 11:
+		_draw_face_card(rect)
+	elif rank_value == 1:
+		_draw_center_symbol(rect, suit_symbol, 34, _ink_color())
+	else:
+		_draw_pips(rect)
+
+func _ensure_overlay() -> void:
+	if _overlay != null and is_instance_valid(_overlay):
+		return
+	_overlay = ColorRect.new()
+	_overlay.name = "CardOverlay"
+	_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_overlay.visible = false
+	add_child(_overlay)
 
 func _refresh_visuals() -> void:
+	queue_redraw()
 	if not is_node_ready():
 		return
-	_ensure_nodes()
-	var accent = _accent_color()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.98, 0.98, 0.96, 1.0)
-	style.border_color = accent if _selected_visual else Color(0.24, 0.28, 0.34, 0.9)
-	if _hovered_visual and not _selected_visual:
-		style.border_color = Color(accent.r, accent.g, accent.b, 0.92)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.corner_radius_top_left = 16
-	style.corner_radius_top_right = 16
-	style.corner_radius_bottom_right = 16
-	style.corner_radius_bottom_left = 16
-	_panel.add_theme_stylebox_override("panel", style)
-
-	for label in [_rank_top_label, _rank_bottom_label]:
-		label.text = rank_label
-		label.add_theme_color_override("font_color", accent)
-		label.add_theme_font_size_override("font_size", 20)
-	for label in [_suit_top_label, _suit_bottom_label]:
-		label.text = suit_symbol
-		label.add_theme_color_override("font_color", accent)
-		label.add_theme_font_size_override("font_size", 18)
-	_center_suit_label.text = suit_symbol
-	_center_suit_label.add_theme_color_override("font_color", Color(accent.r, accent.g, accent.b, 0.68))
-	_center_suit_label.add_theme_font_size_override("font_size", 58)
-
+	_ensure_overlay()
 	var overlay_alpha = 0.0
 	if _selected_visual:
-		overlay_alpha = 0.20
+		overlay_alpha = 0.18
 	elif _hovered_visual:
-		overlay_alpha = 0.12
-	_overlay.color = Color(accent.r, accent.g, accent.b, overlay_alpha)
+		overlay_alpha = 0.10
 	_overlay.visible = overlay_alpha > 0.0
+	_overlay.color = Color(_ink_color().r, _ink_color().g, _ink_color().b, overlay_alpha)
 
-func _accent_color() -> Color:
-	return Color(0.74, 0.18, 0.22, 1.0) if is_red else Color(0.14, 0.19, 0.26, 1.0)
+func _draw_corners(rect: Rect2) -> void:
+	var font = _fallback_font()
+	if font == null:
+		return
+	var ink = _ink_color()
+	var rank_font_size = 14
+	var suit_font_size = 12
+	var top_left = rect.position + Vector2(6.0, 6.0)
+	_draw_label(font, rank_label, top_left, rank_font_size, ink)
+	_draw_label(font, suit_symbol, top_left + Vector2(0.0, 13.0), suit_font_size, ink)
+	var rank_width = font.get_string_size(rank_label, HORIZONTAL_ALIGNMENT_LEFT, -1, rank_font_size).x
+	var suit_width = font.get_string_size(suit_symbol, HORIZONTAL_ALIGNMENT_LEFT, -1, suit_font_size).x
+	var bottom_right = rect.end - Vector2(6.0, 6.0)
+	_draw_label(font, rank_label, Vector2(bottom_right.x - rank_width, bottom_right.y - 12.0), rank_font_size, ink)
+	_draw_label(font, suit_symbol, Vector2(bottom_right.x - suit_width, bottom_right.y - 24.0), suit_font_size, ink)
+
+func _draw_face_card(rect: Rect2) -> void:
+	var inner = rect.grow(-16.0)
+	draw_rect(inner, FACE_FILL)
+	draw_rect(inner, FACE_BORDER, false, 1.0)
+	_draw_center_symbol(rect, rank_label, 28, _ink_color())
+	_draw_center_symbol(Rect2(rect.position + Vector2(0.0, 16.0), rect.size), suit_symbol, 24, Color(_ink_color().r, _ink_color().g, _ink_color().b, 0.72))
+
+func _draw_pips(rect: Rect2) -> void:
+	var layout = PIP_LAYOUTS.get(rank_value, [])
+	var font_size = 18 if rank_value <= 6 else 16
+	for point in layout:
+		var pip_center = rect.position + Vector2(rect.size.x * point.x, rect.size.y * point.y)
+		_draw_center_symbol(rect, suit_symbol, font_size, _ink_color(), pip_center)
+
+func _draw_center_symbol(rect: Rect2, text: String, font_size: int, color: Color, center_override: Variant = null) -> void:
+	var font = _fallback_font()
+	if font == null or text.is_empty():
+		return
+	var center = rect.get_center()
+	if center_override is Vector2:
+		center = center_override as Vector2
+	var text_size = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+	var baseline = center + Vector2(-text_size.x * 0.5, font.get_ascent(font_size) * 0.5 - text_size.y * 0.5)
+	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+
+func _draw_label(font: Font, text: String, top_left: Vector2, font_size: int, color: Color) -> void:
+	var baseline = top_left + Vector2(0.0, font.get_ascent(font_size))
+	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+
+func _border_color() -> Color:
+	if _selected_visual:
+		return Color(0.96, 0.74, 0.14, 1.0)
+	if _hovered_visual:
+		return Color(0.33, 0.38, 0.44, 1.0)
+	return CARD_BORDER
+
+func _ink_color() -> Color:
+	return RED_INK if is_red else BLACK_INK
 
 func _resolved_card_size() -> Vector2:
 	if size != Vector2.ZERO:
@@ -226,6 +209,19 @@ func _resolved_card_size() -> Vector2:
 	if custom_minimum_size != Vector2.ZERO:
 		return custom_minimum_size
 	return CARD_SIZE
+
+func _fallback_font() -> Font:
+	return ThemeDB.fallback_font
+
+func _duplicate_card() -> Control:
+	var clone = get_script().new()
+	if clone == null:
+		return null
+	clone.configure(code, suit, rank_value, rank_label, suit_symbol, suit_name, is_red)
+	clone.custom_minimum_size = _resolved_card_size()
+	clone.size = clone.custom_minimum_size
+	clone.apply_zone_visual_state(ZoneItemVisualState.new())
+	return clone
 
 func _group_cards(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Array[ZoneItemControl]:
 	var cards: Array[ZoneItemControl] = []

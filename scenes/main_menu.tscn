@@ -1,0 +1,127 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/main_menu.gd" id="1_scene"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="MainMenuSidebarPanel"]
+bg_color = Color(0.14, 0.20, 0.29, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.36, 0.46, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxFlat" id="MainMenuContentPanel"]
+bg_color = Color(0.07, 0.11, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.34, 0.45, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scene")
+theme = ExtResource("2_theme")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"DemoHubMargin"
+
+[node name="RootHBox" type="HBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Sidebar" type="PanelContainer" parent="RootMargin/RootHBox"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("MainMenuSidebarPanel")
+
+[node name="SidebarVBox" type="VBoxContainer" parent="RootMargin/RootHBox/Sidebar"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TitleLabel" type="Label" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoHubTitle"
+text = "NascentSoul Launcher"
+
+[node name="SummaryLabel" type="Label" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Choose the demo hub from the menu, or jump straight into FreeCell from its own dedicated entry."
+
+[node name="DemoHubButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoDangerActionButton"
+text = "Open Demo Menu"
+
+[node name="FreeCellButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Play FreeCell"
+
+[node name="SidebarFiller" type="Control" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HintLabel" type="Label" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "The content panel on the right swaps scenes in place, so you can bounce between the launcher, the demo hub, and FreeCell without leaving the app."
+
+[node name="ContentColumn" type="VBoxContainer" parent="RootMargin/RootHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="ContentTitleLabel" type="Label" parent="RootMargin/RootHBox/ContentColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Main Menu"
+
+[node name="ContentSummaryLabel" type="Label" parent="RootMargin/RootHBox/ContentColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Pick an entry from the left."
+
+[node name="ContentPanel" type="PanelContainer" parent="RootMargin/RootHBox/ContentColumn"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("MainMenuContentPanel")
+
+[node name="ContentHost" type="Control" parent="RootMargin/RootHBox/ContentColumn/ContentPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3

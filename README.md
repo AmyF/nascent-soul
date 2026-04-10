@@ -100,7 +100,9 @@ battlefield.begin_targeting(
 
 ## Showcases
 
-The main demo hub is [`scenes/demo.tscn`](scenes/demo.tscn). It now includes 10 static embedded examples, including two full playable showcases:
+The launcher scene is [`scenes/main_menu.tscn`](scenes/main_menu.tscn). It exposes a dedicated `FreeCell` entry alongside the broader example hub in [`scenes/demo.tscn`](scenes/demo.tscn).
+
+The demo hub includes 10 embedded examples, including two full playable showcases:
 
 - `FreeCell`: a complete single-player FreeCell implementation built from `CardZone`, transfer policies, and an example-side tableau layout.
 - `Xiangqi`: a complete local two-player Xiangqi implementation built on `BattlefieldZone`, square placement targets, and zone targeting.
