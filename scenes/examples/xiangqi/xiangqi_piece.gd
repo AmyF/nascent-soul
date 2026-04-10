@@ -13,7 +13,6 @@ var _target_candidate_active: bool = false
 var _target_candidate_allowed: bool = false
 var _panel: Panel = null
 var _glyph_label: Label = null
-var _name_label: Label = null
 var _overlay: ColorRect = null
 
 func _ready() -> void:
@@ -94,27 +93,14 @@ func _ensure_nodes() -> void:
 		_glyph_label.name = "GlyphLabel"
 		_glyph_label.anchor_right = 1.0
 		_glyph_label.anchor_bottom = 1.0
-		_glyph_label.offset_left = 8.0
-		_glyph_label.offset_top = 4.0
-		_glyph_label.offset_right = -8.0
-		_glyph_label.offset_bottom = -18.0
+		_glyph_label.offset_left = 6.0
+		_glyph_label.offset_top = 6.0
+		_glyph_label.offset_right = -6.0
+		_glyph_label.offset_bottom = -6.0
 		_glyph_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_glyph_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_glyph_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(_glyph_label)
-	if _name_label == null or not is_instance_valid(_name_label):
-		_name_label = Label.new()
-		_name_label.name = "NameLabel"
-		_name_label.anchor_right = 1.0
-		_name_label.anchor_bottom = 1.0
-		_name_label.offset_left = 6.0
-		_name_label.offset_top = -18.0
-		_name_label.offset_right = -6.0
-		_name_label.offset_bottom = -4.0
-		_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_name_label)
 	if _overlay == null or not is_instance_valid(_overlay):
 		_overlay = ColorRect.new()
 		_overlay.name = "PieceOverlay"
@@ -146,10 +132,7 @@ func _refresh_visuals() -> void:
 
 	_glyph_label.text = glyph
 	_glyph_label.add_theme_color_override("font_color", accent)
-	_glyph_label.add_theme_font_size_override("font_size", 24)
-	_name_label.text = latin_name
-	_name_label.add_theme_color_override("font_color", Color(accent.r, accent.g, accent.b, 0.82))
-	_name_label.add_theme_font_size_override("font_size", 10)
+	_glyph_label.add_theme_font_size_override("font_size", 34)
 
 	var overlay_color = Color(0, 0, 0, 0)
 	if _target_candidate_active:

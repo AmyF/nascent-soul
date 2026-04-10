@@ -163,9 +163,9 @@ func _ensure_nodes() -> void:
 		_center_suit_label.anchor_right = 1.0
 		_center_suit_label.anchor_bottom = 1.0
 		_center_suit_label.offset_left = 12.0
-		_center_suit_label.offset_top = 48.0
+		_center_suit_label.offset_top = 34.0
 		_center_suit_label.offset_right = -12.0
-		_center_suit_label.offset_bottom = -48.0
+		_center_suit_label.offset_bottom = -34.0
 		_center_suit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_center_suit_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_center_suit_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -182,7 +182,6 @@ func _refresh_visuals() -> void:
 		return
 	_ensure_nodes()
 	var accent = _accent_color()
-	var muted = Color(accent.r, accent.g, accent.b, 0.78)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.98, 0.98, 0.96, 1.0)
 	style.border_color = accent if _selected_visual else Color(0.24, 0.28, 0.34, 0.9)
@@ -206,9 +205,9 @@ func _refresh_visuals() -> void:
 		label.text = suit_symbol
 		label.add_theme_color_override("font_color", accent)
 		label.add_theme_font_size_override("font_size", 18)
-	_center_suit_label.text = "%s\n%s" % [suit_symbol, suit_name]
-	_center_suit_label.add_theme_color_override("font_color", muted)
-	_center_suit_label.add_theme_font_size_override("font_size", 26)
+	_center_suit_label.text = suit_symbol
+	_center_suit_label.add_theme_color_override("font_color", Color(accent.r, accent.g, accent.b, 0.68))
+	_center_suit_label.add_theme_font_size_override("font_size", 58)
 
 	var overlay_alpha = 0.0
 	if _selected_visual:
