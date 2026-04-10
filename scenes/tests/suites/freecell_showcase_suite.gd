@@ -10,6 +10,10 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_legal_moves_between_tableau_free_cells_and_foundations()
 	await _reset_root()
+	await _test_safe_auto_foundation_after_player_move()
+	await _reset_root()
+	await _test_unsafe_legal_cards_stay_out_of_foundations()
+	await _reset_root()
 	await _test_illegal_moves_and_multi_card_capacity_limits()
 	await _reset_root()
 	await _test_drag_start_rules_and_group_drag_visuals()
@@ -77,11 +81,10 @@ func _test_legal_moves_between_tableau_free_cells_and_foundations() -> void:
 	})
 	await _settle_frames(3)
 	_check(scene.call("try_auto_foundation", scene.call("get_card_by_code", "AH")), "freecell should auto-send an exposed ace to its foundation")
-	await _settle_frames(2)
-	_check(scene.call("foundation_total") == 1, "freecell auto-foundation should increase the foundation count")
-	_check(scene.call("try_auto_foundation", scene.call("get_card_by_code", "2H")), "freecell should allow the next matching rank onto the foundation")
-	await _settle_frames(2)
-	_check(scene.call("foundation_total") == 2, "freecell foundations should build upward one rank at a time")
+	await _settle_frames(4)
+	_check(scene.call("foundation_total") == 2, "freecell should chain newly safe cards into the foundations after a manual auto-foundation move")
+	var hearts_foundation = (scene.call("get_foundation_zones")[2] as Zone)
+	_check(hearts_foundation != null and hearts_foundation.get_item_count() == 2, "freecell foundations should still build upward one rank at a time")
 	var tableaus: Array = scene.call("get_tableau_zones")
 	var free_cells: Array = scene.call("get_free_cell_zones")
 	_check(scene.call("try_move_cards", _card_array(scene, ["7C"]), tableaus[3]), "freecell should allow descending alternating tableau moves")
@@ -91,6 +94,63 @@ func _test_legal_moves_between_tableau_free_cells_and_foundations() -> void:
 	_check(scene.call("try_move_cards", _card_array(scene, ["6S"]), free_cells[0]), "freecell should allow moving a single exposed card into an empty free cell")
 	await _settle_frames(2)
 	_check((free_cells[0] as Zone).get_item_count() == 1, "freecell should leave the moved card in the chosen free cell")
+
+func _test_safe_auto_foundation_after_player_move() -> void:
+	var scene = await _spawn_scene()
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["3H", "7C"],
+			["8D"],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[]
+		],
+		"free_cells": ["", "", "", ""],
+		"foundations": {
+			"hearts": ["AH", "2H"],
+			"clubs": ["AC"],
+			"spades": ["AS"]
+		}
+	})
+	await _settle_frames(3)
+	var tableaus: Array = scene.call("get_tableau_zones")
+	_check(scene.call("try_move_cards", _card_array(scene, ["7C"]), tableaus[1]), "freecell should still allow the player move that reveals a safe foundation card")
+	await _settle_frames(4)
+	_check((tableaus[0] as Zone).get_item_count() == 0, "freecell should remove the revealed safe card from its tableau during auto-foundation")
+	_check(scene.call("foundation_total") == 5, "freecell should auto-move a newly exposed safe card to the foundations after a successful move")
+	var hearts_foundation = (scene.call("get_foundation_zones")[2] as Zone)
+	_check(hearts_foundation != null and hearts_foundation.get_item_count() == 3, "freecell should extend the matching suit foundation when auto-foundation is safe")
+
+func _test_unsafe_legal_cards_stay_out_of_foundations() -> void:
+	var scene = await _spawn_scene()
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["5C", "7D"],
+			["8S"],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[]
+		],
+		"free_cells": ["", "", "", ""],
+		"foundations": {
+			"clubs": ["AC", "2C", "3C", "4C"],
+			"hearts": ["AH"],
+			"spades": ["AS"]
+		}
+	})
+	await _settle_frames(3)
+	var tableaus: Array = scene.call("get_tableau_zones")
+	_check(scene.call("try_move_cards", _card_array(scene, ["7D"]), tableaus[1]), "freecell should still allow revealing a legal-but-unsafe foundation candidate")
+	await _settle_frames(4)
+	_check((tableaus[0] as Zone).get_item_count() == 1, "freecell should leave an exposed but unsafe card in the tableau")
+	_check(scene.call("foundation_total") == 6, "freecell should not auto-move legal cards that fail the safe auto-foundation rule")
+	_check(not scene.call("try_auto_foundation", scene.call("get_card_by_code", "5C")), "freecell manual auto-foundation should also respect the safe move rule")
 
 func _test_illegal_moves_and_multi_card_capacity_limits() -> void:
 	var scene = await _spawn_scene()

@@ -71,6 +71,9 @@ var _card_bindings: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _last_seed: int = 0
 var _game_won: bool = false
+var _auto_foundation_pending: bool = false
+var _auto_foundation_running: bool = false
+var _auto_foundation_generation: int = 0
 
 func _ready() -> void:
 	_build_zones()
@@ -81,11 +84,13 @@ func _ready() -> void:
 	start_new_game()
 
 func _exit_tree() -> void:
+	_reset_auto_foundation_state()
 	for policy in _collect_zone_policies():
 		policy.controller = null
 	_disconnect_card_bindings()
 
 func start_new_game(seed: int = -1) -> void:
+	_reset_auto_foundation_state()
 	_last_seed = seed if seed >= 0 else int(Time.get_unix_time_from_system()) ^ int(Time.get_ticks_usec())
 	_game_won = false
 	victory_label.visible = false
@@ -98,6 +103,7 @@ func start_new_game(seed: int = -1) -> void:
 	_set_status("New FreeCell game ready. Drag cards between tableau columns, free cells, and foundations.")
 
 func load_debug_state(state: Dictionary) -> void:
+	_reset_auto_foundation_state()
 	_game_won = false
 	victory_label.visible = false
 	_clear_all_cards()
@@ -159,13 +165,9 @@ func try_auto_foundation(card: Control) -> bool:
 	if card is not FreeCellCardScript:
 		return false
 	var freecell_card := card as FreeCellCardScript
-	var source_zone = _zone_for_item(freecell_card)
-	if source_zone == null:
+	if not _is_safe_auto_foundation_card(freecell_card):
 		return false
-	var target_zone = _foundation_by_suit.get(freecell_card.suit, null) as Zone
-	if target_zone == null:
-		return false
-	return ExampleSupport.move_item(source_zone, freecell_card, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
+	return _move_card_to_foundation(freecell_card)
 
 func evaluate_freecell_transfer(zone_role: StringName, zone_index: int, _context: ZoneContext, request: ZoneTransferRequest) -> ZoneTransferDecision:
 	if request == null:
@@ -379,7 +381,12 @@ func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, _
 		return
 	_refresh_summary()
 	_update_victory_state()
+	if _auto_foundation_running:
+		return
 	_set_status("%s moved from %s to %s." % [_card_label(item), source_zone.name, target_zone.name])
+	var source_role = StringName(_zone_info.get(source_zone, {}).get("role", &""))
+	if source_role != &"foundation":
+		_queue_auto_foundation_pass()
 
 func _on_drop_rejected(items: Array, _source_zone: Zone, _target_zone: Zone, reason: String, _emitter_zone: Zone) -> void:
 	if items.is_empty():
@@ -596,6 +603,155 @@ func _count_open_free_cells() -> int:
 		if zone.get_item_count() == 0:
 			open_cells += 1
 	return open_cells
+
+func _queue_auto_foundation_pass() -> void:
+	if _auto_foundation_pending or _auto_foundation_running or not is_inside_tree():
+		return
+	_auto_foundation_pending = true
+	call_deferred("_run_auto_foundation_pass", _auto_foundation_generation)
+
+func _run_auto_foundation_pass(generation: int) -> void:
+	_auto_foundation_pending = false
+	if generation != _auto_foundation_generation:
+		return
+	if _auto_foundation_running or _game_won or not is_inside_tree():
+		return
+	_auto_foundation_running = true
+	var moved_labels: Array[String] = []
+	var safety_guard := 0
+	while safety_guard < 52:
+		var candidate = _next_safe_auto_foundation_card()
+		if candidate == null:
+			break
+		var moved_label = _card_label(candidate)
+		if not _move_card_to_foundation(candidate):
+			break
+		moved_labels.append(moved_label)
+		safety_guard += 1
+	_auto_foundation_running = false
+	if moved_labels.is_empty():
+		return
+	_refresh_summary()
+	_update_victory_state()
+	if _game_won:
+		return
+	if moved_labels.size() == 1:
+		_set_status("Auto-moved %s to the foundations." % moved_labels[0])
+	else:
+		_set_status("Auto-moved %d safe cards to the foundations." % moved_labels.size())
+
+func _next_safe_auto_foundation_card() -> FreeCellCardScript:
+	var candidates: Array[FreeCellCardScript] = []
+	for zone in _free_cell_zones:
+		var top_card = _top_exposed_card(zone)
+		if _is_safe_auto_foundation_card(top_card):
+			candidates.append(top_card)
+	for zone in _tableau_zones:
+		var top_card = _top_exposed_card(zone)
+		if _is_safe_auto_foundation_card(top_card):
+			candidates.append(top_card)
+	if candidates.is_empty():
+		return null
+	var best = candidates[0]
+	for index in range(1, candidates.size()):
+		var candidate = candidates[index]
+		if candidate.rank_value < best.rank_value:
+			best = candidate
+			continue
+		if candidate.rank_value == best.rank_value and String(candidate.code) < String(best.code):
+			best = candidate
+	return best
+
+func _top_exposed_card(zone: Zone) -> FreeCellCardScript:
+	if zone == null:
+		return null
+	var cards = _typed_cards(zone.get_items())
+	if cards.is_empty():
+		return null
+	var top_card = cards[cards.size() - 1]
+	if top_card is FreeCellCardScript:
+		return top_card as FreeCellCardScript
+	return null
+
+func _move_card_to_foundation(card: FreeCellCardScript) -> bool:
+	if not is_instance_valid(card):
+		return false
+	var source_zone = _zone_for_item(card)
+	if source_zone == null:
+		return false
+	var target_zone = _foundation_by_suit.get(card.suit, null) as Zone
+	if target_zone == null:
+		return false
+	return ExampleSupport.move_item(source_zone, card, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
+
+func _is_safe_auto_foundation_card(card: FreeCellCardScript) -> bool:
+	if not is_instance_valid(card):
+		return false
+	var source_zone = _zone_for_item(card)
+	if source_zone == null:
+		return false
+	var source_role = StringName(_zone_info.get(source_zone, {}).get("role", &""))
+	if source_role != &"tableau" and source_role != &"freecell":
+		return false
+	if not _is_foundation_move_legal(card):
+		return false
+	var opposite_requirement = card.rank_value - 2
+	for suit in _opposite_color_suits(card.suit):
+		if _foundation_rank(suit) < opposite_requirement:
+			return false
+	var partner_requirement = card.rank_value - 3
+	if _foundation_rank(_same_color_partner_suit(card.suit)) < partner_requirement:
+		return false
+	return true
+
+func _is_foundation_move_legal(card: FreeCellCardScript) -> bool:
+	if not is_instance_valid(card):
+		return false
+	var target_zone = _foundation_by_suit.get(card.suit, null) as Zone
+	if target_zone == null:
+		return false
+	return target_zone.get_item_count() + 1 == card.rank_value
+
+func _foundation_rank(suit: StringName) -> int:
+	var zone = _foundation_by_suit.get(suit, null) as Zone
+	if zone == null:
+		return 0
+	var cards = _typed_cards(zone.get_items())
+	if cards.is_empty():
+		return 0
+	var top_card = cards[cards.size() - 1]
+	return (top_card as FreeCellCardScript).rank_value if top_card is FreeCellCardScript else 0
+
+func _opposite_color_suits(suit: StringName) -> Array[StringName]:
+	var suits: Array[StringName] = []
+	if _is_red_suit(suit):
+		suits.append(&"clubs")
+		suits.append(&"spades")
+	else:
+		suits.append(&"diamonds")
+		suits.append(&"hearts")
+	return suits
+
+func _same_color_partner_suit(suit: StringName) -> StringName:
+	match suit:
+		&"clubs":
+			return &"spades"
+		&"spades":
+			return &"clubs"
+		&"diamonds":
+			return &"hearts"
+		&"hearts":
+			return &"diamonds"
+		_:
+			return &"diamonds"
+
+func _is_red_suit(suit: StringName) -> bool:
+	return suit == &"diamonds" or suit == &"hearts"
+
+func _reset_auto_foundation_state() -> void:
+	_auto_foundation_pending = false
+	_auto_foundation_running = false
+	_auto_foundation_generation += 1
 
 func _update_victory_state() -> void:
 	_game_won = foundation_total() == 52
