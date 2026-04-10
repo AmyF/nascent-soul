@@ -1,0 +1,221 @@
+extends "res://scenes/tests/shared/test_harness.gd"
+
+const XIANGQI_SCENE = preload("res://scenes/examples/xiangqi.tscn")
+
+func _init() -> void:
+	_suite_name = "xiangqi-showcase"
+
+func _run_suite() -> void:
+	await _test_initial_setup_and_turn_state()
+	await _reset_root()
+	await _test_general_advisor_and_elephant_rules()
+	await _reset_root()
+	await _test_horse_chariot_cannon_and_soldier_rules()
+	await _reset_root()
+	await _test_turn_capture_and_facing_generals_constraints()
+	await _reset_root()
+	await _test_checkmate_game_over_detection()
+
+func _spawn_scene() -> Control:
+	var scene = XIANGQI_SCENE.instantiate()
+	add_child(scene)
+	await _settle_frames(4)
+	return scene
+
+func _load_state(scene: Control, current_side: String, pieces: Array) -> void:
+	scene.call("load_debug_state", {
+		"current_side": current_side,
+		"pieces": pieces
+	})
+	await _settle_frames(3)
+
+func _test_initial_setup_and_turn_state() -> void:
+	var scene = await _spawn_scene()
+	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
+	var turn_label = scene.get_node_or_null("RootMargin/RootVBox/StateRow/TurnLabel") as Label
+	_check(board_zone != null and board_zone.get_item_count() == 32, "xiangqi should load the full 32-piece starting setup")
+	_check(turn_label != null and turn_label.text.contains("Red"), "xiangqi should begin with red to move")
+	var red_general = scene.call("get_piece_at_coords", Vector2i(4, 9))
+	var black_general = scene.call("get_piece_at_coords", Vector2i(4, 0))
+	_check(red_general != null and red_general.piece_type == &"general", "xiangqi should place the red general at the standard home square")
+	_check(black_general != null and black_general.piece_type == &"general", "xiangqi should place the black general at the standard home square")
+	_check(not scene.call("is_side_in_check", &"red"), "xiangqi initial setup should not start with red in check")
+	_check(not scene.call("is_side_in_check", &"black"), "xiangqi initial setup should not start with black in check")
+
+func _test_general_advisor_and_elephant_rules() -> void:
+	var scene = await _spawn_scene()
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(4, 9))
+	])
+	_check(scene.call("try_move_at", Vector2i(4, 9), Vector2i(4, 8)), "xiangqi should allow a general to move one point orthogonally inside the palace")
+	await _settle_frames(2)
+	_check(scene.call("get_piece_at_coords", Vector2i(4, 8)) != null, "xiangqi should update the general position after a legal palace move")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(4, 9))
+	])
+	_check(not scene.call("try_move_at", Vector2i(4, 9), Vector2i(6, 9)), "xiangqi should reject general moves that leave the palace")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(4, 9)),
+		_piece("red", "advisor", Vector2i(4, 8))
+	])
+	_check(scene.call("try_move_at", Vector2i(4, 8), Vector2i(5, 9)), "xiangqi should allow an advisor to move diagonally inside the palace")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "advisor", Vector2i(4, 8))
+	])
+	_check(not scene.call("try_move_at", Vector2i(4, 8), Vector2i(4, 7)), "xiangqi should reject advisor moves that are not single-step diagonals")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "elephant", Vector2i(2, 5))
+	])
+	_check(scene.call("try_move_at", Vector2i(2, 5), Vector2i(0, 7)), "xiangqi should allow an elephant to move two points diagonally on its own side")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "elephant", Vector2i(2, 5))
+	])
+	_check(not scene.call("try_move_at", Vector2i(2, 5), Vector2i(4, 3)), "xiangqi should reject elephant moves that cross the river")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "elephant", Vector2i(0, 9)),
+		_piece("red", "soldier", Vector2i(1, 8))
+	])
+	_check(not scene.call("try_move_at", Vector2i(0, 9), Vector2i(2, 7)), "xiangqi should reject elephant moves when the eye point is blocked")
+
+func _test_horse_chariot_cannon_and_soldier_rules() -> void:
+	var scene = await _spawn_scene()
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "horse", Vector2i(4, 7))
+	])
+	_check(scene.call("try_move_at", Vector2i(4, 7), Vector2i(6, 8)), "xiangqi should allow a horse to move in an L shape when the leg is clear")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "horse", Vector2i(4, 7)),
+		_piece("red", "soldier", Vector2i(5, 7))
+	])
+	_check(not scene.call("try_move_at", Vector2i(4, 7), Vector2i(6, 8)), "xiangqi should reject horse moves when the leg is blocked")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "chariot", Vector2i(0, 5))
+	])
+	_check(scene.call("try_move_at", Vector2i(0, 5), Vector2i(0, 2)), "xiangqi should allow an unobstructed chariot move along a file")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "chariot", Vector2i(0, 5)),
+		_piece("red", "soldier", Vector2i(0, 4))
+	])
+	_check(not scene.call("try_move_at", Vector2i(0, 5), Vector2i(0, 2)), "xiangqi should reject chariot moves that jump over a blocker")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "cannon", Vector2i(1, 7)),
+		_piece("red", "soldier", Vector2i(1, 5)),
+		_piece("black", "soldier", Vector2i(1, 3))
+	])
+	_check(scene.call("try_move_at", Vector2i(1, 7), Vector2i(1, 3)), "xiangqi should allow a cannon capture with exactly one intervening screen")
+	await _settle_frames(2)
+	var red_capture_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox/RedCaptureLabel") as Label
+	_check(red_capture_label != null and red_capture_label.text.contains("卒"), "xiangqi should record cannon captures in the side panel")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "cannon", Vector2i(1, 7)),
+		_piece("red", "soldier", Vector2i(1, 6))
+	])
+	_check(not scene.call("try_move_at", Vector2i(1, 7), Vector2i(1, 4)), "xiangqi should reject cannon moves that jump when not capturing")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "cannon", Vector2i(1, 7)),
+		_piece("black", "soldier", Vector2i(1, 3))
+	])
+	_check(not scene.call("try_move_at", Vector2i(1, 7), Vector2i(1, 3)), "xiangqi should reject cannon captures without a screen")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "soldier", Vector2i(4, 6))
+	])
+	_check(scene.call("try_move_at", Vector2i(4, 6), Vector2i(4, 5)), "xiangqi should allow a soldier to move one step forward before crossing the river")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "soldier", Vector2i(4, 6))
+	])
+	_check(not scene.call("try_move_at", Vector2i(4, 6), Vector2i(5, 6)), "xiangqi should reject sideways soldier moves before crossing the river")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "soldier", Vector2i(4, 4))
+	])
+	_check(scene.call("try_move_at", Vector2i(4, 4), Vector2i(5, 4)), "xiangqi should allow sideways soldier moves after crossing the river")
+
+func _test_turn_capture_and_facing_generals_constraints() -> void:
+	var scene = await _spawn_scene()
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "horse", Vector2i(1, 7)),
+		_piece("black", "soldier", Vector2i(2, 5))
+	])
+	_check(scene.call("try_move_at", Vector2i(1, 7), Vector2i(2, 5)), "xiangqi should allow a legal capture on the active side's turn")
+	await _settle_frames(2)
+	var turn_label = scene.get_node_or_null("RootMargin/RootVBox/StateRow/TurnLabel") as Label
+	var red_capture_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox/RedCaptureLabel") as Label
+	_check(turn_label != null and turn_label.text.contains("Black"), "xiangqi should pass the turn after a successful move")
+	_check(red_capture_label != null and red_capture_label.text.contains("卒"), "xiangqi should list captured pieces for the side that moved")
+
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(4, 0)),
+		_piece("red", "general", Vector2i(4, 9)),
+		_piece("red", "chariot", Vector2i(4, 5))
+	])
+	_check(not scene.call("is_side_in_check", &"red"), "xiangqi should treat a blocker between the generals as a safe position")
+	_check(not scene.call("try_move_at", Vector2i(4, 5), Vector2i(5, 5)), "xiangqi should reject moves that expose the generals to face each other")
+
+func _test_checkmate_game_over_detection() -> void:
+	var scene = await _spawn_scene()
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(4, 0)),
+		_piece("red", "general", Vector2i(8, 9)),
+		_piece("red", "chariot", Vector2i(3, 1)),
+		_piece("red", "chariot", Vector2i(5, 1)),
+		_piece("red", "chariot", Vector2i(4, 3))
+	])
+	_check(scene.call("try_move_at", Vector2i(4, 3), Vector2i(4, 2)), "xiangqi should allow the mating move into the checking file")
+	await _settle_frames(2)
+	_check(scene.call("get_winner") == &"red", "xiangqi should declare the moving side as the winner after checkmate")
+	var status_label = scene.get_node_or_null("RootMargin/RootVBox/StateRow/StatusLabel") as Label
+	_check(status_label != null and status_label.text.to_lower().contains("checkmate"), "xiangqi should explain checkmate in the status label")
+
+func _piece(side: String, piece_type: String, coords: Vector2i) -> Dictionary:
+	return {
+		"side": side,
+		"type": piece_type,
+		"coords": coords
+	}

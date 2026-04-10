@@ -3,7 +3,7 @@ extends Control
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 
 func _ready() -> void:
-	_schedule_headless_quit_if_root()
+	call_deferred("_schedule_headless_quit_if_root")
 
 func _schedule_headless_quit_if_root() -> void:
 	if DisplayServer.get_name() != "headless":
@@ -13,8 +13,9 @@ func _schedule_headless_quit_if_root() -> void:
 	call_deferred("_shutdown_headless")
 
 func _shutdown_headless() -> void:
-	await get_tree().create_timer(0.5).timeout
-	_cleanup_before_quit()
+	for _i in range(12):
+		await get_tree().process_frame
+	await _cleanup_before_quit()
 
 func _cleanup_before_quit() -> void:
 	_cleanup_viewport_helpers()
@@ -24,8 +25,11 @@ func _cleanup_before_quit() -> void:
 		return
 	if tree.current_scene == self:
 		tree.current_scene = null
-	tree.call_deferred("quit")
 	queue_free()
+	await tree.process_frame
+	await tree.process_frame
+	await tree.process_frame
+	tree.quit()
 
 func _cleanup_viewport_helpers() -> void:
 	var viewport := get_viewport()

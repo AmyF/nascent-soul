@@ -6,11 +6,13 @@ const SUITE_SCENES := [
 	preload("res://scenes/tests/suites/battlefield_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/core_state_suite.tscn"),
 	preload("res://scenes/tests/suites/demo_smoke_suite.tscn"),
+	preload("res://scenes/tests/suites/freecell_showcase_suite.tscn"),
 	preload("res://scenes/tests/suites/interaction_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/layout_visual_contract_suite.tscn"),
 	preload("res://scenes/tests/suites/performance_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/targeting_smoke_suite.tscn"),
-	preload("res://scenes/tests/suites/targeting_visual_framework_suite.tscn")
+	preload("res://scenes/tests/suites/targeting_visual_framework_suite.tscn"),
+	preload("res://scenes/tests/suites/xiangqi_showcase_suite.tscn")
 ]
 
 var _checks_run: int = 0

@@ -1,0 +1,468 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/examples/freecell.gd" id="1_scene"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="FreeCellSlotPanel"]
+bg_color = Color(0.09, 0.11, 0.15, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.39, 0.48, 0.61, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="FreeCellFoundationPanel"]
+bg_color = Color(0.09, 0.11, 0.15, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.64, 0.54, 0.31, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="FreeCellTableauPanel"]
+bg_color = Color(0.08, 0.10, 0.14, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.28, 0.43, 0.56, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[node name="FreeCellShowcase" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_scene")
+theme = ExtResource("2_theme")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"DemoSceneMargin"
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_type_variation = &"DemoRootVBox"
+
+[node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoToolbarHBox"
+
+[node name="NewGameButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "New Game"
+
+[node name="ReplaySeedButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+theme_type_variation = &"DemoDangerActionButton"
+text = "Replay Seed"
+
+[node name="SeedLabel" type="Label" parent="RootMargin/RootVBox/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Seed"
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoStatusLabel"
+text = "Latest: FreeCell status"
+
+[node name="VictoryLabel" type="Label" parent="RootMargin/RootVBox"]
+visible = false
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoGoldHeading"
+text = "Victory"
+
+[node name="TopRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoWideHBox"
+
+[node name="FreeCellsColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(528, 0)
+size_flags_horizontal = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="FreeCellsLabel" type="Label" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Free Cells"
+
+[node name="FreeCellsDetail" type="Label" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Hold one card per slot to unlock larger tableau moves."
+
+[node name="SlotsRow" type="HBoxContainer" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoWideHBox"
+
+[node name="Cell1" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow"]
+custom_minimum_size = Vector2(120, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("FreeCellSlotPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow/Cell1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Cell2" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow"]
+custom_minimum_size = Vector2(120, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("FreeCellSlotPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow/Cell2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Cell3" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow"]
+custom_minimum_size = Vector2(120, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("FreeCellSlotPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow/Cell3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Cell4" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow"]
+custom_minimum_size = Vector2(120, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("FreeCellSlotPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow/Cell4"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="FoundationsColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(528, 0)
+size_flags_horizontal = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="FoundationsLabel" type="Label" parent="RootMargin/RootVBox/TopRow/FoundationsColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoGoldHeading"
+text = "Foundations"
+
+[node name="FoundationsDetail" type="Label" parent="RootMargin/RootVBox/TopRow/FoundationsColumn"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Build A through K in suit order. Double-click exposed cards to auto-send them."
+
+[node name="SlotsRow" type="HBoxContainer" parent="RootMargin/RootVBox/TopRow/FoundationsColumn"]
+layout_mode = 2
+theme_type_variation = &"DemoWideHBox"
+
+[node name="Foundation1" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow"]
+custom_minimum_size = Vector2(120, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("FreeCellFoundationPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow/Foundation1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Foundation2" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow"]
+custom_minimum_size = Vector2(120, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("FreeCellFoundationPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow/Foundation2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Foundation3" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow"]
+custom_minimum_size = Vector2(120, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("FreeCellFoundationPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow/Foundation3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Foundation4" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow"]
+custom_minimum_size = Vector2(120, 176)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("FreeCellFoundationPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow/Foundation4"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TableauRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"DemoWideHBox"
+
+[node name="Tableau1" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau1"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "T1"
+
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau1"]
+custom_minimum_size = Vector2(120, 420)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("FreeCellTableauPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau1/ZonePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Tableau2" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau2"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "T2"
+
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau2"]
+custom_minimum_size = Vector2(120, 420)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("FreeCellTableauPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau2/ZonePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Tableau3" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau3"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "T3"
+
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau3"]
+custom_minimum_size = Vector2(120, 420)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("FreeCellTableauPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau3/ZonePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Tableau4" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau4"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "T4"
+
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau4"]
+custom_minimum_size = Vector2(120, 420)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("FreeCellTableauPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau4/ZonePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Tableau5" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau5"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "T5"
+
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau5"]
+custom_minimum_size = Vector2(120, 420)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("FreeCellTableauPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau5/ZonePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Tableau6" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau6"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "T6"
+
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau6"]
+custom_minimum_size = Vector2(120, 420)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("FreeCellTableauPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau6/ZonePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Tableau7" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau7"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "T7"
+
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau7"]
+custom_minimum_size = Vector2(120, 420)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("FreeCellTableauPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau7/ZonePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Tableau8" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(120, 0)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"DemoColumnVBox"
+
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau8"]
+layout_mode = 2
+theme_type_variation = &"DemoGreenHeading"
+text = "T8"
+
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau8"]
+custom_minimum_size = Vector2(120, 420)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("FreeCellTableauPanel")
+
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau8/ZonePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

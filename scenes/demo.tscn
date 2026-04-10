@@ -10,6 +10,8 @@
 [ext_resource type="PackedScene" path="res://scenes/examples/battlefield_hex_lab.tscn" id="8_hex"]
 [ext_resource type="PackedScene" path="res://scenes/examples/battlefield_transfer_modes.tscn" id="9_modes"]
 [ext_resource type="PackedScene" path="res://scenes/examples/targeting_lab.tscn" id="10_targeting"]
+[ext_resource type="PackedScene" path="res://scenes/examples/freecell.tscn" id="11_freecell"]
+[ext_resource type="PackedScene" path="res://scenes/examples/xiangqi.tscn" id="12_xiangqi"]
 
 [node name="DemoHub" type="Control" unique_id=1823012048]
 layout_mode = 3
@@ -105,4 +107,20 @@ layout_mode = 2
 metadata/_tab_index = 7
 
 [node name="Content" parent="RootMargin/RootVBox/TabContainer/Targeting选目标" instance=ExtResource("10_targeting")]
+layout_mode = 2
+
+[node name="FreeCell空当接龙" type="Control" parent="RootMargin/RootVBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 8
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/FreeCell空当接龙" instance=ExtResource("11_freecell")]
+layout_mode = 2
+
+[node name="Xiangqi象棋" type="Control" parent="RootMargin/RootVBox/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 9
+
+[node name="Content" parent="RootMargin/RootVBox/TabContainer/Xiangqi象棋" instance=ExtResource("12_xiangqi")]
 layout_mode = 2

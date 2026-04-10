@@ -9,6 +9,8 @@ const BATTLEFIELD_SQUARE_SCENE = preload("res://scenes/examples/battlefield_squa
 const BATTLEFIELD_HEX_SCENE = preload("res://scenes/examples/battlefield_hex_lab.tscn")
 const BATTLEFIELD_MODES_SCENE = preload("res://scenes/examples/battlefield_transfer_modes.tscn")
 const TARGETING_SCENE = preload("res://scenes/examples/targeting_lab.tscn")
+const FREECELL_SCENE = preload("res://scenes/examples/freecell.tscn")
+const XIANGQI_SCENE = preload("res://scenes/examples/xiangqi.tscn")
 
 func _init() -> void:
 	_suite_name = "demo-smoke"
@@ -32,6 +34,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_battlefield_examples_load()
 	await _reset_root()
+	await _test_showcase_examples_load()
+	await _reset_root()
 	await _test_targeting_example_load()
 
 func _test_demo_scene_resource_naming() -> void:
@@ -51,6 +55,13 @@ func _test_demo_scene_resource_naming() -> void:
 	_check(recipes_text.contains("id=\"RecipeBoardCapacityPolicy\""), "zone recipes should prefix scene-local policies with Recipe")
 	_check(recipes_text.contains("id=\"RecipeDeckCardSpark\""), "zone recipes should prefix scene-local card resources with Recipe")
 	_check(recipes_text.contains("id=\"RecipeDeckZonePanel\""), "zone recipes should prefix scene-local panel styles with Recipe")
+	var freecell_text = FileAccess.get_file_as_string("res://scenes/examples/freecell.tscn")
+	_check(freecell_text.contains("id=\"FreeCellSlotPanel\""), "freecell showcase should prefix scene-local slot styles with FreeCell")
+	_check(freecell_text.contains("id=\"FreeCellFoundationPanel\""), "freecell showcase should prefix scene-local foundation styles with FreeCell")
+	_check(freecell_text.contains("id=\"FreeCellTableauPanel\""), "freecell showcase should prefix scene-local tableau styles with FreeCell")
+	var xiangqi_text = FileAccess.get_file_as_string("res://scenes/examples/xiangqi.tscn")
+	_check(xiangqi_text.contains("id=\"XiangqiBoardPanel\""), "xiangqi showcase should prefix scene-local board styles with Xiangqi")
+	_check(xiangqi_text.contains("id=\"XiangqiSidePanel\""), "xiangqi showcase should prefix scene-local side styles with Xiangqi")
 
 func _test_static_demo_scene_configuration() -> void:
 	var demo = DEMO_SCENE.instantiate()
@@ -62,7 +73,7 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(demo_title != null and demo_title.theme_type_variation == &"DemoHubTitle", "demo hub title should use the shared title theme variation")
 	_check(demo_margin != null and demo_margin.theme_type_variation == &"DemoHubMargin", "demo hub margin container should use the shared hub margin variation")
 	if tab_container != null:
-		_check(tab_container.get_child_count() == 8, "demo hub should keep eight static example tabs")
+		_check(tab_container.get_child_count() == 10, "demo hub should keep ten static example tabs")
 		for tab in tab_container.get_children():
 			_check(tab.get_node_or_null("Content") != null, "demo hub tabs should statically embed their example scenes")
 	var transfer = TRANSFER_SCENE.instantiate()
@@ -125,6 +136,11 @@ func _test_static_demo_scene_configuration() -> void:
 	var recipes_deck_cards = recipes.get("deck_cards") as Array
 	var recipes_hand_cards = recipes.get("hand_cards") as Array
 	var recipes_board_cards = recipes.get("board_cards") as Array
+	var freecell = FREECELL_SCENE.instantiate()
+	var freecell_status = freecell.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
+	var xiangqi = XIANGQI_SCENE.instantiate()
+	var xiangqi_turn = xiangqi.get_node_or_null("RootMargin/RootVBox/StateRow/TurnLabel") as Label
+	var xiangqi_board_host = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost") as Control
 	_check(recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardDetails") != null, "zone recipes should serialize the static board recipe copy")
 	_check(recipes.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardCapacityLabel") != null, "zone recipes should serialize the dynamic board capacity label")
 	_check(recipes.theme != null, "zone recipes should serialize the shared demo theme")
@@ -135,11 +151,19 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(recipes_board_cards.size() == 2, "zone recipes should serialize two board sample cards")
 	_check(recipes_board != null and recipes_board.config != null, "zone recipes board zone should serialize its config")
 	_check(recipes_board != null and ExampleSupport.get_zone_transfer_policy(recipes_board) is ZoneCapacityTransferPolicy, "zone recipes board zone should serialize its capacity policy")
+	_check(freecell.theme != null, "freecell showcase should serialize the shared demo theme")
+	_check(freecell_status != null and freecell_status.theme_type_variation == &"DemoStatusLabel", "freecell showcase should use the shared status theme variation")
+	_check(freecell.get_node_or_null("RootMargin/RootVBox/TableauRow") is HBoxContainer, "freecell showcase should serialize the tableau row host")
+	_check(xiangqi.theme != null, "xiangqi showcase should serialize the shared demo theme")
+	_check(xiangqi_turn != null and xiangqi_turn.theme_type_variation == &"DemoGoldHeading", "xiangqi showcase should use the shared turn heading variation")
+	_check(xiangqi_board_host != null, "xiangqi showcase should serialize the board host container")
 	demo.free()
 	transfer.free()
 	policy.free()
 	layouts.free()
 	recipes.free()
+	freecell.free()
+	xiangqi.free()
 
 func _test_demo_hub_summary_panels() -> void:
 	var scene = DEMO_SCENE.instantiate()
@@ -157,6 +181,8 @@ func _test_demo_hub_summary_panels() -> void:
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 2, "Content/RootMargin/RootVBox/Grid", "policy tab content should stay below the tab header")
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 3, "Content/RootMargin/RootVBox/Toolbar", "recipes tab toolbar should stay below the tab header")
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 7, "Content/RootMargin/RootVBox/ContentRow", "targeting tab content should stay below the tab header")
+	await _assert_tab_content_stays_below_tab_bar(tab_container, 8, "Content/RootMargin/RootVBox/TopRow", "freecell tab content should stay below the tab header")
+	await _assert_tab_content_stays_below_tab_bar(tab_container, 9, "Content/RootMargin/RootVBox/ContentRow", "xiangqi tab content should stay below the tab header")
 
 func _test_transfer_playground_guidance() -> void:
 	var scene = TRANSFER_SCENE.instantiate()
@@ -339,6 +365,32 @@ func _test_battlefield_examples_load() -> void:
 		_check(found_battlefield_zone, "%s should expose at least one battlefield zone" % scene.name)
 		scene.queue_free()
 		await _settle_frames(1)
+
+func _test_showcase_examples_load() -> void:
+	var freecell = FREECELL_SCENE.instantiate()
+	add_child(freecell)
+	await _settle_frames(3)
+	var freecell_status = freecell.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
+	var freecell_seed = freecell.get_node_or_null("RootMargin/RootVBox/Toolbar/SeedLabel") as Label
+	_check(freecell_status != null and freecell_status.text.contains("FreeCell"), "freecell showcase should report initial game guidance in the status label")
+	_check(freecell_seed != null and freecell_seed.text.contains("Seed"), "freecell showcase should expose the deal seed in the toolbar")
+	_check(freecell.call("get_tableau_zones").size() == 8, "freecell showcase should create eight tableau lanes")
+	_check(freecell.call("get_free_cell_zones").size() == 4, "freecell showcase should create four free cells")
+	_check(freecell.call("get_foundation_zones").size() == 4, "freecell showcase should create four foundations")
+	freecell.queue_free()
+	await _settle_frames(1)
+
+	var xiangqi = XIANGQI_SCENE.instantiate()
+	add_child(xiangqi)
+	await _settle_frames(3)
+	var turn_label = xiangqi.get_node_or_null("RootMargin/RootVBox/StateRow/TurnLabel") as Label
+	var status_label = xiangqi.get_node_or_null("RootMargin/RootVBox/StateRow/StatusLabel") as Label
+	var board_zone = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
+	_check(turn_label != null and turn_label.text.contains("Red"), "xiangqi showcase should start with red to move")
+	_check(status_label != null and status_label.text.contains("Click"), "xiangqi showcase should explain how to begin a move")
+	_check(board_zone != null and board_zone.get_item_count() == 32, "xiangqi showcase should create the full initial board setup")
+	xiangqi.queue_free()
+	await _settle_frames(1)
 
 func _test_targeting_example_load() -> void:
 	var scene = TARGETING_SCENE.instantiate()
