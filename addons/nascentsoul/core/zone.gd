@@ -70,19 +70,18 @@ func _ready() -> void:
 		resized.connect(resized_callable)
 
 func _exit_tree() -> void:
+	var drag_coordinator = _get_drag_coordinator(false)
+	if drag_coordinator != null and drag_coordinator.get_session() != null:
+		var drag_session = drag_coordinator.get_session()
+		if drag_session.source_zone == self or drag_session.hover_zone == self:
+			drag_coordinator.clear_session()
 	var targeting_coordinator = _get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		var session = targeting_coordinator.get_session()
 		if session.source_zone == self or session.candidate.target_zone == self:
 			targeting_coordinator.clear_session()
 	_unbind_items_root_signals(_items_root)
-	if _input_service != null:
-		_input_service.cleanup()
-	if _render_service != null:
-		_render_service.clear_preview_internal()
-		_render_service.clear_display_state()
-	if _store != null:
-		_store.clear_transfer_handoffs()
+	_cleanup_runtime_services()
 	remove_from_group(TARGETING_ZONE_GROUP)
 
 func _process(delta: float) -> void:
@@ -452,6 +451,26 @@ func _ensure_services() -> void:
 		_targeting_service = ZoneTargetingService.new(_context)
 	_context.bind_services(_input_service, _render_service, _transfer_service, _targeting_service)
 	_transfer_service.bind_services(_input_service, _render_service, _targeting_service)
+
+func _cleanup_runtime_services() -> void:
+	if _input_service != null:
+		_input_service.cleanup()
+	if _targeting_service != null:
+		_targeting_service.cleanup()
+	if _transfer_service != null:
+		_transfer_service.cleanup()
+	if _render_service != null:
+		_render_service.cleanup()
+	if _context != null:
+		_context.cleanup()
+	if _store != null:
+		_store.cleanup()
+	_input_service = null
+	_targeting_service = null
+	_transfer_service = null
+	_render_service = null
+	_context = null
+	_store = null
 
 func _resolved_config() -> ZoneConfig:
 	if _config != null:

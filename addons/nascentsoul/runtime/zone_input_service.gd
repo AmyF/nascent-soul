@@ -51,12 +51,22 @@ func ensure_long_press_timer() -> void:
 func cleanup() -> void:
 	for item in item_bindings.keys().duplicate():
 		unregister_item(item)
+	item_bindings.clear()
 	var gui_input_callable = Callable(self, "on_zone_gui_input")
-	if zone.gui_input.is_connected(gui_input_callable):
+	if zone != null and is_instance_valid(zone) and zone.gui_input.is_connected(gui_input_callable):
 		zone.gui_input.disconnect(gui_input_callable)
 	if is_instance_valid(long_press_timer):
+		var timeout_callable = Callable(self, "on_long_press_timeout")
+		if long_press_timer.timeout.is_connected(timeout_callable):
+			long_press_timer.timeout.disconnect(timeout_callable)
+		long_press_timer.stop()
 		long_press_timer.queue_free()
+	reset_press_state_for_item()
 	long_press_timer = null
+	long_press_item = null
+	selection_state = null
+	zone = null
+	context = null
 
 func register_item(item: ZoneItemControl) -> void:
 	if not is_instance_valid(item) or item_bindings.has(item):

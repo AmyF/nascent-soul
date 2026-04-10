@@ -3,7 +3,11 @@ class_name ZoneStore extends RefCounted
 var items: Array[ZoneItemControl] = []
 var item_targets: Dictionary = {}
 var transfer_handoffs: Dictionary = {}
-var selection_state := ZoneSelectionState.new()
+var selection_state: ZoneSelectionState = ZoneSelectionState.new()
+
+func cleanup() -> void:
+	clear_runtime_items()
+	selection_state = null
 
 func get_items() -> Array[ZoneItemControl]:
 	return items.duplicate()
@@ -133,7 +137,8 @@ func clear_runtime_items() -> void:
 	items.clear()
 	item_targets.clear()
 	clear_transfer_handoffs()
-	selection_state.clear()
+	if selection_state != null:
+		selection_state.clear()
 
 func sync_container_order(items_root: Control, ghost_instance: Control = null) -> void:
 	if items_root == null:

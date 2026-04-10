@@ -11,6 +11,14 @@ func _init(p_context: ZoneContext) -> void:
 	context = p_context
 	zone = context.zone
 
+func cleanup() -> void:
+	clear_targeting_feedback(false)
+	highlight_item = null
+	candidate = ZoneTargetCandidate.invalid()
+	decision = ZoneTargetDecision.new()
+	zone = null
+	context = null
+
 func begin_targeting(command: ZoneTargetingCommand) -> bool:
 	if command == null or not is_instance_valid(command.source_item):
 		return false

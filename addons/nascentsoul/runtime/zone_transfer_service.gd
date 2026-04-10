@@ -18,6 +18,14 @@ func bind_services(p_input_service: ZoneInputService, p_render_service: ZoneRend
 	render_service = p_render_service
 	targeting_service = p_targeting_service
 
+func cleanup() -> void:
+	input_service = null
+	render_service = null
+	targeting_service = null
+	store = null
+	zone = null
+	context = null
+
 func process(_delta: float) -> void:
 	if zone.get_items_root() == null:
 		return

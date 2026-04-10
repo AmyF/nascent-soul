@@ -23,6 +23,15 @@ func bind_services(p_input_service, p_render_service, p_transfer_service, p_targ
 	transfer_service = p_transfer_service
 	targeting_service = p_targeting_service
 
+func cleanup() -> void:
+	zone = null
+	config = null
+	store = null
+	input_service = null
+	render_service = null
+	transfer_service = null
+	targeting_service = null
+
 func update_config(next_config) -> void:
 	config = next_config
 

@@ -44,7 +44,15 @@ func clear_display_state() -> void:
 			if active_tweens[item] != null:
 				active_tweens[item].kill()
 	display_state.clear()
-	context.clear_transfer_handoffs()
+	if context != null:
+		context.clear_transfer_handoffs()
+
+func cleanup() -> void:
+	clear_preview_internal()
+	clear_display_state()
+	reset_hover_feedback_tracking()
+	context = null
+	zone = null
 
 func get_display_state(style: Resource) -> Dictionary:
 	var key = style.get_instance_id()
