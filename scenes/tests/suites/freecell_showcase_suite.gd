@@ -12,6 +12,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_illegal_moves_and_multi_card_capacity_limits()
 	await _reset_root()
+	await _test_drag_start_rules_and_group_drag_visuals()
+	await _reset_root()
 	await _test_hover_feedback_stays_static()
 	await _reset_root()
 	await _test_compact_layout_keeps_tableau_operable()
@@ -161,6 +163,90 @@ func _test_illegal_moves_and_multi_card_capacity_limits() -> void:
 	await _settle_frames(2)
 	_check((tableaus[0] as Zone).get_item_count() == 0 and (tableaus[1] as Zone).get_item_count() == 3, "successful multi-card moves should relocate the full exposed run")
 
+func _test_drag_start_rules_and_group_drag_visuals() -> void:
+	var scene = await _spawn_scene()
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["9C", "8H", "7C"],
+			[],
+			["6D"],
+			[],
+			[],
+			[],
+			[],
+			[]
+		],
+		"free_cells": ["", "", "", ""],
+		"foundations": {
+			"hearts": ["AH", "2H"]
+		}
+	})
+	await _settle_frames(3)
+	var tableaus: Array = scene.call("get_tableau_zones")
+	var foundations: Array = scene.call("get_foundation_zones")
+	var source_zone = tableaus[0] as Zone
+	var target_zone = tableaus[1] as Zone
+	var run_head = scene.call("get_card_by_code", "9C") as ZoneItemControl
+	source_zone.start_drag([run_head], run_head)
+	var session = source_zone.get_drag_session()
+	_check(session != null, "freecell should allow dragging an exposed descending alternating run from its head card")
+	if session != null:
+		_check(_card_codes(session.items) == ["9C", "8H", "7C"], "freecell should expand the drag to the full exposed tableau run")
+		_check(session.anchor_item == run_head, "freecell should preserve the clicked card as the drag anchor")
+		_check(session.cursor_proxy != null and session.cursor_proxy.get_child_count() == 3, "freecell drag proxy should render the full dragged run")
+		_preview_transfer(target_zone, source_zone, session.items, ZonePlacementTarget.linear(0), run_head.global_position, session.anchor_item)
+		session.hover_zone = target_zone
+		session.preview_target = ZonePlacementTarget.linear(0)
+		var ghost = _find_unmanaged_control(target_zone)
+		_check(ghost != null and ghost.get_child_count() == 3, "freecell preview ghost should render the full dragged run")
+		source_zone.cancel_drag(session)
+		await _settle_frames(2)
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["9C", "8H", "7H"],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[]
+		],
+		"free_cells": ["", "", "", ""],
+		"foundations": {}
+	})
+	await _settle_frames(3)
+	source_zone = (scene.call("get_tableau_zones")[0] as Zone)
+	var invalid_head = scene.call("get_card_by_code", "9C") as ZoneItemControl
+	source_zone.start_drag([invalid_head], invalid_head)
+	await _settle_frames(2)
+	_check(source_zone.get_drag_session() == null, "freecell should reject dragging a tableau suffix that is not a legal descending alternating run")
+	scene.call("load_debug_state", {
+		"tableaus": [[], [], [], [], [], [], [], []],
+		"free_cells": ["KS", "", "", ""],
+		"foundations": {
+			"hearts": ["AH", "2H", "3H"]
+		}
+	})
+	await _settle_frames(3)
+	var free_cells: Array = scene.call("get_free_cell_zones")
+	var free_cell_zone = free_cells[0] as Zone
+	var free_cell_card = scene.call("get_card_by_code", "KS") as ZoneItemControl
+	free_cell_zone.start_drag([free_cell_card], free_cell_card)
+	session = free_cell_zone.get_drag_session()
+	_check(session != null and session.items.size() == 1, "freecell lanes should only ever start single-card drags from free cells")
+	if session != null:
+		free_cell_zone.cancel_drag(session)
+		await _settle_frames(2)
+	var foundation_zone = foundations[2] as Zone
+	var foundation_top = scene.call("get_card_by_code", "3H") as ZoneItemControl
+	foundation_zone.start_drag(_card_array(scene, ["AH", "2H", "3H"]), foundation_top)
+	session = foundation_zone.get_drag_session()
+	_check(session != null and _card_codes(session.items) == ["3H"], "freecell foundations should only drag the exposed top card even if more cards are requested")
+	if session != null:
+		foundation_zone.cancel_drag(session)
+		await _settle_frames(2)
+
 func _test_victory_detection() -> void:
 	var scene = await _spawn_scene()
 	scene.call("load_debug_state", {
@@ -252,3 +338,10 @@ func _card_array(scene: Control, codes: Array) -> Array[ZoneItemControl]:
 		if card is ZoneItemControl:
 			cards.append(card)
 	return cards
+
+func _card_codes(items: Array) -> Array[String]:
+	var codes: Array[String] = []
+	for item in items:
+		if item is ZoneItemControl:
+			codes.append((item as ZoneItemControl).name)
+	return codes

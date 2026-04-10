@@ -6,6 +6,7 @@ const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card
 const FreeCellCardDisplayScript = preload("res://scenes/examples/freecell/freecell_card_display.gd")
 const FreeCellTableauLayoutScript = preload("res://scenes/examples/freecell/freecell_tableau_layout.gd")
 const FreeCellZonePolicyScript = preload("res://scenes/examples/freecell/freecell_zone_policy.gd")
+const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
 const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 const REJECT_STATUS_COLOR := Color(0.96, 0.60, 0.56)
@@ -193,6 +194,30 @@ func evaluate_freecell_transfer(zone_role: StringName, zone_index: int, _context
 		_:
 			return ZoneTransferDecision.new(false, "Unknown FreeCell destination.", ZonePlacementTarget.invalid())
 
+func evaluate_freecell_drag_start(zone_role: StringName, _zone_index: int, context: ZoneContext, anchor_item: ZoneItemControl, _selected_items: Array[ZoneItemControl]):
+	if context == null or anchor_item is not FreeCellCardScript or not context.has_item(anchor_item):
+		return ZoneDragStartDecisionScript.new(false, "This card can no longer move.", [])
+	var source_cards = _typed_cards(context.get_items_ordered())
+	var card_index = _find_card_index(source_cards, anchor_item)
+	if card_index == -1:
+		return ZoneDragStartDecisionScript.new(false, "This card can no longer move.", [anchor_item])
+	match zone_role:
+		&"tableau":
+			var tail = source_cards.slice(card_index, source_cards.size())
+			if tail.is_empty():
+				return ZoneDragStartDecisionScript.new(false, "This card can no longer move.", [anchor_item])
+			if card_index != source_cards.size() - 1 and not _is_descending_alternating_run(tail):
+				return ZoneDragStartDecisionScript.new(false, "Only exposed descending alternating runs can move together.", [anchor_item])
+			if tail.size() == 1 and card_index != source_cards.size() - 1:
+				return ZoneDragStartDecisionScript.new(false, "Only the exposed top card can move from this tableau.", [anchor_item])
+			return ZoneDragStartDecisionScript.new(true, "", tail)
+		&"freecell", &"foundation":
+			if card_index != source_cards.size() - 1:
+				return ZoneDragStartDecisionScript.new(false, "Only the exposed top card can move.", [anchor_item])
+			return ZoneDragStartDecisionScript.new(true, "", [anchor_item])
+		_:
+			return ZoneDragStartDecisionScript.new(false, "Unknown FreeCell source lane.", [anchor_item])
+
 func _build_zones() -> void:
 	if not _tableau_zones.is_empty():
 		return
@@ -254,6 +279,7 @@ func _wire_controls() -> void:
 func _bind_zone_events(zone: Zone) -> void:
 	zone.item_transferred.connect(_on_item_transferred.bind(zone))
 	zone.drop_rejected.connect(_on_drop_rejected.bind(zone))
+	zone.drag_start_rejected.connect(_on_drag_start_rejected.bind(zone))
 	zone.item_double_clicked.connect(_on_item_double_clicked.bind(zone))
 	if _zone_info.get(zone, {}).get("role", &"") == &"tableau":
 		zone.item_clicked.connect(_on_tableau_item_clicked.bind(zone))
@@ -356,6 +382,12 @@ func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, _
 	_set_status("%s moved from %s to %s." % [_card_label(item), source_zone.name, target_zone.name])
 
 func _on_drop_rejected(items: Array, _source_zone: Zone, _target_zone: Zone, reason: String, _emitter_zone: Zone) -> void:
+	if items.is_empty():
+		_set_status(reason, REJECT_STATUS_COLOR)
+		return
+	_set_status("%s: %s" % [_card_label(items[0]), reason], REJECT_STATUS_COLOR)
+
+func _on_drag_start_rejected(items: Array, _source_zone: Zone, reason: String, _emitter_zone: Zone) -> void:
 	if items.is_empty():
 		_set_status(reason, REJECT_STATUS_COLOR)
 		return

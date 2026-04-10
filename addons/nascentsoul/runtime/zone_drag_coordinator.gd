@@ -36,9 +36,9 @@ static func ensure_for(zone_host: Node) -> ZoneDragCoordinator:
 func get_session() -> ZoneDragSession:
 	return active_session
 
-func start_drag(source_zone: Node, items: Array[ZoneItemControl], drag_offset: Vector2, cursor_proxy: Control) -> ZoneDragSession:
+func start_drag(source_zone: Node, items: Array[ZoneItemControl], anchor_item: ZoneItemControl, drag_offset: Vector2, cursor_proxy: Control) -> ZoneDragSession:
 	clear_session()
-	active_session = ZoneDragSession.new(source_zone, items, drag_offset, cursor_proxy)
+	active_session = ZoneDragSession.new(source_zone, items, anchor_item, drag_offset, cursor_proxy)
 	set_process(true)
 	if is_instance_valid(cursor_proxy):
 		cursor_proxy.top_level = true

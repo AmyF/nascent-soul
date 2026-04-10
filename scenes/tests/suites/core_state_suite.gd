@@ -6,6 +6,54 @@ const ZoneGroupSortScript = preload("res://addons/nascentsoul/impl/sorts/zone_gr
 const HAND_CONFIG = preload("res://addons/nascentsoul/presets/hand_zone_config.tres")
 const BOARD_CONFIG = preload("res://addons/nascentsoul/presets/board_zone_config.tres")
 const TRANSFER_PLAYGROUND_SCENE = preload("res://scenes/examples/transfer_playground.tscn")
+const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
+
+class RejectDragStartPolicy extends ZoneTransferPolicy:
+	func evaluate_drag_start(_context: ZoneContext, anchor_item: ZoneItemControl, _selected_items: Array[ZoneItemControl]):
+		return ZoneDragStartDecisionScript.new(false, "Dragging %s is disabled." % anchor_item.name, [anchor_item])
+
+class GroupVisualTestItem extends ZoneItemControl:
+	func _init(label: String = "") -> void:
+		name = label
+		custom_minimum_size = Vector2(72, 96)
+		size = custom_minimum_size
+
+	func create_zone_drag_ghost(_context: ZoneContext) -> Control:
+		var ghost := Panel.new()
+		ghost.name = "SingleGhost"
+		ghost.custom_minimum_size = custom_minimum_size
+		ghost.size = custom_minimum_size
+		return ghost
+
+	func create_zone_drag_proxy(_context: ZoneContext) -> Control:
+		var proxy := ColorRect.new()
+		proxy.name = "SingleProxy"
+		proxy.color = Color(0.32, 0.46, 0.88, 0.72)
+		proxy.custom_minimum_size = custom_minimum_size
+		proxy.size = custom_minimum_size
+		return proxy
+
+	func create_zone_group_drag_ghost(_context: ZoneContext, source_items: Array[ZoneItemControl], _anchor_item: ZoneItemControl) -> Control:
+		return _make_group_root("GroupGhost", Color(0.92, 0.82, 0.36, 0.22), source_items.size())
+
+	func create_zone_group_drag_proxy(_context: ZoneContext, source_items: Array[ZoneItemControl], _anchor_item: ZoneItemControl) -> Control:
+		return _make_group_root("GroupProxy", Color(0.22, 0.72, 0.92, 0.72), source_items.size())
+
+	func _make_group_root(root_name: String, color: Color, item_count: int) -> Control:
+		var root := Control.new()
+		root.name = root_name
+		root.custom_minimum_size = Vector2(custom_minimum_size.x, custom_minimum_size.y + max(0, item_count - 1) * 22.0)
+		root.size = root.custom_minimum_size
+		for index in range(item_count):
+			var rect := ColorRect.new()
+			rect.name = "Layer%d" % index
+			rect.color = color
+			rect.custom_minimum_size = custom_minimum_size
+			rect.size = custom_minimum_size
+			rect.position = Vector2(0, index * 22.0)
+			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			root.add_child(rect)
+		return root
 
 func _init() -> void:
 	_suite_name = "core-state"
@@ -32,6 +80,10 @@ func _run_suite() -> void:
 	await _test_group_sort_policy()
 	await _reset_root()
 	await _test_drag_visual_factory()
+	await _reset_root()
+	await _test_drag_start_rejection_signal()
+	await _reset_root()
+	await _test_group_drag_visual_hooks_and_anchor_snapshots()
 	await _reset_root()
 	await _test_policy_reject_cleanup()
 	await _reset_root()
@@ -453,6 +505,65 @@ func _test_drag_visual_factory() -> void:
 	await _settle_frames(2)
 	_check(_unmanaged_control_names(source_zone).is_empty(), "custom proxy cleanup should not leave unmanaged controls in the source zone")
 	_check(_unmanaged_control_names(target_zone).is_empty(), "custom ghost cleanup should not leave unmanaged controls in the target zone")
+
+func _test_drag_start_rejection_signal() -> void:
+	var panel = _make_panel("RejectStartPanel", Vector2(24, 24), Vector2(620, 260))
+	var reject_policy := RejectDragStartPolicy.new()
+	var zone = ExampleSupport.make_zone(panel, "RejectStartZone", ZoneHBoxLayout.new(), null, reject_policy)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	var rejection_events: Array[String] = []
+	zone.drag_start_rejected.connect(func(items: Array, source_zone_ref: Zone, reason: String) -> void:
+		var item_name = str(items[0].name) if not items.is_empty() and items[0] is Control else "Selection"
+		rejection_events.append("%s:%s:%s" % [item_name, source_zone_ref.name, reason])
+	)
+	zone.add_item(alpha)
+	await _settle_frames(2)
+	zone.start_drag([alpha], alpha)
+	await _settle_frames(2)
+	_check(zone.get_drag_session() == null, "drag start rejection should not create a drag session")
+	_check(alpha.visible, "drag start rejection should leave the original card visible")
+	_check(rejection_events == ["Alpha:RejectStartZone:Dragging Alpha is disabled."], "drag start rejection should emit the source zone and reason")
+	_check(_unmanaged_control_names(zone).is_empty(), "drag start rejection should not create unmanaged proxy or ghost controls")
+
+func _test_group_drag_visual_hooks_and_anchor_snapshots() -> void:
+	var target_panel = _make_panel("GroupVisualTargetPanel", Vector2.ZERO, Vector2(620, 260))
+	var source_panel = _make_panel("GroupVisualSourcePanel", Vector2(24, 320), Vector2(620, 260))
+	var source_zone = ExampleSupport.make_zone(source_panel, "GroupVisualSourceZone", ZoneHBoxLayout.new())
+	var target_zone = ExampleSupport.make_zone(target_panel, "GroupVisualTargetZone", ZoneHBoxLayout.new())
+	var alpha = GroupVisualTestItem.new("Alpha")
+	var beta = GroupVisualTestItem.new("Beta")
+	source_zone.add_item(alpha)
+	source_zone.add_item(beta)
+	await _settle_frames(2)
+	source_zone.start_drag([alpha, beta], beta)
+	var session = source_zone.get_drag_session()
+	_check(session != null, "group drag visual test should create an active drag session")
+	if session == null:
+		return
+	_check(session.anchor_item == beta, "multi-item drags should preserve the explicit anchor item")
+	_check(_control_name_list(session.items) == ["Alpha", "Beta"], "drag start should still normalize moving items into zone order")
+	_check(session.cursor_proxy != null and session.cursor_proxy.name == "GroupProxy", "group drag proxy hook should take precedence over the single-item proxy")
+	_check(session.cursor_proxy.get_child_count() == 2, "group drag proxy should render every dragged item")
+	var preview_decision = _preview_transfer(target_zone, source_zone, session.items, ZonePlacementTarget.linear(0), beta.global_position, session.anchor_item)
+	_check(preview_decision.allowed, "group drag preview should still resolve through the normal transfer path")
+	session.hover_zone = target_zone
+	session.preview_target = ZonePlacementTarget.linear(0)
+	var ghost = _find_unmanaged_control(target_zone)
+	_check(ghost != null and ghost.name == "GroupGhost", "group drag ghost hook should take precedence over the single-item ghost")
+	if ghost != null:
+		_check(ghost.get_child_count() == 2, "group drag ghost should render every dragged item")
+	var drop_position = Vector2(420, 180)
+	var snapshots = _capture_transfer_snapshots(source_zone, session.items, drop_position, session.anchor_item)
+	var alpha_snapshot: Dictionary = snapshots.get(alpha, {})
+	var beta_snapshot: Dictionary = snapshots.get(beta, {})
+	var dragged_offset = alpha_snapshot.get("global_position", Vector2.ZERO) - beta_snapshot.get("global_position", Vector2.ZERO)
+	var source_offset = alpha.global_position - beta.global_position
+	_check(beta_snapshot.get("global_position", Vector2.ZERO).distance_to(drop_position) <= 0.01, "drag transfer snapshots should anchor the explicit drag anchor at the drop position")
+	_check(dragged_offset.distance_to(source_offset) <= 0.01, "drag transfer snapshots should preserve relative offsets around the explicit anchor item")
+	source_zone.cancel_drag(session)
+	await _settle_frames(2)
+	_check(_unmanaged_control_names(source_zone).is_empty(), "group proxy cleanup should not leave unmanaged controls in the source zone")
+	_check(_unmanaged_control_names(target_zone).is_empty(), "group ghost cleanup should not leave unmanaged controls in the target zone")
 
 func _test_drag_cancel_cleanup() -> void:
 	var panel = _make_panel("CancelPanel", Vector2(24, 24), Vector2(620, 260))

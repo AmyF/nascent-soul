@@ -6,12 +6,18 @@ class_name ZoneItemControl extends Control
 
 var _zone_visual_state := ZoneItemVisualState.new()
 
+func create_zone_group_drag_ghost(context: ZoneContext, _source_items: Array[ZoneItemControl], _anchor_item: ZoneItemControl) -> Control:
+	return create_zone_drag_ghost(context)
+
 func create_zone_drag_ghost(_context: ZoneContext) -> Control:
 	var ghost := ColorRect.new()
 	ghost.color = Color(1, 1, 1, 0.18)
 	ghost.custom_minimum_size = _resolved_item_size()
 	ghost.size = ghost.custom_minimum_size
 	return ghost
+
+func create_zone_group_drag_proxy(context: ZoneContext, _source_items: Array[ZoneItemControl], _anchor_item: ZoneItemControl) -> Control:
+	return create_zone_drag_proxy(context)
 
 func create_zone_drag_proxy(_context: ZoneContext) -> Control:
 	var proxy = duplicate(0)

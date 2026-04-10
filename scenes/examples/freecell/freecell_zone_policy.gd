@@ -4,6 +4,11 @@ var controller = null
 var zone_role: StringName = &""
 var zone_index: int = -1
 
+func evaluate_drag_start(context: ZoneContext, anchor_item: ZoneItemControl, selected_items: Array[ZoneItemControl]):
+	if controller == null or not controller.has_method("evaluate_freecell_drag_start"):
+		return ZoneDragStartDecisionScript.new(false, "FreeCell controller unavailable.", [])
+	return controller.evaluate_freecell_drag_start(zone_role, zone_index, context, anchor_item, selected_items)
+
 func evaluate_transfer(context: ZoneContext, request: ZoneTransferRequest) -> ZoneTransferDecision:
 	if controller == null or not controller.has_method("evaluate_freecell_transfer"):
 		return ZoneTransferDecision.new(false, "FreeCell controller unavailable.", ZonePlacementTarget.invalid())

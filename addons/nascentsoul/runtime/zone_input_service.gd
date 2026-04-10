@@ -220,7 +220,7 @@ func handle_mouse_motion(event: InputEventMouseMotion, item: ZoneItemControl) ->
 	if context.targeting_service.try_start_drag_targeting(item, event.global_position):
 		return
 	var drag_items = resolve_drag_items(item)
-	context.transfer_service.start_drag_at(drag_items, event.global_position)
+	context.transfer_service.start_drag_at(drag_items, event.global_position, item)
 
 func apply_click_selection(item: ZoneItemControl, event: InputEventMouseButton) -> void:
 	var interaction = context.get_interaction()

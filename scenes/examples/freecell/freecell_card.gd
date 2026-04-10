@@ -65,6 +65,12 @@ func create_zone_drag_ghost(_context: ZoneContext) -> Control:
 	ghost.add_theme_stylebox_override("panel", style)
 	return ghost
 
+func create_zone_group_drag_ghost(context: ZoneContext, source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
+	var cards = _group_cards(source_items, anchor_item)
+	if cards.size() <= 1:
+		return create_zone_drag_ghost(context)
+	return _build_group_visual(context, cards, anchor_item, false)
+
 func create_zone_drag_proxy(_context: ZoneContext) -> Control:
 	var proxy = duplicate(0)
 	if proxy is Control:
@@ -73,6 +79,12 @@ func create_zone_drag_proxy(_context: ZoneContext) -> Control:
 		control_proxy.global_position = global_position
 		return control_proxy
 	return super.create_zone_drag_proxy(_context)
+
+func create_zone_group_drag_proxy(context: ZoneContext, source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
+	var cards = _group_cards(source_items, anchor_item)
+	if cards.size() <= 1:
+		return create_zone_drag_proxy(context)
+	return _build_group_visual(context, cards, anchor_item, true)
 
 func apply_zone_visual_state(state: ZoneItemVisualState) -> void:
 	var next_state = state if state != null else ZoneItemVisualState.new()
@@ -215,3 +227,49 @@ func _resolved_card_size() -> Vector2:
 	if custom_minimum_size != Vector2.ZERO:
 		return custom_minimum_size
 	return CARD_SIZE
+
+func _group_cards(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Array[ZoneItemControl]:
+	var cards: Array[ZoneItemControl] = []
+	var has_anchor = false
+	for item in source_items:
+		if item is not ZoneItemControl or not is_instance_valid(item):
+			continue
+		cards.append(item as ZoneItemControl)
+		if item == anchor_item:
+			has_anchor = true
+	if cards.is_empty():
+		return cards
+	if not has_anchor:
+		var anchor_card = anchor_item as ZoneItemControl
+		if is_instance_valid(anchor_card):
+			cards = [anchor_card]
+	return cards
+
+func _build_group_visual(context: ZoneContext, cards: Array[ZoneItemControl], anchor_item: ZoneItemControl, use_proxy: bool) -> Control:
+	var anchor_card = anchor_item as ZoneItemControl
+	if not is_instance_valid(anchor_card):
+		anchor_card = cards[0]
+	var root := Control.new()
+	root.name = "%s%s" % [anchor_card.name, "GroupProxy" if use_proxy else "GroupGhost"]
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var anchor_global = anchor_card.global_position
+	var bounds = Rect2(Vector2.ZERO, _resolved_card_size())
+	var added_children = 0
+	for card in cards:
+		if not is_instance_valid(card):
+			continue
+		var child = card.create_zone_drag_proxy(context) if use_proxy else card.create_zone_drag_ghost(context)
+		if child == null:
+			continue
+		root.add_child(child)
+		child.top_level = false
+		child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		child.position = card.global_position - anchor_global
+		var child_size = child.size if child.size != Vector2.ZERO else child.custom_minimum_size
+		bounds = bounds.expand(child.position + child_size)
+		added_children += 1
+	if added_children == 0:
+		return create_zone_drag_proxy(context) if use_proxy else create_zone_drag_ghost(context)
+	root.custom_minimum_size = bounds.size
+	root.size = bounds.size
+	return root

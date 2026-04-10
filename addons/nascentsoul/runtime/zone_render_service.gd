@@ -120,8 +120,8 @@ func update_hover_preview(session: ZoneDragSession) -> void:
 	session.hover_zone = zone
 	session.requested_target = requested_target
 	session.preview_target = preview_target
-	var preview_source = session.items[0] if not session.items.is_empty() and session.items[0] is ZoneItemControl else null
-	if apply_hover_feedback(session.items, decision, preview_target, preview_source):
+	var preview_anchor = session.anchor_item if is_instance_valid(session.anchor_item) else session.items[0] if not session.items.is_empty() and session.items[0] is ZoneItemControl else null
+	if apply_hover_feedback(session.items, decision, preview_target, preview_anchor):
 		refresh()
 
 func get_layout_items(session: ZoneDragSession) -> Array[ZoneItemControl]:
@@ -147,18 +147,19 @@ func should_render_ghost_for_session(session: ZoneDragSession) -> bool:
 			return false
 	return true
 
-func create_ghost(source_item: ZoneItemControl) -> void:
+func create_ghost(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> void:
 	var preview_root = zone.get_preview_root()
-	if preview_root == null or not is_instance_valid(source_item):
+	var resolved_anchor = anchor_item if is_instance_valid(anchor_item) else source_items[0] if not source_items.is_empty() else null
+	if preview_root == null or not is_instance_valid(resolved_anchor):
 		return
-	var ghost = create_factory_ghost(source_item)
+	var ghost = create_factory_ghost(source_items, resolved_anchor)
 	if ghost == null:
-		ghost = source_item.create_zone_drag_ghost(context)
+		ghost = resolved_anchor.create_zone_group_drag_ghost(context, source_items, resolved_anchor)
 	if ghost == null:
 		var fallback := ColorRect.new()
 		fallback.color = Color(1, 1, 1, 0.18)
-		fallback.custom_minimum_size = resolve_item_size(source_item)
-		fallback.size = resolve_item_size(source_item)
+		fallback.custom_minimum_size = resolve_item_size(resolved_anchor)
+		fallback.size = resolve_item_size(resolved_anchor)
 		ghost = fallback
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if ghost.get_parent() != preview_root:
@@ -168,27 +169,30 @@ func create_ghost(source_item: ZoneItemControl) -> void:
 			preview_root.add_child(ghost)
 	ghost_instance = ghost
 
-func create_cursor_proxy(source_item: ZoneItemControl) -> Control:
-	var factory_proxy = create_factory_proxy(source_item)
+func create_cursor_proxy(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
+	var resolved_anchor = anchor_item if is_instance_valid(anchor_item) else source_items[0] if not source_items.is_empty() else null
+	if not is_instance_valid(resolved_anchor):
+		return null
+	var factory_proxy = create_factory_proxy(source_items, resolved_anchor)
 	if factory_proxy != null:
 		return factory_proxy
-	return source_item.create_zone_drag_proxy(context)
+	return resolved_anchor.create_zone_group_drag_proxy(context, source_items, resolved_anchor)
 
-func create_factory_ghost(source_item: ZoneItemControl) -> Control:
+func create_factory_ghost(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
 	var factory = context.get_drag_visual_factory()
 	if factory == null:
 		return null
-	var created = factory.create_ghost(context, source_item)
-	if created is Control and created != source_item and is_instance_valid(created):
+	var created = factory.create_group_ghost(context, source_items, anchor_item)
+	if created is Control and created != anchor_item and is_instance_valid(created):
 		return created as Control
 	return null
 
-func create_factory_proxy(source_item: ZoneItemControl) -> Control:
+func create_factory_proxy(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
 	var factory = context.get_drag_visual_factory()
 	if factory == null:
 		return null
-	var created = factory.create_drag_proxy(context, source_item)
-	if created is Control and created != source_item and is_instance_valid(created):
+	var created = factory.create_group_drag_proxy(context, source_items, anchor_item)
+	if created is Control and created != anchor_item and is_instance_valid(created):
 		return created as Control
 	return null
 
@@ -223,7 +227,7 @@ func apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferD
 		next_target = ZonePlacementTarget.invalid()
 	if next_active and next_allowed and next_target != null and next_target.is_valid():
 		if not is_instance_valid(ghost_instance) and is_instance_valid(preview_source):
-			create_ghost(preview_source)
+			create_ghost(items, preview_source)
 			refresh_needed = true
 	elif is_instance_valid(ghost_instance):
 		clear_preview_internal()

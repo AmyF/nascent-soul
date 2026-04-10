@@ -13,6 +13,7 @@ signal item_hover_entered(item: ZoneItemControl)
 signal item_hover_exited(item: ZoneItemControl)
 signal selection_changed(items: Array)
 signal drag_started(items: Array, source_zone: Zone)
+signal drag_start_rejected(items: Array, source_zone: Zone, reason: String)
 signal drop_preview_changed(items: Array, target_zone: Zone, target)
 signal drop_hover_state_changed(items: Array, target_zone: Zone, decision)
 signal item_added(item: ZoneItemControl, index: int)
@@ -234,9 +235,9 @@ func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 	_ensure_services()
 	_input_service.select_item(item, additive)
 
-func start_drag(items: Array[ZoneItemControl]) -> void:
+func start_drag(items: Array[ZoneItemControl], anchor_item: ZoneItemControl = null) -> void:
 	_ensure_services()
-	_transfer_service.start_drag(items)
+	_transfer_service.start_drag(items, anchor_item)
 
 func begin_targeting(command: ZoneTargetingCommand) -> bool:
 	_ensure_services()
@@ -282,9 +283,9 @@ func clear_transfer_handoffs() -> void:
 	_ensure_services()
 	_store.clear_transfer_handoffs()
 
-func capture_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null) -> Dictionary:
+func capture_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
 	_ensure_services()
-	return _transfer_service.build_transfer_snapshots(moving_items, drop_position)
+	return _transfer_service.build_transfer_snapshots(moving_items, drop_position, anchor_item)
 
 func resolve_transfer_origin(moving_items: Array[ZoneItemControl]):
 	_ensure_services()
@@ -421,9 +422,9 @@ func _apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransfer
 	_ensure_services()
 	return _render_service.apply_hover_feedback(items, decision, preview_target, preview_source)
 
-func _build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null) -> Dictionary:
+func _build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
 	_ensure_services()
-	return _transfer_service.build_transfer_snapshots(moving_items, drop_position)
+	return _transfer_service.build_transfer_snapshots(moving_items, drop_position, anchor_item)
 
 func _resolve_programmatic_transfer_global_position(moving_items: Array[ZoneItemControl]):
 	_ensure_services()
@@ -621,6 +622,9 @@ func _emit_selection_changed() -> void:
 
 func _emit_drag_started(items: Array[ZoneItemControl], source_zone: Zone) -> void:
 	drag_started.emit(items, source_zone)
+
+func _emit_drag_start_rejected(items: Array, source_zone: Zone, reason: String) -> void:
+	drag_start_rejected.emit(items, source_zone, reason)
 
 func _emit_drop_preview_changed(items: Array, target_zone: Zone, target) -> void:
 	drop_preview_changed.emit(items, target_zone, target)

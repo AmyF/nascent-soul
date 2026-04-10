@@ -30,6 +30,22 @@ enum ProxyMode {
 @export var proxy_color: Color = Color(1, 1, 1, 0.72)
 @export var proxy_scale: Vector2 = Vector2.ONE
 
+func create_group_ghost(context: ZoneContext, source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
+	var resolved_anchor = _resolve_anchor_item(source_items, anchor_item)
+	if not is_instance_valid(resolved_anchor):
+		return null
+	var item_size = context.resolve_item_size(resolved_anchor)
+	var fallback = _create_item_group_ghost(context, source_items, resolved_anchor)
+	if fallback != null:
+		return fallback
+	match ghost_mode:
+		GhostMode.COLOR_RECT:
+			return _make_color_rect(item_size, ghost_fill_color)
+		GhostMode.DUPLICATE:
+			return _make_duplicate(resolved_anchor, ghost_duplicate_modulate, Vector2.ONE)
+		_:
+			return _make_outline_panel(item_size)
+
 func create_ghost(context: ZoneContext, source_item: ZoneItemControl) -> Control:
 	var item_size = context.resolve_item_size(source_item)
 	var fallback = _create_item_ghost(context, source_item)
@@ -42,6 +58,30 @@ func create_ghost(context: ZoneContext, source_item: ZoneItemControl) -> Control
 			return _make_duplicate(source_item, ghost_duplicate_modulate, Vector2.ONE)
 		_:
 			return _make_outline_panel(item_size)
+
+func create_group_drag_proxy(context: ZoneContext, source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
+	var resolved_anchor = _resolve_anchor_item(source_items, anchor_item)
+	if not is_instance_valid(resolved_anchor):
+		return null
+	var item_size = context.resolve_item_size(resolved_anchor)
+	var fallback = _create_item_group_proxy(context, source_items, resolved_anchor)
+	if fallback != null:
+		return fallback
+	match proxy_mode:
+		ProxyMode.COLOR_RECT:
+			var proxy = _make_color_rect(item_size, proxy_color)
+			proxy.scale = proxy_scale
+			proxy.global_position = resolved_anchor.global_position
+			return proxy
+		_:
+			var duplicate_proxy = _make_duplicate(resolved_anchor, proxy_modulate, proxy_scale)
+			if duplicate_proxy != null:
+				duplicate_proxy.global_position = resolved_anchor.global_position
+				return duplicate_proxy
+	var fallback_proxy = _make_color_rect(item_size, proxy_color)
+	fallback_proxy.scale = proxy_scale
+	fallback_proxy.global_position = resolved_anchor.global_position
+	return fallback_proxy
 
 func create_drag_proxy(context: ZoneContext, source_item: ZoneItemControl) -> Control:
 	var item_size = context.resolve_item_size(source_item)
@@ -64,14 +104,32 @@ func create_drag_proxy(context: ZoneContext, source_item: ZoneItemControl) -> Co
 	fallback_proxy.global_position = source_item.global_position
 	return fallback_proxy
 
+func _create_item_group_ghost(context: ZoneContext, source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
+	if prefer_item_methods:
+		return anchor_item.create_zone_group_drag_ghost(context, source_items, anchor_item)
+	return null
+
 func _create_item_ghost(context: ZoneContext, source_item: ZoneItemControl) -> Control:
 	if prefer_item_methods:
 		return source_item.create_zone_drag_ghost(context)
 	return null
 
+func _create_item_group_proxy(context: ZoneContext, source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
+	if prefer_item_methods:
+		return anchor_item.create_zone_group_drag_proxy(context, source_items, anchor_item)
+	return null
+
 func _create_item_proxy(context: ZoneContext, source_item: ZoneItemControl) -> Control:
 	if prefer_item_methods:
 		return source_item.create_zone_drag_proxy(context)
+	return null
+
+func _resolve_anchor_item(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> ZoneItemControl:
+	if is_instance_valid(anchor_item):
+		return anchor_item
+	for item in source_items:
+		if is_instance_valid(item):
+			return item
 	return null
 
 func _make_outline_panel(item_size: Vector2) -> Control:

@@ -168,7 +168,7 @@ func container_order_needs_sync(items_root: Control, ghost_instance: Control = n
 		control_index += 1
 	return control_index != items.size()
 
-func build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null) -> Dictionary:
+func build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
 	var snapshots: Dictionary = {}
 	if moving_items.is_empty():
 		return snapshots
@@ -178,7 +178,7 @@ func build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_positio
 	if drop_position is not Vector2:
 		return snapshots
 	var resolved_drop_position: Vector2 = drop_position
-	var primary_item = moving_items[0]
+	var primary_item = anchor_item if is_instance_valid(anchor_item) and anchor_item in moving_items else moving_items[0]
 	var primary_snapshot: Dictionary = snapshots.get(primary_item, {})
 	var primary_global: Vector2 = primary_snapshot.get("global_position", resolved_drop_position)
 	for item in moving_items:
