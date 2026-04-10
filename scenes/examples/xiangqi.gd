@@ -1,5 +1,6 @@
 extends Control
 
+const DemoLayoutSupport = preload("res://scenes/examples/shared/demo_layout_support.gd")
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 const TargetingSupport = preload("res://scenes/examples/shared/targeting_support.gd")
 const XiangqiPieceScript = preload("res://scenes/examples/xiangqi/xiangqi_piece.gd")
@@ -56,10 +57,20 @@ const PIECE_DEFS := {
 	&"soldier": {"name": "Soldier", "red": "兵", "black": "卒"}
 }
 
+@onready var root_vbox: VBoxContainer = $RootMargin/RootVBox
+@onready var toolbar: Control = $RootMargin/RootVBox/Toolbar
 @onready var new_game_button: Button = $RootMargin/RootVBox/Toolbar/NewGameButton
 @onready var cancel_button: Button = $RootMargin/RootVBox/Toolbar/CancelMoveButton
+@onready var state_row: Control = $RootMargin/RootVBox/StateRow
 @onready var turn_label: Label = $RootMargin/RootVBox/StateRow/TurnLabel
 @onready var status_label: Label = $RootMargin/RootVBox/StateRow/StatusLabel
+@onready var content_row: HFlowContainer = $RootMargin/RootVBox/ContentRow
+@onready var left_panel: Panel = $RootMargin/RootVBox/ContentRow/LeftPanel
+@onready var board_column: VBoxContainer = $RootMargin/RootVBox/ContentRow/BoardColumn
+@onready var board_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardLabel
+@onready var board_caption: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardCaption
+@onready var board_panel: Panel = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel
+@onready var right_panel: Panel = $RootMargin/RootVBox/ContentRow/RightPanel
 @onready var red_capture_label: Label = $RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox/RedCaptureLabel
 @onready var black_capture_label: Label = $RootMargin/RootVBox/ContentRow/RightPanel/RightVBox/BlackCaptureLabel
 @onready var board_host: Control = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost
@@ -76,6 +87,9 @@ var _captured_by_black: Array[String] = []
 func _ready() -> void:
 	_build_board()
 	_wire_controls()
+	resized.connect(_queue_layout_refresh)
+	visibility_changed.connect(_queue_layout_refresh)
+	_queue_layout_refresh()
 	start_new_game()
 
 func _exit_tree() -> void:
@@ -598,7 +612,64 @@ func _set_status(message: String, color: Color = NORMAL_STATUS_COLOR) -> void:
 	status_label.text = message
 	status_label.add_theme_color_override("font_color", color)
 
+func _queue_layout_refresh() -> void:
+	call_deferred("_apply_responsive_layout")
+
+func _apply_responsive_layout() -> void:
+	var mode = DemoLayoutSupport.mode_for(self)
+	var content_width = max(root_vbox.size.x, DemoLayoutSupport.resolved_width(self) - 40.0)
+	var row_spacing = float(content_row.get_theme_constant("h_separation"))
+	var board_padding := Vector2(12.0, 12.0)
+	var root_spacing = float(root_vbox.get_theme_constant("separation"))
+	var board_spacing = float(board_column.get_theme_constant("separation"))
+	var side_panel_height = 0.0
+	if mode == DemoLayoutSupport.COMPACT:
+		side_panel_height = 220.0 + row_spacing
+	elif mode == DemoLayoutSupport.NARROW:
+		side_panel_height = 180.0 * 2.0 + row_spacing * 2.0
+	var available_content_height = max(420.0, root_vbox.size.y - _control_height(toolbar) - _control_height(state_row) - root_spacing * 2.0)
+	var board_chrome_height = _control_height(board_label) + _control_height(board_caption) + board_spacing * 2.0
+	var max_board_panel_height = max(400.0, available_content_height - side_panel_height - board_chrome_height)
+	var cell_from_width = floor((content_width - board_padding.x * 2.0) / float(BOARD_COLUMNS))
+	var cell_from_height = floor((max_board_panel_height - board_padding.y * 2.0) / float(BOARD_ROWS))
+	var min_cell = 48.0 if mode == DemoLayoutSupport.DESKTOP else 40.0
+	var resolved_cell = clamp(min(cell_from_width, cell_from_height), min_cell, 72.0)
+	var cell_size := Vector2(resolved_cell, resolved_cell)
+	var board_size = Vector2(
+		board_padding.x * 2.0 + cell_size.x * BOARD_COLUMNS,
+		board_padding.y * 2.0 + cell_size.y * BOARD_ROWS
+	)
+	if mode == DemoLayoutSupport.DESKTOP:
+		DemoLayoutSupport.ensure_child_order(content_row, [left_panel, board_column, right_panel])
+		DemoLayoutSupport.set_minimum_size(left_panel, 180.0, board_size.y)
+		DemoLayoutSupport.set_minimum_size(right_panel, 180.0, board_size.y)
+		DemoLayoutSupport.set_minimum_width(board_column, mode, board_size.x, board_size.x, board_size.x)
+	else:
+		DemoLayoutSupport.ensure_child_order(content_row, [board_column, left_panel, right_panel])
+		var compact_panel_width = max(220.0, floor((content_width - row_spacing) * 0.5))
+		var narrow_panel_width = max(0.0, content_width)
+		var panel_width = compact_panel_width if mode == DemoLayoutSupport.COMPACT else narrow_panel_width
+		var panel_height = 220.0 if mode == DemoLayoutSupport.COMPACT else 180.0
+		DemoLayoutSupport.set_minimum_size(left_panel, panel_width, panel_height)
+		DemoLayoutSupport.set_minimum_size(right_panel, panel_width, panel_height)
+		DemoLayoutSupport.set_minimum_width(board_column, mode, board_size.x, content_width, content_width)
+	DemoLayoutSupport.set_minimum_size(board_panel, board_size.x, board_size.y)
+	if _space_model != null:
+		_space_model.cell_size = cell_size
+		_space_model.padding = board_padding
+	if _board_overlay != null:
+		_board_overlay.cell_size = cell_size
+		_board_overlay.padding = board_padding
+		_board_overlay.queue_redraw()
+	if _board_zone != null:
+		_board_zone.refresh()
+
 func _step(value: int) -> int:
 	if value == 0:
 		return 0
 	return 1 if value > 0 else -1
+
+func _control_height(control: Control) -> float:
+	if control == null:
+		return 0.0
+	return control.size.y if control.size.y > 0.0 else control.get_combined_minimum_size().y

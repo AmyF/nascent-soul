@@ -12,12 +12,22 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_illegal_moves_and_multi_card_capacity_limits()
 	await _reset_root()
+	await _test_hover_feedback_stays_static()
+	await _reset_root()
+	await _test_compact_layout_keeps_tableau_operable()
+	await _reset_root()
 	await _test_victory_detection()
 
 func _spawn_scene() -> Control:
 	var scene = FREECELL_SCENE.instantiate()
 	add_child(scene)
 	await _settle_frames(4)
+	return scene
+
+func _spawn_scene_in_host(host_size: Vector2) -> Control:
+	var scene = FREECELL_SCENE.instantiate()
+	await _mount_scene_in_host(scene, host_size)
+	await _settle_frames(2)
 	return scene
 
 func _test_initial_deal_and_zone_population() -> void:
@@ -168,6 +178,66 @@ func _test_victory_detection() -> void:
 	_check(scene.call("has_won"), "freecell should mark the game as won when every foundation is complete")
 	var victory_label = scene.get_node_or_null("RootMargin/RootVBox/VictoryLabel") as Label
 	_check(victory_label != null and victory_label.visible, "freecell should reveal the victory banner after a solved state loads")
+
+func _test_hover_feedback_stays_static() -> void:
+	var scene = await _spawn_scene()
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["7C"],
+			["8D"],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[]
+		],
+		"free_cells": ["", "", "", ""],
+		"foundations": {}
+	})
+	await _settle_frames(3)
+	var tableaus: Array = scene.call("get_tableau_zones")
+	var source_zone = tableaus[0] as Zone
+	var target_zone = tableaus[1] as Zone
+	var card = scene.call("get_card_by_code", "7C") as Control
+	var overlay = card.get_node_or_null("CardOverlay") as ColorRect
+	var before_position = card.global_position
+	var before_scale = card.scale
+	var before_z = card.z_index
+	_emit_mouse_entered(card)
+	await _settle_frames(2)
+	_check(source_zone != null and source_zone.get_hovered_item() == card, "freecell hover should still register the hovered card")
+	_check(card.global_position.is_equal_approx(before_position), "freecell hover should not move the card")
+	_check(card.scale.is_equal_approx(before_scale), "freecell hover should not scale the card")
+	_check(card.z_index == before_z, "freecell hover should not raise the card z-order")
+	_check(overlay != null and overlay.visible and overlay.color.a > 0.0, "freecell hover should still light the card overlay")
+	_check(scene.call("try_move_cards", _card_array(scene, ["7C"]), target_zone), "freecell hover cleanup should not break drag/drop move validation")
+
+func _test_compact_layout_keeps_tableau_operable() -> void:
+	var scene = await _spawn_scene_in_host(Vector2(960, 900))
+	await _settle_frames(3)
+	var top_row = scene.get_node_or_null("RootMargin/RootVBox/TopRow") as Control
+	var tableau_scroll = scene.get_node_or_null("RootMargin/RootVBox/TableauScroll") as ScrollContainer
+	var tableau_row = scene.get_node_or_null("RootMargin/RootVBox/TableauScroll/TableauRow") as HBoxContainer
+	_check(top_row != null and tableau_scroll != null and top_row.get_global_rect().end.y <= tableau_scroll.get_global_rect().position.y + 1.0, "freecell compact layout should keep top controls above the tableau surface")
+	_check(tableau_row != null and tableau_scroll != null and tableau_row.custom_minimum_size.x > tableau_scroll.size.x, "freecell compact layout should preserve lane width via scrolling")
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["7C"],
+			["8D"],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[]
+		],
+		"free_cells": ["", "", "", ""],
+		"foundations": {}
+	})
+	await _settle_frames(3)
+	var tableaus: Array = scene.call("get_tableau_zones")
+	_check(scene.call("try_move_cards", _card_array(scene, ["7C"]), tableaus[1]), "freecell compact layout should keep tableau moves operable")
 
 func _foundation_codes(suit_code: String) -> Array:
 	var codes: Array = []

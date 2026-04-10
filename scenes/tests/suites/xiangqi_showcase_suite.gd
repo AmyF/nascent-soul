@@ -14,12 +14,20 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_turn_capture_and_facing_generals_constraints()
 	await _reset_root()
+	await _test_compact_layout_keeps_board_targetable()
+	await _reset_root()
 	await _test_checkmate_game_over_detection()
 
 func _spawn_scene() -> Control:
 	var scene = XIANGQI_SCENE.instantiate()
 	add_child(scene)
 	await _settle_frames(4)
+	return scene
+
+func _spawn_scene_in_host(host_size: Vector2) -> Control:
+	var scene = XIANGQI_SCENE.instantiate()
+	await _mount_scene_in_host(scene, host_size)
+	await _settle_frames(2)
 	return scene
 
 func _load_state(scene: Control, current_side: String, pieces: Array) -> void:
@@ -212,6 +220,24 @@ func _test_checkmate_game_over_detection() -> void:
 	_check(scene.call("get_winner") == &"red", "xiangqi should declare the moving side as the winner after checkmate")
 	var status_label = scene.get_node_or_null("RootMargin/RootVBox/StateRow/StatusLabel") as Label
 	_check(status_label != null and status_label.text.to_lower().contains("checkmate"), "xiangqi should explain checkmate in the status label")
+
+func _test_compact_layout_keeps_board_targetable() -> void:
+	var scene = await _spawn_scene_in_host(Vector2(960, 900))
+	await _settle_frames(3)
+	var board_column = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn") as Control
+	var board_panel = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel") as Panel
+	var left_panel = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/LeftPanel") as Panel
+	var right_panel = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/RightPanel") as Panel
+	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
+	_check(board_panel != null and board_zone != null and _rect_inside(board_panel.get_global_rect(), board_zone.get_global_rect(), 4.0), "xiangqi compact layout should keep the board zone inside the visible board panel")
+	_check(board_column != null and left_panel != null and right_panel != null and left_panel.get_global_rect().position.y >= board_column.get_global_rect().end.y - 1.0 and right_panel.get_global_rect().position.y >= board_column.get_global_rect().end.y - 1.0, "xiangqi compact layout should reflow both side panels below the board")
+	_check(left_panel != null and right_panel != null and absf(left_panel.global_position.y - right_panel.global_position.y) <= 4.0, "xiangqi compact layout should keep the side panels on one wrapped row at compact widths")
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "horse", Vector2i(4, 7))
+	])
+	_check(scene.call("try_move_at", Vector2i(4, 7), Vector2i(6, 8)), "xiangqi compact layout should keep the board interactive after reflow")
 
 func _piece(side: String, piece_type: String, coords: Vector2i) -> Dictionary:
 	return {

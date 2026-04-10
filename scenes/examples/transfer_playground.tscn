@@ -259,10 +259,10 @@ theme_type_variation = &"DemoSceneMargin"
 layout_mode = 2
 theme_type_variation = &"DemoRootVBox"
 
-[node name="TopRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="TopRow" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_type_variation = &"DemoWideHBox"
+theme_type_variation = &"DemoWideFlow"
 
 [node name="DeckColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2

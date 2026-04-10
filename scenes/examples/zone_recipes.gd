@@ -1,5 +1,6 @@
 extends Control
 
+const DemoLayoutSupport = preload("res://scenes/examples/shared/demo_layout_support.gd")
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 
 const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
@@ -12,6 +13,7 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var reset_button: Button = $RootMargin/RootVBox/Toolbar/ResetButton
+@onready var recipes_grid: GridContainer = $RootMargin/RootVBox/RecipesGrid
 @onready var board_capacity_label: Label = $RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardCapacityLabel
 @onready var _deck_zone: Zone = $RootMargin/RootVBox/RecipesGrid/DeckColumn/DeckZone as Zone
 @onready var _hand_zone: Zone = $RootMargin/RootVBox/RecipesGrid/HandColumn/HandZone as Zone
@@ -21,6 +23,9 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 func _ready() -> void:
 	_populate_cards()
 	_wire_actions()
+	resized.connect(_queue_layout_refresh)
+	visibility_changed.connect(_queue_layout_refresh)
+	_queue_layout_refresh()
 	_refresh_guidance()
 	_set_status(ExampleSupport.compact_bilingual("Starter recipe 已就绪", "Starter recipe is ready"))
 	_schedule_headless_quit_if_root()
@@ -109,3 +114,9 @@ func _schedule_headless_quit_if_root() -> void:
 	if get_tree().current_scene != self:
 		return
 	get_tree().create_timer(0.5).timeout.connect(get_tree().quit)
+
+func _queue_layout_refresh() -> void:
+	call_deferred("_apply_responsive_layout")
+
+func _apply_responsive_layout() -> void:
+	DemoLayoutSupport.set_grid_columns(recipes_grid, DemoLayoutSupport.mode_for(self), 4, 2, 1)

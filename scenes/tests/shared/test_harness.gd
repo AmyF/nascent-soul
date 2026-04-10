@@ -33,6 +33,18 @@ func _make_panel(name: String, position_value: Vector2, panel_size: Vector2) -> 
 	add_child(panel)
 	return panel
 
+func _mount_scene_in_host(scene: Control, host_size: Vector2, host_position: Vector2 = Vector2.ZERO) -> Panel:
+	var host := Panel.new()
+	host.name = "%sHost" % scene.name
+	host.position = host_position
+	host.custom_minimum_size = host_size
+	host.size = host_size
+	host.clip_contents = true
+	add_child(host)
+	host.add_child(scene)
+	await _settle_frames(3)
+	return host
+
 func _zone_item_names(zone: Zone) -> Array[String]:
 	var names: Array[String] = []
 	for item in zone.get_items():

@@ -203,9 +203,9 @@ theme_type_variation = &"DemoSceneMargin"
 layout_mode = 2
 theme_type_variation = &"DemoRootVBox"
 
-[node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="Toolbar" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_type_variation = &"DemoToolbarHBox"
+theme_type_variation = &"DemoToolbarFlow"
 
 [node name="SortButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2

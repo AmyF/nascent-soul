@@ -20,6 +20,8 @@ func _run_suite() -> void:
 	_test_static_demo_scene_configuration()
 	await _test_demo_hub_summary_panels()
 	await _reset_root()
+	await _test_demo_hub_responsive_layouts()
+	await _reset_root()
 	await _test_transfer_playground_guidance()
 	await _reset_root()
 	await _test_policy_lab_rule_cards_and_reject_feedback()
@@ -79,7 +81,7 @@ func _test_static_demo_scene_configuration() -> void:
 	var transfer = TRANSFER_SCENE.instantiate()
 	var transfer_board = transfer.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardZone") as Zone
 	var transfer_status = transfer.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
-	var transfer_top_row = transfer.get_node_or_null("RootMargin/RootVBox/TopRow") as HBoxContainer
+	var transfer_top_row = transfer.get_node_or_null("RootMargin/RootVBox/TopRow") as Container
 	var transfer_deck_cards = transfer.get("deck_cards") as Array
 	var transfer_hand_cards = transfer.get("hand_cards") as Array
 	var transfer_board_cards = transfer.get("board_cards") as Array
@@ -87,7 +89,7 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(transfer.get_node_or_null("RootMargin/RootVBox/TopRow/BoardColumn/BoardCapacityLabel") != null, "transfer playground should serialize the board capacity label")
 	_check(transfer.theme != null, "transfer playground should serialize the shared demo theme")
 	_check(transfer_status != null and transfer_status.theme_type_variation == &"DemoStatusLabel", "transfer playground status should use the shared status theme variation")
-	_check(transfer_top_row != null and transfer_top_row.theme_type_variation == &"DemoWideHBox", "transfer playground top row should use the shared wide row variation")
+	_check(transfer_top_row != null and transfer_top_row.theme_type_variation == &"DemoWideFlow", "transfer playground top row should use the shared wide flow variation")
 	_check(transfer_deck_cards.size() == 6, "transfer playground should serialize six deck sample cards")
 	_check(transfer_hand_cards.size() == 5, "transfer playground should serialize five hand sample cards")
 	_check(transfer_board_cards.size() == 2, "transfer playground should serialize two board sample cards")
@@ -153,7 +155,8 @@ func _test_static_demo_scene_configuration() -> void:
 	_check(recipes_board != null and ExampleSupport.get_zone_transfer_policy(recipes_board) is ZoneCapacityTransferPolicy, "zone recipes board zone should serialize its capacity policy")
 	_check(freecell.theme != null, "freecell showcase should serialize the shared demo theme")
 	_check(freecell_status != null and freecell_status.theme_type_variation == &"DemoStatusLabel", "freecell showcase should use the shared status theme variation")
-	_check(freecell.get_node_or_null("RootMargin/RootVBox/TableauRow") is HBoxContainer, "freecell showcase should serialize the tableau row host")
+	_check(freecell.get_node_or_null("RootMargin/RootVBox/TableauScroll") is ScrollContainer, "freecell showcase should serialize the tableau scroll host")
+	_check(freecell.get_node_or_null("RootMargin/RootVBox/TableauScroll/TableauRow") is HBoxContainer, "freecell showcase should serialize the tableau row host inside the scroll surface")
 	_check(xiangqi.theme != null, "xiangqi showcase should serialize the shared demo theme")
 	_check(xiangqi_turn != null and xiangqi_turn.theme_type_variation == &"DemoGoldHeading", "xiangqi showcase should use the shared turn heading variation")
 	_check(xiangqi_board_host != null, "xiangqi showcase should serialize the board host container")
@@ -183,6 +186,27 @@ func _test_demo_hub_summary_panels() -> void:
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 7, "Content/RootMargin/RootVBox/ContentRow", "targeting tab content should stay below the tab header")
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 8, "Content/RootMargin/RootVBox/TopRow", "freecell tab content should stay below the tab header")
 	await _assert_tab_content_stays_below_tab_bar(tab_container, 9, "Content/RootMargin/RootVBox/ContentRow", "xiangqi tab content should stay below the tab header")
+
+func _test_demo_hub_responsive_layouts() -> void:
+	for host_size in [Vector2(1280, 900), Vector2(960, 900)]:
+		var scene = DEMO_SCENE.instantiate()
+		var host = await _mount_scene_in_host(scene, host_size)
+		var tab_container = scene.get_node_or_null("RootMargin/RootVBox/TabContainer") as TabContainer
+		_check(tab_container != null, "demo hub should mount inside a %dx%d host" % [int(host_size.x), int(host_size.y)])
+		if tab_container == null:
+			host.queue_free()
+			await _settle_frames(1)
+			continue
+		await _assert_tab_content_stays_below_tab_bar(tab_container, 0, "Content/RootMargin/RootVBox/TopRow", "transfer tab content should stay below the tab header at %dpx width" % int(host_size.x))
+		await _assert_tab_content_stays_below_tab_bar(tab_container, 8, "Content/RootMargin/RootVBox/TopRow", "freecell tab content should stay below the tab header at %dpx width" % int(host_size.x))
+		await _assert_tab_content_stays_below_tab_bar(tab_container, 9, "Content/RootMargin/RootVBox/ContentRow", "xiangqi tab content should stay below the tab header at %dpx width" % int(host_size.x))
+		if host_size.x >= 1280.0:
+			await _assert_transfer_tab_layout(tab_container, host.get_global_rect())
+		else:
+			await _assert_freecell_tab_layout(tab_container, host.get_global_rect())
+			await _assert_xiangqi_tab_layout(tab_container, host.get_global_rect())
+		host.queue_free()
+		await _settle_frames(1)
 
 func _test_transfer_playground_guidance() -> void:
 	var scene = TRANSFER_SCENE.instantiate()
@@ -356,7 +380,7 @@ func _test_battlefield_examples_load() -> void:
 		add_child(scene)
 		await _settle_frames(2)
 		_check(scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") is Label, "%s should include a status label" % scene.name)
-		_check(scene.get_node_or_null("RootMargin/RootVBox/ContentRow") is HBoxContainer, "%s should include the main content row" % scene.name)
+		_check(scene.get_node_or_null("RootMargin/RootVBox/ContentRow") is Container, "%s should include the main content row" % scene.name)
 		var found_battlefield_zone = false
 		for node in scene.find_children("*", "BattlefieldZone", true, false):
 			if node is Zone:
@@ -397,7 +421,7 @@ func _test_targeting_example_load() -> void:
 	add_child(scene)
 	await _settle_frames(3)
 	var status = scene.get_node_or_null("RootMargin/RootVBox/StatusLabel") as Label
-	var content_row = scene.get_node_or_null("RootMargin/RootVBox/ContentRow") as HBoxContainer
+	var content_row = scene.get_node_or_null("RootMargin/RootVBox/ContentRow") as Container
 	var spell_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/SpellColumn/SpellHandPanel/SpellSourceZone") as Zone
 	var spell_targets = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/SpellColumn/SpellTargetPanel/SpellTargetZone") as Zone
 	var spell_style_option = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/SpellColumn/SpellToolbar/SpellStyleOption") as OptionButton
@@ -439,8 +463,57 @@ func _assert_tab_content_stays_below_tab_bar(tab_container: TabContainer, tab_in
 	var content: Control = null
 	if current_tab != null:
 		content = current_tab.get_node_or_null(node_path) as Control
-	var tab_bar_bottom = tab_container.global_position.y + 32.0
+	var tab_bar_bottom = current_tab.get_global_rect().position.y if current_tab != null else tab_container.global_position.y + 32.0
 	_check(content != null, "%s (content node exists)" % message)
 	if content == null:
 		return
 	_check(content.get_global_rect().position.y >= tab_bar_bottom, message)
+
+func _assert_transfer_tab_layout(tab_container: TabContainer, _visible_rect: Rect2) -> void:
+	tab_container.current_tab = 0
+	await _settle_frames(2)
+	var current_tab = tab_container.get_current_tab_control()
+	var visible_rect = current_tab.get_global_rect()
+	var top_row = current_tab.get_node_or_null("Content/RootMargin/RootVBox/TopRow") as Control
+	var hand_label = current_tab.get_node_or_null("Content/RootMargin/RootVBox/HandLabel") as Control
+	var hand_zone = current_tab.get_node_or_null("Content/RootMargin/RootVBox/HandZone") as Zone
+	var board_zone = current_tab.get_node_or_null("Content/RootMargin/RootVBox/TopRow/BoardColumn/BoardZone") as Zone
+	_check(top_row != null and hand_label != null and top_row.get_global_rect().end.y <= hand_label.get_global_rect().position.y + 1.0, "transfer tab should keep the play row above the hand lane")
+	_check(hand_zone != null and _rect_inside(visible_rect, hand_zone.get_global_rect(), 4.0), "transfer tab should keep the hand lane inside the visible host")
+	_check(board_zone != null and _rect_inside(visible_rect, board_zone.get_global_rect(), 4.0), "transfer tab should keep the board lane inside the visible host")
+
+func _assert_freecell_tab_layout(tab_container: TabContainer, _visible_rect: Rect2) -> void:
+	tab_container.current_tab = 8
+	await _settle_frames(2)
+	var current_tab = tab_container.get_current_tab_control()
+	var visible_rect = current_tab.get_global_rect()
+	var scene = current_tab.get_node_or_null("Content") as Control
+	var top_row = current_tab.get_node_or_null("Content/RootMargin/RootVBox/TopRow") as Control
+	var tableau_scroll = current_tab.get_node_or_null("Content/RootMargin/RootVBox/TableauScroll") as ScrollContainer
+	var tableau_row = current_tab.get_node_or_null("Content/RootMargin/RootVBox/TableauScroll/TableauRow") as HBoxContainer
+	_check(top_row != null and tableau_scroll != null and top_row.get_global_rect().end.y <= tableau_scroll.get_global_rect().position.y + 1.0, "freecell tab should keep controls above the tableau scroll surface")
+	_check(tableau_scroll != null and _rect_inside(visible_rect, tableau_scroll.get_global_rect(), 4.0), "freecell tab should keep the tableau scroll surface inside the visible host")
+	_check(tableau_row != null and tableau_scroll != null and tableau_row.custom_minimum_size.x > tableau_scroll.size.x, "freecell compact layout should keep full-width tableau lanes inside a scroll surface")
+	if scene == null:
+		return
+	var tableaus: Array = scene.call("get_tableau_zones")
+	if tableaus.is_empty():
+		return
+	var first_zone = tableaus[0] as Zone
+	_check(first_zone != null and first_zone.get_global_rect().position.x >= tableau_scroll.get_global_rect().position.x - 1.0 and first_zone.get_global_rect().position.y < tableau_scroll.get_global_rect().end.y, "freecell tab should keep the first tableau lane reachable inside the scroll surface")
+
+func _assert_xiangqi_tab_layout(tab_container: TabContainer, _visible_rect: Rect2) -> void:
+	tab_container.current_tab = 9
+	await _settle_frames(2)
+	var current_tab = tab_container.get_current_tab_control()
+	var visible_rect = current_tab.get_global_rect()
+	var state_row = current_tab.get_node_or_null("Content/RootMargin/RootVBox/StateRow") as Control
+	var content_row = current_tab.get_node_or_null("Content/RootMargin/RootVBox/ContentRow") as Control
+	var board_column = current_tab.get_node_or_null("Content/RootMargin/RootVBox/ContentRow/BoardColumn") as Control
+	var board_panel = current_tab.get_node_or_null("Content/RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel") as Panel
+	var left_panel = current_tab.get_node_or_null("Content/RootMargin/RootVBox/ContentRow/LeftPanel") as Panel
+	var right_panel = current_tab.get_node_or_null("Content/RootMargin/RootVBox/ContentRow/RightPanel") as Panel
+	_check(state_row != null and content_row != null and state_row.get_global_rect().end.y <= content_row.get_global_rect().position.y + 1.0, "xiangqi tab should keep state controls above the board content")
+	_check(board_panel != null and _rect_inside(visible_rect, board_panel.get_global_rect(), 4.0), "xiangqi tab should keep the board panel inside the visible host")
+	_check(board_column != null and left_panel != null and right_panel != null and left_panel.get_global_rect().position.y >= board_column.get_global_rect().end.y - 1.0 and right_panel.get_global_rect().position.y >= board_column.get_global_rect().end.y - 1.0, "xiangqi compact layout should move both side panels below the board")
+	_check(left_panel != null and right_panel != null and absf(left_panel.global_position.y - right_panel.global_position.y) <= 4.0, "xiangqi compact layout should keep the red and black panels on the same wrapped row")

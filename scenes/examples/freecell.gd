@@ -1,7 +1,9 @@
 extends Control
 
+const DemoLayoutSupport = preload("res://scenes/examples/shared/demo_layout_support.gd")
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card.gd")
+const FreeCellCardDisplayScript = preload("res://scenes/examples/freecell/freecell_card_display.gd")
 const FreeCellTableauLayoutScript = preload("res://scenes/examples/freecell/freecell_tableau_layout.gd")
 const FreeCellZonePolicyScript = preload("res://scenes/examples/freecell/freecell_zone_policy.gd")
 
@@ -43,14 +45,20 @@ const RANK_LABELS := {
 	13: "K"
 }
 
+@onready var root_vbox: VBoxContainer = $RootMargin/RootVBox
+@onready var toolbar: Control = $RootMargin/RootVBox/Toolbar
 @onready var new_game_button: Button = $RootMargin/RootVBox/Toolbar/NewGameButton
 @onready var replay_seed_button: Button = $RootMargin/RootVBox/Toolbar/ReplaySeedButton
 @onready var seed_label: Label = $RootMargin/RootVBox/Toolbar/SeedLabel
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var victory_label: Label = $RootMargin/RootVBox/VictoryLabel
-@onready var free_cells_slots_row: HBoxContainer = $RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow
-@onready var foundations_slots_row: HBoxContainer = $RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow
-@onready var tableau_row: HBoxContainer = $RootMargin/RootVBox/TableauRow
+@onready var top_row: HFlowContainer = $RootMargin/RootVBox/TopRow
+@onready var free_cells_column: VBoxContainer = $RootMargin/RootVBox/TopRow/FreeCellsColumn
+@onready var foundations_column: VBoxContainer = $RootMargin/RootVBox/TopRow/FoundationsColumn
+@onready var free_cells_slots_row: HFlowContainer = $RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow
+@onready var foundations_slots_row: HFlowContainer = $RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow
+@onready var tableau_scroll: ScrollContainer = $RootMargin/RootVBox/TableauScroll
+@onready var tableau_row: HBoxContainer = $RootMargin/RootVBox/TableauScroll/TableauRow
 
 var _tableau_zones: Array[Zone] = []
 var _free_cell_zones: Array[Zone] = []
@@ -66,6 +74,9 @@ var _game_won: bool = false
 func _ready() -> void:
 	_build_zones()
 	_wire_controls()
+	resized.connect(_queue_layout_refresh)
+	visibility_changed.connect(_queue_layout_refresh)
+	_queue_layout_refresh()
 	start_new_game()
 
 func _exit_tree() -> void:
@@ -192,10 +203,8 @@ func _build_zones() -> void:
 	interaction.ctrl_toggles_selection = false
 	interaction.shift_range_select_enabled = false
 	interaction.keyboard_navigation_enabled = false
-	var display_style := ZoneCardDisplay.new()
-	display_style.hovered_scale = 1.02
+	var display_style := FreeCellCardDisplayScript.new()
 	display_style.selected_scale = 1.01
-	display_style.hovered_lift = 6.0
 	display_style.selected_lift = 1.0
 	var drag_factory := ZoneConfigurableDragVisualFactory.new()
 	drag_factory.ghost_fill_color = Color(0.98, 0.95, 0.82, 0.08)
@@ -571,3 +580,41 @@ func _card_label(item: Control) -> String:
 func _set_status(message: String, font_color: Color = NORMAL_STATUS_COLOR) -> void:
 	status_label.text = "Latest: %s" % message
 	status_label.add_theme_color_override("font_color", font_color)
+
+func _queue_layout_refresh() -> void:
+	call_deferred("_apply_responsive_layout")
+
+func _apply_responsive_layout() -> void:
+	var mode = DemoLayoutSupport.mode_for(self)
+	var content_width = max(root_vbox.size.x, DemoLayoutSupport.resolved_width(self) - 40.0)
+	var row_spacing = float(top_row.get_theme_constant("h_separation"))
+	var compact_column_width = max(420.0, floor((content_width - row_spacing) * 0.5))
+	var narrow_column_width = max(0.0, content_width)
+	DemoLayoutSupport.set_minimum_width(free_cells_column, mode, 528.0, compact_column_width, narrow_column_width)
+	DemoLayoutSupport.set_minimum_width(foundations_column, mode, 528.0, compact_column_width, narrow_column_width)
+	var root_spacing = float(root_vbox.get_theme_constant("separation"))
+	var reserved_height = _control_height(toolbar) + _control_height(status_label) + (_control_height(victory_label) if victory_label.visible else 0.0) + _control_height(top_row) + root_spacing * 4.0
+	var available_scroll_height = clamp(root_vbox.size.y - reserved_height, 240.0, 440.0)
+	tableau_scroll.custom_minimum_size = Vector2(0.0, available_scroll_height)
+	tableau_row.custom_minimum_size = Vector2(_tableau_content_width(), 0.0)
+	for zone in _all_zones():
+		zone.refresh()
+
+func _tableau_content_width() -> float:
+	var total_width := 0.0
+	var child_controls := 0
+	for child in tableau_row.get_children():
+		if child is not Control:
+			continue
+		child_controls += 1
+		var control := child as Control
+		total_width += max(control.custom_minimum_size.x, control.get_combined_minimum_size().x)
+	if child_controls <= 1:
+		return total_width
+	var spacing = float(tableau_row.get_theme_constant("separation"))
+	return total_width + spacing * float(child_controls - 1)
+
+func _control_height(control: Control) -> float:
+	if control == null:
+		return 0.0
+	return control.size.y if control.size.y > 0.0 else control.get_combined_minimum_size().y

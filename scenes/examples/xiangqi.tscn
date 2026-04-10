@@ -50,9 +50,9 @@ theme_type_variation = &"DemoSceneMargin"
 layout_mode = 2
 theme_type_variation = &"DemoRootVBox"
 
-[node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="Toolbar" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_type_variation = &"DemoToolbarHBox"
+theme_type_variation = &"DemoToolbarFlow"
 
 [node name="NewGameButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
@@ -64,9 +64,9 @@ layout_mode = 2
 theme_type_variation = &"DemoDangerActionButton"
 text = "Cancel Targeting"
 
-[node name="StateRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="StateRow" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_type_variation = &"DemoToolbarHBox"
+theme_type_variation = &"DemoToolbarFlow"
 
 [node name="TurnLabel" type="Label" parent="RootMargin/RootVBox/StateRow"]
 layout_mode = 2
@@ -80,10 +80,10 @@ autowrap_mode = 3
 theme_type_variation = &"DemoStatusLabel"
 text = "Click a red piece to begin."
 
-[node name="ContentRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="ContentRow" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_type_variation = &"DemoWideHBox"
+theme_type_variation = &"DemoWideFlow"
 
 [node name="LeftPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow"]
 custom_minimum_size = Vector2(180, 760)

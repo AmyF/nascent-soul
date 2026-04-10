@@ -1,5 +1,6 @@
 extends Control
 
+const DemoLayoutSupport = preload("res://scenes/examples/shared/demo_layout_support.gd")
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 
 @export_group("Sample Cards")
@@ -9,6 +10,7 @@ const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd"
 @onready var sort_button: Button = $RootMargin/RootVBox/Toolbar/SortButton
 @onready var reset_button: Button = $RootMargin/RootVBox/Toolbar/ResetButton
 @onready var sort_mode_label: Label = $RootMargin/RootVBox/Toolbar/SortModeLabel
+@onready var grid: GridContainer = $RootMargin/RootVBox/Grid
 @onready var _hand_zone: Zone = $RootMargin/RootVBox/Grid/HandColumn/HandZone as Zone
 @onready var _row_zone: Zone = $RootMargin/RootVBox/Grid/RowColumn/RowZone as Zone
 @onready var _list_zone: Zone = $RootMargin/RootVBox/Grid/ListColumn/ListZone as Zone
@@ -18,6 +20,9 @@ func _ready() -> void:
 	_populate_cards()
 	sort_button.pressed.connect(_toggle_row_sort)
 	reset_button.pressed.connect(_reset_gallery)
+	resized.connect(_queue_layout_refresh)
+	visibility_changed.connect(_queue_layout_refresh)
+	_queue_layout_refresh()
 	_refresh_guidance()
 	_set_status(ExampleSupport.compact_bilingual("布局对照已就绪", "Layout gallery is ready"))
 	_schedule_headless_quit_if_root()
@@ -78,3 +83,9 @@ func _schedule_headless_quit_if_root() -> void:
 	if get_tree().current_scene != self:
 		return
 	get_tree().create_timer(0.5).timeout.connect(get_tree().quit)
+
+func _queue_layout_refresh() -> void:
+	call_deferred("_apply_responsive_layout")
+
+func _apply_responsive_layout() -> void:
+	DemoLayoutSupport.set_grid_columns(grid, DemoLayoutSupport.mode_for(self), 4, 2, 1)

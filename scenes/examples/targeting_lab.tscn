@@ -36,10 +36,10 @@ layout_mode = 2
 theme_type_variation = &"DemoStatusLabel"
 autowrap_mode = 3
 
-[node name="ContentRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="ContentRow" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_type_variation = &"DemoWideHBox"
+theme_type_variation = &"DemoWideFlow"
 
 [node name="SpellColumn" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
 layout_mode = 2
@@ -54,8 +54,9 @@ layout_mode = 2
 autowrap_mode = 3
 text = "Drag the spell card to an enemy piece. Use the preset menu to preview built-in addon styles on drag-entry targeting."
 
-[node name="SpellToolbar" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
+[node name="SpellToolbar" type="HFlowContainer" parent="RootMargin/RootVBox/ContentRow/SpellColumn"]
 layout_mode = 2
+theme_type_variation = &"DemoToolbarFlow"
 
 [node name="SpellStyleLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/SpellColumn/SpellToolbar"]
 layout_mode = 2
@@ -87,8 +88,9 @@ layout_mode = 2
 autowrap_mode = 3
 text = "Use explicit begin_targeting() to aim a piece ability at empty or occupied square cells. The preset menu below drives intent.style_override."
 
-[node name="AbilityToolbar" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/AbilityColumn"]
+[node name="AbilityToolbar" type="HFlowContainer" parent="RootMargin/RootVBox/ContentRow/AbilityColumn"]
 layout_mode = 2
+theme_type_variation = &"DemoToolbarFlow"
 
 [node name="AbilityStyleOption" type="OptionButton" parent="RootMargin/RootVBox/ContentRow/AbilityColumn/AbilityToolbar"]
 layout_mode = 2

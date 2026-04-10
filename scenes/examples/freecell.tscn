@@ -62,9 +62,9 @@ theme_type_variation = &"DemoSceneMargin"
 layout_mode = 2
 theme_type_variation = &"DemoRootVBox"
 
-[node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="Toolbar" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_type_variation = &"DemoToolbarHBox"
+theme_type_variation = &"DemoToolbarFlow"
 
 [node name="NewGameButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
@@ -96,13 +96,12 @@ autowrap_mode = 3
 theme_type_variation = &"DemoGoldHeading"
 text = "Victory"
 
-[node name="TopRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="TopRow" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
-theme_type_variation = &"DemoWideHBox"
+theme_type_variation = &"DemoWideFlow"
 
 [node name="FreeCellsColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(528, 0)
 size_flags_horizontal = 3
 theme_type_variation = &"DemoColumnVBox"
 
@@ -117,9 +116,9 @@ autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
 text = "Hold one card per slot to unlock larger tableau moves."
 
-[node name="SlotsRow" type="HBoxContainer" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn"]
+[node name="SlotsRow" type="HFlowContainer" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn"]
 layout_mode = 2
-theme_type_variation = &"DemoWideHBox"
+theme_type_variation = &"DemoWideFlow"
 
 [node name="Cell1" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsColumn/SlotsRow"]
 custom_minimum_size = Vector2(120, 176)
@@ -179,7 +178,6 @@ grow_vertical = 2
 
 [node name="FoundationsColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
-custom_minimum_size = Vector2(528, 0)
 size_flags_horizontal = 3
 theme_type_variation = &"DemoColumnVBox"
 
@@ -194,9 +192,9 @@ autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
 text = "Build A through K in suit order. Double-click exposed cards to auto-send them."
 
-[node name="SlotsRow" type="HBoxContainer" parent="RootMargin/RootVBox/TopRow/FoundationsColumn"]
+[node name="SlotsRow" type="HFlowContainer" parent="RootMargin/RootVBox/TopRow/FoundationsColumn"]
 layout_mode = 2
-theme_type_variation = &"DemoWideHBox"
+theme_type_variation = &"DemoWideFlow"
 
 [node name="Foundation1" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsColumn/SlotsRow"]
 custom_minimum_size = Vector2(120, 176)
@@ -254,30 +252,35 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TableauRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+[node name="TableauScroll" type="ScrollContainer" parent="RootMargin/RootVBox"]
+custom_minimum_size = Vector2(0, 440)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TableauRow" type="HBoxContainer" parent="RootMargin/RootVBox/TableauScroll"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"DemoWideHBox"
 
-[node name="Tableau1" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+[node name="Tableau1" type="VBoxContainer" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau1"]
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau1"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
 text = "T1"
 
-[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau1"]
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau1"]
 custom_minimum_size = Vector2(120, 420)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
 
-[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau1/ZonePanel"]
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau1/ZonePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -285,25 +288,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tableau2" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+[node name="Tableau2" type="VBoxContainer" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau2"]
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau2"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
 text = "T2"
 
-[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau2"]
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau2"]
 custom_minimum_size = Vector2(120, 420)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
 
-[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau2/ZonePanel"]
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau2/ZonePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -311,25 +314,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tableau3" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+[node name="Tableau3" type="VBoxContainer" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau3"]
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau3"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
 text = "T3"
 
-[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau3"]
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau3"]
 custom_minimum_size = Vector2(120, 420)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
 
-[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau3/ZonePanel"]
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau3/ZonePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -337,25 +340,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tableau4" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+[node name="Tableau4" type="VBoxContainer" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau4"]
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau4"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
 text = "T4"
 
-[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau4"]
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau4"]
 custom_minimum_size = Vector2(120, 420)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
 
-[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau4/ZonePanel"]
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau4/ZonePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -363,25 +366,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tableau5" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+[node name="Tableau5" type="VBoxContainer" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau5"]
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau5"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
 text = "T5"
 
-[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau5"]
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau5"]
 custom_minimum_size = Vector2(120, 420)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
 
-[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau5/ZonePanel"]
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau5/ZonePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -389,25 +392,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tableau6" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+[node name="Tableau6" type="VBoxContainer" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau6"]
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau6"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
 text = "T6"
 
-[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau6"]
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau6"]
 custom_minimum_size = Vector2(120, 420)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
 
-[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau6/ZonePanel"]
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau6/ZonePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -415,25 +418,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tableau7" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+[node name="Tableau7" type="VBoxContainer" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau7"]
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau7"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
 text = "T7"
 
-[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau7"]
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau7"]
 custom_minimum_size = Vector2(120, 420)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
 
-[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau7/ZonePanel"]
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau7/ZonePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -441,25 +444,25 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tableau8" type="VBoxContainer" parent="RootMargin/RootVBox/TableauRow"]
+[node name="Tableau8" type="VBoxContainer" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(120, 0)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauRow/Tableau8"]
+[node name="Label" type="Label" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau8"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
 text = "T8"
 
-[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauRow/Tableau8"]
+[node name="ZonePanel" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau8"]
 custom_minimum_size = Vector2(120, 420)
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
 
-[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauRow/Tableau8/ZonePanel"]
+[node name="ZoneHost" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau8/ZonePanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
