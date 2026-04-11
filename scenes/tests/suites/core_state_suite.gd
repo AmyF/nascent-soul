@@ -14,4 +14,6 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_runtime_port_contract()
 	await _reset_root()
+	await _test_runtime_hook_boundary_contract()
+	await _reset_root()
 	_test_placement_target_contract()

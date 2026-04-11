@@ -14,7 +14,7 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `576` checks
+- full regression runner passes with `581` checks
 - headless editor load succeeds with the plugin enabled
 - launcher regression coverage now focuses on the two public showcase entry points
 
@@ -67,10 +67,16 @@ It checks the two-entry main menu plus the compatibility shell that swaps betwee
 The addon-core contract coverage now splits into:
 
 - [`scenes/tests/suites/core_state_suite.gd`](../scenes/tests/suites/core_state_suite.gd) for zone/config/runtime-port surface
-- [`scenes/tests/suites/core_transfer_suite.gd`](../scenes/tests/suites/core_transfer_suite.gd) for transfer behavior, signal chains, and drag-finalize flow
+- [`scenes/tests/suites/core_transfer_suite.gd`](../scenes/tests/suites/core_transfer_suite.gd) for transfer behavior, routing/decision flow, signal chains, and drag-finalize flow
 - [`scenes/tests/suites/core_runtime_resilience_suite.gd`](../scenes/tests/suites/core_runtime_resilience_suite.gd) for rejection cleanup, drag visuals, reconciliation, and resilience cases
 
-That keeps the core regression output closer to the way a maintainer reads the addon surface: first the facade, then transfer behavior, then failure and cleanup guarantees.
+That keeps the core regression output closer to the way a maintainer reads the addon surface: first the facade and runtime-hook boundary, then transfer behavior, then failure and cleanup guarantees.
+
+The current core suites intentionally protect the new teaching seams too:
+
+- `core-zone-contracts` locks the `Zone` facade plus the internal runtime-port/runtime-hook lookup seam.
+- `core-transfer-contracts` exercises the routed transfer workflow rather than relying on one monolithic transfer service file.
+- `interaction-smoke` and showcase suites keep the input binding / pointer / selection split honest through real drag, click, and long-press behavior.
 
 ## Useful Commands
 

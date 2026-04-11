@@ -71,6 +71,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_runtime_port_contract()
 	await _reset_root()
+	await _test_runtime_hook_boundary_contract()
+	await _reset_root()
 	_test_placement_target_contract()
 	await _reset_root()
 	await _test_drag_transfer_and_selection_prune()
@@ -243,6 +245,17 @@ func _test_runtime_port_contract() -> void:
 	_check(selection_events == [["Alpha"]], "runtime port selection helper should surface the current selected-items snapshot")
 	_check(hover_exit_events == ["Alpha"], "runtime port hover helper should emit through the public zone signal")
 	_check(layout_events.size() >= 1, "runtime port layout helper should emit the public layout_changed signal")
+
+func _test_runtime_hook_boundary_contract() -> void:
+	var panel = _make_panel("RuntimeHooksPanel", Vector2(24, 24), Vector2(620, 260))
+	var zone = ExampleSupport.make_zone(panel, "RuntimeHooksZone", ZoneHBoxLayout.new())
+	await _settle_frames(2)
+	var runtime_hooks = ZoneRuntimeHooksScript.for_zone(zone)
+	_check(runtime_hooks != null, "live zones should resolve runtime hooks through the internal runtime seam")
+	_check(not zone.has_method("_runtime_preview_transfer"), "Zone facade should not expose the legacy runtime preview hook")
+	_check(not zone.has_method("_runtime_update_targeting_session"), "Zone facade should not expose the legacy targeting-session hook")
+	_check(not zone.has_method("_runtime_finalize_drag_session"), "Zone facade should not expose the legacy drag-finalize hook")
+	_check(not zone.has_method("_runtime_set_transfer_handoff"), "Zone facade should not expose the legacy transfer-handoff hook")
 
 func _test_placement_target_contract() -> void:
 	var invalid = ZonePlacementTarget.invalid()

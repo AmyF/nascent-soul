@@ -159,8 +159,12 @@ If you want to study the addon internals after that, use this maintainer path:
 1. [Architecture](ARCHITECTURE.md)
 2. `addons/nascentsoul/core/zone.gd`
 3. `addons/nascentsoul/runtime/zone_runtime_bootstrap.gd`
-4. `addons/nascentsoul/runtime/zone_runtime_port.gd`
-5. one runtime workflow at a time (`transfer`, `input`, `targeting`, or `render`)
+4. `addons/nascentsoul/runtime/zone_runtime_port.gd` and `zone_runtime_hooks.gd`
+5. runtime state collaborators: `zone_context.gd`, `zone_store.gd`, `zone_display_state_cache.gd`, `zone_transfer_staging.gd`
+6. one runtime workflow at a time:
+   - `transfer`: `zone_transfer_service.gd` -> `zone_transfer_command_router.gd` / `zone_drag_start_flow.gd` / `zone_transfer_decision_resolver.gd` -> execution/cleanup helpers
+   - `input`: `zone_input_service.gd` -> `zone_input_binding_registry.gd` / `zone_input_pointer_flow.gd` / `zone_input_selection_controller.gd`
+   - `targeting` or `render`: service first, then the focused helper files it delegates to
 
 Recommended public showcase order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
 
@@ -171,7 +175,7 @@ Recommended public showcase order from [`scenes/main_menu.tscn`](scenes/main_men
 
 Validated on Godot 4.6.1:
 
-- Headless regression runner passes with `576` checks.
+- Headless regression runner passes with `581` checks.
 - Headless editor load succeeds with the plugin enabled.
 - Launcher smoke coverage confirms the two-entry main menu, the compatibility shell, and both showcase scenes.
 
