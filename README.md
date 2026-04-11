@@ -2,48 +2,102 @@
 
 NascentSoul is a Godot 4.6 addon for building **card-style lanes** and **tactical board surfaces** with one consistent zone model.
 
-It is designed for teams who want:
+It is meant for projects that want:
 
-- **scene-authored workflows** that stay friendly to the Inspector
 - one public API family for ordered lanes and explicit-cell battlefields
-- reusable extension seams for layout, transfer rules, targeting, display, sorting, and drag visuals
-- examples that teach how to use the library instead of bypassing it
+- Inspector-friendly, scene-authored workflows
+- reusable extension seams for layout, transfer, targeting, display, sorting, and drag visuals
+- examples that teach how to use the addon instead of bypassing it
 
-## Why It Exists
+## Architecture
 
-Many card and tactics UIs need the same core behaviors:
+```mermaid
+flowchart TD
+    subgraph Public_Surface[Public surface]
+        Zone[Zone<br/>CardZone / BattlefieldZone]
+        Item[ZoneItemControl<br/>ZoneCard / ZonePiece]
+        Config[ZoneConfig]
+    end
 
-- item ownership
-- selection
-- drag and drop
-- reorder vs. cross-zone movement
-- explicit placement targets
-- hover / preview / targeting feedback
+    subgraph Commands_And_Decisions[Commands, requests, and decisions]
+        PlacementTarget[ZonePlacementTarget]
+        Placement[ZonePlacement]
+        Transfer[ZoneTransferCommand<br/>ZoneTransferRequest<br/>ZoneDragStartDecision<br/>ZoneTransferDecision]
+        Targeting[ZoneTargetingCommand<br/>ZoneTargetingIntent<br/>ZoneTargetRequest<br/>ZoneTargetCandidate<br/>ZoneTargetDecision]
+    end
 
-NascentSoul puts those behaviors behind a single mental model so you do not need one system for card lanes and another for tactical boards.
+    subgraph Resource_Seams[Zone-level resource seams]
+        Space[ZoneSpaceModel]
+        Layout[ZoneLayoutPolicy]
+        Display[ZoneDisplayStyle]
+        Sort[ZoneSortPolicy]
+        Interaction[ZoneInteraction]
+        DragVisual[ZoneDragVisualFactory]
+        TransferPolicy[ZoneTransferPolicy]
+        TargetPolicy[ZoneTargetingPolicy]
+        TargetStyle[ZoneTargetingStyle]
+    end
 
-## Core Mental Model
+    subgraph Item_Level_Seams[Item-level seams]
+        SpawnFactory[ZoneItemSpawnFactory]
+    end
 
-Everything starts with three public ideas:
+    subgraph Runtime_Support[Internal runtime support]
+        Bootstrap[ZoneRuntimeBootstrap]
+        RuntimeState[ZoneContext<br/>ZoneStore<br/>ZoneDisplayStateCache<br/>ZoneTransferStaging]
+        Services[ZoneInputService<br/>ZoneTransferService<br/>ZoneRenderService<br/>ZoneTargetingService]
+        Bridges[ZoneRuntimePort<br/>ZoneRuntimeHooks]
+        Coordinators[ZoneDragCoordinator<br/>ZoneTargetingCoordinator]
+    end
 
-| Concept | Role | Typical question it answers |
-| --- | --- | --- |
-| `Zone` | The runtime surface | "Where do items live and how do players interact with them?" |
-| `ZoneConfig` | The behavior bundle | "How should this zone lay out, sort, animate, accept drops, and resolve targets?" |
-| `ZoneItemControl` | The managed item base | "What is the thing the player sees, selects, drags, or targets?" |
+    Zone --> Item
+    Zone --> Config
+    Zone --> PlacementTarget
+    Zone --> Transfer
+    Zone --> Targeting
+    Zone --> Bootstrap
 
-Two more concepts complete the picture:
+    Config --> Space
+    Config --> Layout
+    Config --> Display
+    Config --> Sort
+    Config --> Interaction
+    Config --> DragVisual
+    Config --> TransferPolicy
+    Config --> TargetPolicy
+    Config --> TargetStyle
 
-| Concept | Role |
-| --- | --- |
-| `ZonePlacementTarget` | Describes where an item should land: a linear index for ordered zones, or grid coordinates for battlefields |
-| Transfer vs. targeting | **Transfer** moves or spawns items. **Targeting** chooses an item or cell without moving the source item yet |
+    Item --> SpawnFactory
+    Space --> PlacementTarget
 
-If you understand those five ideas, the rest of the addon becomes much easier to place.
+    Transfer --> PlacementTarget
+    Transfer --> TransferPolicy
+    Targeting --> TargetPolicy
+    Targeting --> TargetStyle
+    Targeting --> PlacementTarget
+    Layout --> Placement
+    Display --> Placement
+
+    Bootstrap --> RuntimeState
+    Bootstrap --> Services
+    Bootstrap --> Bridges
+    Services --> RuntimeState
+    Bridges --> Coordinators
+```
+
+The important split is simple:
+
+- **`Zone` is the public facade**. `CardZone` and `BattlefieldZone` are specializations of the same runtime model.
+- **`ZoneConfig` is the composition root**. It wires space, layout, display, sorting, interaction, transfer, targeting, and drag-visual seams for a zone.
+- **Transfer and targeting are separate workflows**. Transfer uses command/request/decision types for movement and spawning; targeting uses command/intent/request/candidate/decision types before gameplay resolves meaning.
+- **`ZoneItemControl` is the managed item contract**. `ZoneCard` and `ZonePiece` are built-in defaults, and transfer-driven spawning hangs off the item's `ZoneItemSpawnFactory`.
+- **Runtime support stays internal**. `ZoneRuntimeBootstrap`, `ZoneContext`, `ZoneStore`, `ZoneDisplayStateCache`, `ZoneTransferStaging`, the four services, runtime port/hooks, and the viewport coordinators exist to keep the public `Zone` API small.
+
+For the full maintainer view, read [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Install
 
-1. Copy `addons/nascentsoul/` into your project.
+1. Copy `addons/nascentsoul/` into your Godot project.
 2. Enable the **NascentSoul** plugin in `Project Settings > Plugins`.
 3. Start from the preset configs in `addons/nascentsoul/presets/`, or create zones from the editor menu.
 
@@ -88,118 +142,26 @@ piece.data.title = "Guardian"
 field.add_item(piece, ZonePlacementTarget.square(1, 1))
 ```
 
-## Inspector-First Workflow
+For a fuller first walkthrough, read [docs/getting-started.md](docs/getting-started.md).
 
-NascentSoul is happiest when the scene explains the setup directly.
+## Showcase
 
-Recommended pattern:
+Use [`scenes/main_menu.tscn`](scenes/main_menu.tscn) as the public entry point.
 
-1. assign a preset `.tres`
-2. duplicate it into a local resource or local subresource
-3. override only the fields that differ for this scene
-4. keep the actual `Zone` nodes scene-authored whenever possible
+Read the examples in this order:
 
-Start here:
+1. [Workflow Board](docs/showcase-workflow-board.md) — the smallest starter example; three scene-authored lanes, local `ZoneConfig` resources, and one tiny WIP rule
+2. [FreeCell](docs/showcase-freecell.md) — the card-game reference implementation built on `CardZone`, scene-authored lanes, and example-side rules
+3. [Xiangqi](docs/showcase-xiangqi.md) — the board-game reference implementation built on `BattlefieldZone`, explicit placement targets, and targeting
 
-- `addons/nascentsoul/presets/hand_zone_config.tres`
-- `addons/nascentsoul/presets/pile_zone_config.tres`
-- `addons/nascentsoul/presets/board_zone_config.tres`
-- `addons/nascentsoul/presets/discard_zone_config.tres`
-- `addons/nascentsoul/presets/battlefield_square_zone_config.tres`
-- `addons/nascentsoul/presets/battlefield_hex_zone_config.tres`
+## Read More
 
-## Public Showcase Path
-
-Use [`scenes/main_menu.tscn`](scenes/main_menu.tscn) as the public first screen.
-
-Walk the examples in this order:
-
-1. [Workflow Board](docs/showcase-workflow-board.md)
-   Smallest useful starter. Three scene-authored lanes, two local `ZoneConfig` resources, and one tiny example-side WIP rule.
-2. [FreeCell](docs/showcase-freecell.md)
-   Full card-game reference implementation built on `CardZone`, example-side rules, history, and scene-authored lanes.
-3. [Xiangqi](docs/showcase-xiangqi.md)
-   Full board-game reference implementation built on `BattlefieldZone`, explicit placement targets, targeting, and move-rule orchestration.
-
-[`scenes/demo.tscn`](scenes/demo.tscn) still exists as a compatibility shell for directly opening the two full game showcases together, but it is **not** the recommended starting point.
-
-## Documentation Map
-
-### Start here
-
-- [Getting Started](docs/getting-started.md) — first working card lane, first battlefield, and the public types to learn first
-- [Decision Framework](docs/decision-framework.md) — how to decide which surface or extension seam to use
-
-### Learn the public surfaces
-
+- [Getting Started](docs/getting-started.md)
+- [Decision Framework](docs/decision-framework.md)
 - [Card Zones](docs/card-zones.md)
 - [Battlefields](docs/battlefields.md)
 - [Transfers and Targeting](docs/transfers-and-targeting.md)
-
-### Extend the addon behavior
-
 - [Extending Policies](docs/extending-policies.md)
 - [Extending Layouts](docs/extending-layouts.md)
-
-### Study real examples
-
-- [Showcase: Workflow Board](docs/showcase-workflow-board.md)
-- [Showcase: FreeCell](docs/showcase-freecell.md)
-- [Showcase: Xiangqi](docs/showcase-xiangqi.md)
-
-### Maintain the library
-
 - [Architecture](ARCHITECTURE.md)
 - [Testing](docs/testing.md)
-
-## Learning Paths
-
-### If you want to build with the addon
-
-1. [Getting Started](docs/getting-started.md)
-2. [Decision Framework](docs/decision-framework.md)
-3. [Card Zones](docs/card-zones.md) and/or [Battlefields](docs/battlefields.md)
-4. [Transfers and Targeting](docs/transfers-and-targeting.md)
-5. [Extending Policies](docs/extending-policies.md) and [Extending Layouts](docs/extending-layouts.md)
-6. [Workflow Board](docs/showcase-workflow-board.md) -> [FreeCell](docs/showcase-freecell.md) -> [Xiangqi](docs/showcase-xiangqi.md)
-7. [Testing](docs/testing.md) when you are ready to lock new behavior down
-
-### If you want to maintain the addon
-
-1. [Architecture](ARCHITECTURE.md)
-2. `addons/nascentsoul/core/zone.gd`
-3. `addons/nascentsoul/runtime/zone_runtime_bootstrap.gd`
-4. `addons/nascentsoul/runtime/zone_runtime_port.gd`
-5. `addons/nascentsoul/runtime/zone_runtime_hooks.gd`
-6. one workflow at a time:
-   - transfer: `zone_transfer_service.gd` -> `zone_transfer_execution.gd` -> `zone_drag_session_cleanup.gd`
-   - input: `zone_input_service.gd` -> `zone_input_selection_controller.gd`
-   - targeting: `zone_targeting_service.gd` -> `zone_target_resolution.gd` -> `zone_target_feedback.gd`
-   - render: `zone_render_service.gd` -> `zone_drag_preview_feedback.gd`
-
-## Validation
-
-Validated on Godot 4.6.1:
-
-- headless regression runner passes with **648 checks**
-- headless editor load succeeds with the plugin enabled
-- the public launcher path is [Workflow Board](docs/showcase-workflow-board.md) -> [FreeCell](docs/showcase-freecell.md) -> [Xiangqi](docs/showcase-xiangqi.md)
-
-Useful commands:
-
-```bash
-godot --headless --path . scenes/tests/regression_runner.tscn
-godot --headless --editor --quit --path .
-godot --path .
-```
-
-`godot --path .` opens the project so you can launch the public examples from `scenes/main_menu.tscn`.
-
-## Status
-
-NascentSoul `1.0.0` is the current stable public baseline.
-
-The project is intentionally maintained as both:
-
-- a reusable addon
-- a teaching repository where docs, examples, and tests are part of the product
