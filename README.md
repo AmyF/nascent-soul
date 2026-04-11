@@ -176,6 +176,14 @@ Recommended reading order:
 6. [Game Implementation Checklist](docs/game-implementation-checklist.md)
 7. [Architecture](ARCHITECTURE.md)
 
+If you want to study the addon internals after that, use this maintainer path:
+
+1. [Architecture](ARCHITECTURE.md)
+2. `addons/nascentsoul/core/zone.gd`
+3. `addons/nascentsoul/runtime/zone_runtime_bootstrap.gd`
+4. `addons/nascentsoul/runtime/zone_runtime_port.gd`
+5. one runtime workflow at a time (`transfer`, `input`, `targeting`, or `render`)
+
 Recommended example order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
 
 1. `Transfer`
@@ -194,6 +202,7 @@ Recommended example order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
 Validated on Godot 4.6.1:
 
 - Headless regression runner passes with `1697` checks.
+- Headless regression runner passes with `1714` checks.
 - Headless editor load succeeds with the plugin enabled.
 - Demo smoke coverage confirms the main-menu launcher, the compatibility shell, and both showcase scenes.
 

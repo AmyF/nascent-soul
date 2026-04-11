@@ -14,9 +14,9 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `1697` checks
+- full regression runner passes with `1714` checks
 - headless editor load succeeds with the plugin enabled
-- demo smoke covers the main-menu launcher, the compatibility shell, and both showcase scenes
+- demo regression coverage now splits into scene contracts, launcher flow, and example-story suites
 
 ## What The Suite Covers
 
@@ -26,7 +26,9 @@ Validated on Godot 4.6.1:
 - layout visual contracts
 - targeting flows and targeting visuals
 - performance smoke checks
-- launcher and compatibility-shell smoke coverage
+- demo scene contracts and serialized authoring checks
+- launcher and compatibility-shell navigation coverage
+- demo example behavior stories
 - FreeCell showcase rules and helper contracts
 - Xiangqi showcase rules
 
@@ -47,6 +49,16 @@ The new showcase-specific suites live at:
 - [`scenes/tests/suites/xiangqi_showcase_suite.gd`](../scenes/tests/suites/xiangqi_showcase_suite.gd)
 
 They are intended to protect the examples as first-class reference implementations, not as disposable demos.
+
+## Demo Story Suites
+
+The demo-facing suites now split by concern:
+
+- [`scenes/tests/suites/demo_scene_contract_suite.gd`](../scenes/tests/suites/demo_scene_contract_suite.gd) checks serialized authoring, naming, and static scene contracts
+- [`scenes/tests/suites/demo_smoke_suite.gd`](../scenes/tests/suites/demo_smoke_suite.gd) checks launcher and compatibility-shell navigation
+- [`scenes/tests/suites/demo_examples_suite.gd`](../scenes/tests/suites/demo_examples_suite.gd) checks example behavior stories and showcase loading
+
+That split keeps the regression runner output closer to the way a learner reads the project.
 
 ## Useful Commands
 

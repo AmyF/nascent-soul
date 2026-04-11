@@ -37,6 +37,19 @@ The controller no longer constructs lane zones in code. Instead it coordinates a
 - `freecell_move_rules.gd` owns transfer validation, drag-start expansion, carry-capacity checks, and foundation legality
 - `freecell_history.gd` owns snapshot dedupe, undo checkpoints, and restore orchestration state
 
+## Showcase Pattern
+
+FreeCell is the reference card-game decomposition in this repository:
+
+1. **scene wiring** stays in `freecell.tscn`
+2. **zone discovery + role metadata** live in `freecell_zone_registry.gd`
+3. **serialized game state** lives in `freecell_state_model.gd`
+4. **move legality** lives in `freecell_move_rules.gd`
+5. **undo / restore history** lives in `freecell_history.gd`
+6. **UI/status orchestration** stays in `freecell.gd`
+
+That split keeps the public addon API visible while moving game-specific rules and history into small example-side helpers.
+
 ## Rule Coverage
 
 The showcase as a whole implements:

@@ -3,6 +3,7 @@ extends "res://scenes/tests/shared/test_harness.gd"
 const ZoneCompositeTransferPolicyScript = preload("res://addons/nascentsoul/impl/permissions/zone_composite_transfer_policy.gd")
 const ZoneConfigurableDragVisualFactoryScript = preload("res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd")
 const ZoneGroupSortScript = preload("res://addons/nascentsoul/impl/sorts/zone_group_sort.gd")
+const ZoneRuntimePortScript = preload("res://addons/nascentsoul/runtime/zone_runtime_port.gd")
 const HAND_CONFIG = preload("res://addons/nascentsoul/presets/hand_zone_config.tres")
 const BOARD_CONFIG = preload("res://addons/nascentsoul/presets/board_zone_config.tres")
 const TRANSFER_PLAYGROUND_SCENE = preload("res://scenes/examples/transfer_playground.tscn")
@@ -67,9 +68,13 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_base_zone_defaults()
 	await _reset_root()
+	await _test_runtime_port_contract()
+	await _reset_root()
 	_test_placement_target_contract()
 	await _reset_root()
 	await _test_drag_transfer_and_selection_prune()
+	await _reset_root()
+	await _test_transfer_signal_chain()
 	await _reset_root()
 	await _test_batch_transfer_api()
 	await _reset_root()
@@ -201,6 +206,43 @@ func _test_base_zone_defaults() -> void:
 	_check(zone.get_transfer_policy() is ZoneAllowAllTransferPolicy, "base Zone default config should still use the allow-all transfer policy")
 	_check(zone.get_display_style() is ZoneCardDisplay, "base Zone default config should keep the standard card display style")
 
+func _test_runtime_port_contract() -> void:
+	var panel = _make_panel("RuntimePortPanel", Vector2(24, 24), Vector2(620, 260))
+	var zone = ExampleSupport.make_zone(panel, "RuntimePortZone", ZoneHBoxLayout.new())
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	zone.add_item(alpha)
+	await _settle_frames(2)
+	var port = ZoneRuntimePortScript.for_zone(zone)
+	_check(port != null, "live zones should resolve a runtime port")
+	_check(ZoneRuntimePortScript.resolve_context(zone) != null, "runtime port lookup should resolve the zone context")
+	_check(ZoneRuntimePortScript.resolve_input_service(zone) != null, "runtime port lookup should resolve the input service")
+	_check(ZoneRuntimePortScript.resolve_render_service(zone) != null, "runtime port lookup should resolve the render service")
+	_check(ZoneRuntimePortScript.resolve_transfer_service(zone) != null, "runtime port lookup should resolve the transfer service")
+	zone.select_item(alpha, false)
+	await _settle_frames(1)
+	var selection_events: Array = []
+	zone.selection_changed.connect(func(items: Array) -> void:
+		var names: Array[String] = []
+		for item in items:
+			if item is ZoneItemControl:
+				names.append((item as ZoneItemControl).name)
+		selection_events.append(names)
+	)
+	ZoneRuntimePortScript.emit_selection_changed_for(zone)
+	var hover_exit_events: Array[String] = []
+	zone.item_hover_exited.connect(func(item: Control) -> void:
+		hover_exit_events.append(item.name)
+	)
+	ZoneRuntimePortScript.emit_item_hover_exited_for(zone, alpha)
+	var layout_events: Array[String] = []
+	zone.layout_changed.connect(func() -> void:
+		layout_events.append("layout")
+	)
+	ZoneRuntimePortScript.emit_layout_changed_for(zone)
+	_check(selection_events == [["Alpha"]], "runtime port selection helper should surface the current selected-items snapshot")
+	_check(hover_exit_events == ["Alpha"], "runtime port hover helper should emit through the public zone signal")
+	_check(layout_events.size() >= 1, "runtime port layout helper should emit the public layout_changed signal")
+
 func _test_placement_target_contract() -> void:
 	var invalid = ZonePlacementTarget.invalid()
 	_check(not invalid.is_valid(), "invalid placement target should remain invalid")
@@ -264,6 +306,59 @@ func _test_drag_transfer_and_selection_prune() -> void:
 	_check(transfer_events == ["Beta:SourceZone->TargetZone@1"], "target transfer signal should describe the final target index")
 	_check(_unmanaged_control_names(source_zone).is_empty(), "successful transfer should not leave a source ghost behind")
 	_check(_unmanaged_control_names(target_zone).is_empty(), "successful transfer should not leave a target ghost behind")
+
+func _test_transfer_signal_chain() -> void:
+	var target_panel = _make_panel("SignalTargetPanel", Vector2.ZERO, Vector2(620, 260))
+	var source_panel = _make_panel("SignalSourcePanel", Vector2(24, 320), Vector2(620, 260))
+	var source_zone = ExampleSupport.make_zone(source_panel, "SignalSourceZone", ZoneHBoxLayout.new())
+	var target_zone = ExampleSupport.make_zone(target_panel, "SignalTargetZone", ZoneHBoxLayout.new())
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
+	source_zone.add_item(alpha)
+	target_zone.add_item(beta)
+	await _settle_frames(2)
+	source_zone.select_item(alpha, false)
+	await _settle_frames(1)
+	var source_removed_events: Array[String] = []
+	var source_selection_events: Array = []
+	var source_layout_events: Array[String] = []
+	source_zone.item_removed.connect(func(item: Control, from_index: int) -> void:
+		source_removed_events.append("%s:%d" % [item.name, from_index])
+	)
+	source_zone.selection_changed.connect(func(items: Array) -> void:
+		var names: Array[String] = []
+		for item in items:
+			if item is ZoneItemControl:
+				names.append((item as ZoneItemControl).name)
+		source_selection_events.append(names)
+	)
+	source_zone.layout_changed.connect(func() -> void:
+		source_layout_events.append("layout")
+	)
+	var target_added_events: Array[String] = []
+	var target_transfer_events: Array[String] = []
+	var target_layout_events: Array[String] = []
+	target_zone.item_added.connect(func(item: Control, index: int) -> void:
+		target_added_events.append("%s:%d" % [item.name, index])
+	)
+	target_zone.item_transferred.connect(func(item: Control, source_zone_ref: Zone, target_zone_ref: Zone, target) -> void:
+		var resolved_target := target as ZonePlacementTarget
+		var linear_index := resolved_target.linear_index if resolved_target != null and resolved_target.is_linear() else -1
+		target_transfer_events.append("%s:%s->%s@%d" % [item.name, source_zone_ref.name, target_zone_ref.name, linear_index])
+	)
+	target_zone.layout_changed.connect(func() -> void:
+		target_layout_events.append("layout")
+	)
+	_check(_transfer_items(source_zone, [alpha], target_zone, ZonePlacementTarget.linear(1)), "programmatic transfer should still succeed through the public API")
+	await _settle_frames(2)
+	_check(source_removed_events == ["Alpha:0"], "source zone should emit item_removed through the public signal chain")
+	_check(source_selection_events == [[]], "source zone should emit the pruned selection through the public signal chain")
+	_check(source_layout_events.size() >= 1, "source zone should emit layout_changed during the transfer")
+	_check(target_added_events == ["Alpha:1"], "target zone should emit item_added for the inserted transfer result")
+	_check(target_transfer_events == ["Alpha:SignalSourceZone->SignalTargetZone@1"], "target zone should emit item_transferred with the resolved placement target")
+	_check(target_layout_events.size() >= 1, "target zone should emit layout_changed during the transfer")
+	_check(_zone_item_names(source_zone).is_empty(), "source zone should no longer contain the moved item")
+	_check(_zone_item_names(target_zone) == ["Beta", "Alpha"], "target zone should contain the inserted item at the resolved index")
 
 func _test_batch_transfer_api() -> void:
 	var target_panel = _make_panel("BatchTargetPanel", Vector2.ZERO, Vector2(620, 260))

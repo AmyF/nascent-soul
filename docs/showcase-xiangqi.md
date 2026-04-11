@@ -6,6 +6,10 @@ Primary files:
 
 - [`scenes/examples/xiangqi.tscn`](../scenes/examples/xiangqi.tscn)
 - [`scenes/examples/xiangqi.gd`](../scenes/examples/xiangqi.gd)
+- [`scenes/examples/xiangqi/xiangqi_board_registry.gd`](../scenes/examples/xiangqi/xiangqi_board_registry.gd)
+- [`scenes/examples/xiangqi/xiangqi_state_model.gd`](../scenes/examples/xiangqi/xiangqi_state_model.gd)
+- [`scenes/examples/xiangqi/xiangqi_move_rules.gd`](../scenes/examples/xiangqi/xiangqi_move_rules.gd)
+- [`scenes/examples/xiangqi/xiangqi_history.gd`](../scenes/examples/xiangqi/xiangqi_history.gd)
 - [`scenes/examples/xiangqi/xiangqi_piece.gd`](../scenes/examples/xiangqi/xiangqi_piece.gd)
 - [`scenes/examples/xiangqi/xiangqi_target_policy.gd`](../scenes/examples/xiangqi/xiangqi_target_policy.gd)
 - [`scenes/examples/xiangqi/xiangqi_board_overlay.gd`](../scenes/examples/xiangqi/xiangqi_board_overlay.gd)
@@ -26,6 +30,23 @@ The showcase uses:
 - explicit `ZonePlacementTarget.square(x, y)` positions for every piece
 
 The custom board overlay only draws the visual board. The battlefield zone remains the interaction surface.
+
+## Controller Decomposition
+
+The Xiangqi showcase now follows the same helper-oriented pattern as FreeCell:
+
+- `xiangqi.gd` stays focused on scene wiring, targeting callbacks, status messages, and turn orchestration
+- `xiangqi_board_registry.gd` owns piece lookup, piece spawning, and candidate-to-board resolution
+- `xiangqi_state_model.gd` owns initial setup, serialized state shape, board snapshots, and state signatures
+- `xiangqi_move_rules.gd` owns move legality, check detection, legal-move search, and piece attack rules
+- `xiangqi_history.gd` owns undo snapshots, transition history, and undo-animation state
+
+That split keeps the learning path stable:
+
+1. read the scene and controller first
+2. read the state model to see the serialized board shape
+3. read the move rules to understand Xiangqi legality
+4. read history last to understand undo/restore flow
 
 ## Rule Coverage
 

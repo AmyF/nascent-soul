@@ -2,6 +2,8 @@ extends RefCounted
 
 # Internal helper for drag-session cleanup across all involved zones.
 
+const ZoneRuntimePortScript = preload("res://addons/nascentsoul/runtime/zone_runtime_port.gd")
+
 var transfer_service = null
 var zone = null
 
@@ -17,10 +19,10 @@ func cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit
 	session.prune_invalid_items()
 	var involved_zones = _collect_involved_drag_zones(session)
 	for involved_zone in involved_zones:
-		var render_service = transfer_service.resolve_zone_render_service(involved_zone)
+		var render_service = ZoneRuntimePortScript.resolve_render_service(involved_zone)
 		if render_service != null:
 			render_service.clear_preview_for_session(session)
-		var input_service = transfer_service.resolve_zone_input_service(involved_zone)
+		var input_service = ZoneRuntimePortScript.resolve_input_service(involved_zone)
 		if input_service != null:
 			input_service.clear_hover_for_items(session.items, false)
 			input_service.reset_press_state_for_item()
@@ -33,9 +35,9 @@ func cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit
 	if not refresh_involved:
 		return
 	for involved_zone in involved_zones:
-		transfer_service.request_zone_refresh(involved_zone)
+		ZoneRuntimePortScript.request_refresh_for(involved_zone)
 		if emit_layout_changed:
-			transfer_service.emit_zone_layout_changed(involved_zone)
+			ZoneRuntimePortScript.emit_layout_changed_for(involved_zone)
 
 func _collect_involved_drag_zones(session: ZoneDragSession) -> Array[Zone]:
 	var involved_zones: Array[Zone] = []
@@ -48,10 +50,10 @@ func _collect_involved_drag_zones(session: ZoneDragSession) -> Array[Zone]:
 
 func _resolve_drag_coordinator(involved_zones: Array[Zone]) -> ZoneDragCoordinator:
 	for involved_zone in involved_zones:
-		var coordinator = transfer_service.resolve_zone_drag_coordinator(involved_zone)
+		var coordinator = ZoneRuntimePortScript.resolve_drag_coordinator(involved_zone, false)
 		if coordinator != null:
 			return coordinator
-	return transfer_service.resolve_zone_drag_coordinator(zone)
+	return ZoneRuntimePortScript.resolve_drag_coordinator(zone, false)
 
 func _append_unique_zone(zones: Array[Zone], candidate: Zone) -> void:
 	if candidate == null or candidate in zones:

@@ -72,6 +72,16 @@ Your scene or controller script should still own:
 Zones should stay reusable.  
 Your controller should stay game-specific.
 
+When the controller starts growing, use the same helper pattern as the built-in showcases:
+
+1. keep **scene wiring** in the `.tscn` and thin controller
+2. move **zone lookup / board lookup** into a registry helper
+3. move **serialized state shape** into a state-model helper
+4. move **move legality / rule evaluation** into a rules helper
+5. move **undo / restore stacks** into a history helper
+
+FreeCell and Xiangqi now both follow that structure.
+
 ## 7. Teach Through Examples
 
 Walk the built-in examples in this order when you need a reference:
@@ -100,3 +110,12 @@ Before calling the implementation done:
 3. run the headless editor load
 
 The repository treats examples and docs as part of the product, so keep them in lockstep with the code.
+
+When a suite gets too large, split it by story:
+
+- scene contracts / serialized authoring checks
+- launcher and navigation flows
+- example behavior stories
+- showcase-specific rule suites
+
+The current `demo-*` suites are organized that way on purpose.

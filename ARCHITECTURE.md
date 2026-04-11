@@ -28,6 +28,7 @@ These types exist to make the public surface work, but they are **not** intended
 | Area | Paths | Notes |
 | --- | --- | --- |
 | Runtime bootstrap | `addons/nascentsoul/runtime/zone_runtime_bootstrap.gd` | Owns the shared store/context/service wiring for a `Zone` |
+| Runtime port | `addons/nascentsoul/runtime/zone_runtime_port.gd` | Owns signal emission, refresh, coordinator lookup, and cross-zone runtime lookup so services stay off the `Zone` facade |
 | Internal root host | `addons/nascentsoul/runtime/zone_internal_roots.gd` | Keeps `ItemsRoot` / `PreviewRoot` present, ordered, and editor-safe |
 | Transfer workflow | `addons/nascentsoul/runtime/zone_transfer_service.gd`, `zone_transfer_execution.gd`, `zone_drag_session_cleanup.gd` | `ZoneTransferService` owns transfer decision flow and drag orchestration, while execution and cleanup stay separate |
 | Input workflow | `addons/nascentsoul/runtime/zone_input_service.gd`, `zone_input_selection_controller.gd` | Gesture capture stays separate from selection / hover / keyboard flow |
@@ -98,6 +99,11 @@ Internal machinery that powers `Zone`.
 
 This layer should be treated as maintainers' code, not as the addon's day-to-day extension surface.
 
+Two files matter most when reading it:
+
+- `zone_runtime_bootstrap.gd` shows **which collaborators exist**
+- `zone_runtime_port.gd` shows **how those collaborators talk back to the public `Zone` facade**
+
 ### `cards/` and `pieces/`
 
 Default item implementations that demonstrate the intended item API.
@@ -105,6 +111,21 @@ Default item implementations that demonstrate the intended item API.
 They are public and reusable, but they should not become the only way to extend the system. Custom item types should still be able to build on `ZoneItemControl`.
 
 ## Extension Rules
+
+## How to Read the Addon Core
+
+If you are learning from the implementation rather than only using the public API, read the addon in this order:
+
+1. **`core/zone.gd`**: learn the public signals and methods first. Stop at the facade level before diving into runtime details.
+2. **`runtime/zone_runtime_bootstrap.gd`**: see which internal collaborators a `Zone` assembles.
+3. **`runtime/zone_runtime_port.gd`**: see how services emit public signals, request redraws, and resolve sibling runtime helpers without calling back into `Zone` directly.
+4. Pick one workflow and follow it end-to-end:
+   - transfer: `zone_transfer_service.gd` → `zone_transfer_execution.gd` → `zone_drag_session_cleanup.gd`
+   - input: `zone_input_service.gd` → `zone_input_selection_controller.gd`
+   - targeting: `zone_targeting_service.gd` → `zone_target_resolution.gd` → `zone_target_feedback.gd`
+   - render: `zone_render_service.gd` → `zone_drag_preview_feedback.gd`
+
+That reading order keeps the mental model stable: **public facade first, assembly second, workflow details last**.
 
 ### Expected extension points
 

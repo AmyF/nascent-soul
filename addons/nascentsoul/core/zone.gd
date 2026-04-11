@@ -7,9 +7,11 @@ class_name Zone extends Control
 const ITEMS_ROOT_NAME := "ItemsRoot"
 const PREVIEW_ROOT_NAME := "PreviewRoot"
 const TARGETING_ZONE_GROUP := "__NascentSoulZones"
+const ZoneConfigurationWarningsScript := preload("res://addons/nascentsoul/runtime/zone_configuration_warnings.gd")
 const ZoneInternalRootsScript := preload("res://addons/nascentsoul/runtime/zone_internal_roots.gd")
 const ZoneRuntimeBootstrapScript := preload("res://addons/nascentsoul/runtime/zone_runtime_bootstrap.gd")
 
+# Public interaction surface.
 signal item_clicked(item: ZoneItemControl)
 signal item_double_clicked(item: ZoneItemControl)
 signal item_right_clicked(item: ZoneItemControl)
@@ -49,6 +51,7 @@ var _render_service: ZoneRenderService = null
 var _transfer_service: ZoneTransferService = null
 var _targeting_service: ZoneTargetingService = null
 
+# Public configuration.
 @export_group("Zone")
 @export var config: ZoneConfig:
 	get:
@@ -113,24 +116,9 @@ func _get_configuration_warnings() -> PackedStringArray:
 		return PackedStringArray()
 	_ensure_internal_nodes()
 	_ensure_services()
-	var warnings := PackedStringArray()
-	var resolved_layout = _context.get_layout_policy()
-	var resolved_display = _context.get_display_style()
-	if clip_contents and (resolved_layout is ZoneHandLayout or resolved_layout is ZonePileLayout or resolved_display is ZoneCardDisplay):
-		warnings.append("Zone clips its children. Hover lift, drag previews, and pile overlap may be cut off.")
-	if size != Vector2.ZERO:
-		if resolved_layout is ZoneHandLayout and (resolved_layout as ZoneHandLayout).would_escape_container(size):
-			warnings.append("The current hand layout values push cards outside the zone. Reduce arch settings or use a taller zone.")
-		if resolved_layout is ZonePileLayout and (resolved_layout as ZonePileLayout).would_escape_container(size):
-			warnings.append("The current pile layout values push cards outside the zone. Reduce overlap or increase the zone size.")
-	for child in get_children():
-		if _is_expected_direct_child(child):
-			continue
-		if child is Control:
-			warnings.append("Direct child '%s' is not managed. Put zone items under ItemsRoot instead of attaching them directly to Zone." % child.name)
-			break
-	return warnings
+	return ZoneConfigurationWarningsScript.build(self, _context, Callable(self, "_is_expected_direct_child"))
 
+# Public gameplay API.
 func refresh() -> void:
 	_ensure_internal_nodes()
 	_ensure_services()
@@ -373,6 +361,7 @@ func _runtime_finalize_drag_session(session: ZoneDragSession = null) -> void:
 	_ensure_services()
 	_transfer_service.finalize_drag_session(session)
 
+# Internal lifecycle wiring.
 func _get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator:
 	if not is_inside_tree():
 		return null
@@ -398,22 +387,6 @@ func _get_targeting_coordinator(create_if_missing: bool = true) -> ZoneTargeting
 	if existing is ZoneTargetingCoordinator:
 		return existing as ZoneTargetingCoordinator
 	return null
-
-func _get_context() -> ZoneContext:
-	_ensure_services()
-	return _context
-
-func _get_input_service() -> ZoneInputService:
-	_ensure_services()
-	return _input_service
-
-func _get_render_service() -> ZoneRenderService:
-	_ensure_services()
-	return _render_service
-
-func _get_transfer_service() -> ZoneTransferService:
-	_ensure_services()
-	return _transfer_service
 
 func _ensure_services() -> void:
 	if _runtime_bootstrap == null:
@@ -482,7 +455,7 @@ func _rebind_after_configuration_change() -> void:
 
 func _on_zone_resized() -> void:
 	refresh()
-	_emit_layout_changed()
+	layout_changed.emit()
 
 func _bind_items_root_signals() -> void:
 	if _items_root == null:
@@ -519,7 +492,7 @@ func _handle_items_root_structure_changed() -> void:
 	var coordinator = _get_drag_coordinator(false)
 	if coordinator == null or coordinator.get_session() == null:
 		refresh()
-		_emit_layout_changed()
+		layout_changed.emit()
 
 func _coerce_placement_target(value):
 	if value == null:
@@ -527,69 +500,3 @@ func _coerce_placement_target(value):
 	if value is ZonePlacementTarget:
 		return (value as ZonePlacementTarget).duplicate_target()
 	return null
-
-func _emit_item_clicked(item: ZoneItemControl) -> void:
-	item_clicked.emit(item)
-
-func _emit_item_double_clicked(item: ZoneItemControl) -> void:
-	item_double_clicked.emit(item)
-
-func _emit_item_right_clicked(item: ZoneItemControl) -> void:
-	item_right_clicked.emit(item)
-
-func _emit_item_long_pressed(item: ZoneItemControl) -> void:
-	item_long_pressed.emit(item)
-
-func _emit_item_hover_entered(item: ZoneItemControl) -> void:
-	item_hover_entered.emit(item)
-
-func _emit_item_hover_exited(item: ZoneItemControl) -> void:
-	item_hover_exited.emit(item)
-
-func _emit_selection_changed() -> void:
-	selection_changed.emit(get_selected_items())
-
-func _emit_drag_started(items: Array[ZoneItemControl], source_zone: Zone) -> void:
-	drag_started.emit(items, source_zone)
-
-func _emit_drag_start_rejected(items: Array, source_zone: Zone, reason: String) -> void:
-	drag_start_rejected.emit(items, source_zone, reason)
-
-func _emit_drop_preview_changed(items: Array, target_zone: Zone, target) -> void:
-	drop_preview_changed.emit(items, target_zone, target)
-
-func _emit_drop_hover_state_changed(items: Array, target_zone: Zone, decision) -> void:
-	drop_hover_state_changed.emit(items, target_zone, decision)
-
-func _emit_item_added(item: ZoneItemControl, index: int) -> void:
-	item_added.emit(item, index)
-
-func _emit_item_removed(item: ZoneItemControl, from_index: int) -> void:
-	item_removed.emit(item, from_index)
-
-func _emit_item_reordered(item: ZoneItemControl, from_index: int, to_index: int) -> void:
-	item_reordered.emit(item, from_index, to_index)
-
-func _emit_item_transferred(item: ZoneItemControl, source_zone: Zone, target_zone: Zone, target) -> void:
-	item_transferred.emit(item, source_zone, target_zone, target)
-
-func _emit_drop_rejected(items: Array, source_zone: Zone, target_zone: Zone, reason: String) -> void:
-	drop_rejected.emit(items, source_zone, target_zone, reason)
-
-func _emit_targeting_started(source_item: ZoneItemControl, source_zone: Zone, intent: ZoneTargetingIntent) -> void:
-	targeting_started.emit(source_item, source_zone, intent)
-
-func _emit_target_preview_changed(source_item: ZoneItemControl, target_zone: Zone, candidate) -> void:
-	target_preview_changed.emit(source_item, target_zone, candidate)
-
-func _emit_target_hover_state_changed(source_item: ZoneItemControl, target_zone: Zone, decision) -> void:
-	target_hover_state_changed.emit(source_item, target_zone, decision)
-
-func _emit_targeting_resolved(source_item: ZoneItemControl, source_zone: Zone, candidate, decision) -> void:
-	targeting_resolved.emit(source_item, source_zone, candidate, decision)
-
-func _emit_targeting_cancelled(source_item: ZoneItemControl, source_zone: Zone) -> void:
-	targeting_cancelled.emit(source_item, source_zone)
-
-func _emit_layout_changed() -> void:
-	layout_changed.emit()

@@ -27,6 +27,7 @@ func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	selection_state = context.selection_state
 	_selection_controller = ZoneInputSelectionControllerScript.new(self, context, selection_state)
 
+# Lifecycle and binding.
 func bind_runtime_services(p_transfer_service: ZoneTransferService, p_targeting_service: ZoneTargetingService) -> void:
 	transfer_service = p_transfer_service
 	targeting_service = p_targeting_service
@@ -128,6 +129,7 @@ func clear_selection() -> void:
 func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 	_selection_controller.select_item(item, additive)
 
+# Input event handling.
 func on_item_gui_input(event: InputEvent, item: ZoneItemControl) -> void:
 	if context.get_interaction() == null:
 		return
@@ -255,6 +257,7 @@ func reset_press_state_for_item(item = null) -> void:
 func clear_background_interaction() -> void:
 	_selection_controller.clear_background_interaction()
 
+# Runtime-port bridge.
 func request_refresh() -> void:
 	if runtime_port != null:
 		runtime_port.request_refresh()
