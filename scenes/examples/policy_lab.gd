@@ -6,10 +6,23 @@ const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd"
 const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 
-@export_group("Sample Cards")
-@export var deck_cards: Array[ExampleCardSpec] = []
-@export var hand_cards: Array[ExampleCardSpec] = []
+@export_group("Status Copy")
+@export var ready_status := "规则实验室已就绪 / Policy lab is ready"
+@export var status_prefix := "最近 / Latest"
+@export var board_capacity_format := "容量 %d / %d / Capacity %d / %d"
+@export var sanctum_capacity_format := "容量 %d / %d / Capacity %d / %d"
 
+@export_group("Layout Presets")
+@export var grid_columns := Vector3i(5, 3, 2)
+@export var edge_column_widths := Vector3(160.0, 150.0, 148.0)
+@export var middle_column_widths := Vector3(180.0, 170.0, 164.0)
+@export var zone_heights := Vector3(220.0, 196.0, 170.0)
+
+@onready var deck_column: VBoxContainer = $RootMargin/RootVBox/Grid/DeckColumn
+@onready var hand_column: VBoxContainer = $RootMargin/RootVBox/Grid/HandColumn
+@onready var board_column: VBoxContainer = $RootMargin/RootVBox/Grid/BoardColumn
+@onready var sanctum_column: VBoxContainer = $RootMargin/RootVBox/Grid/SanctumColumn
+@onready var discard_column: VBoxContainer = $RootMargin/RootVBox/Grid/DiscardColumn
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
 @onready var grid: GridContainer = $RootMargin/RootVBox/Grid
 @onready var board_capacity_label: Label = $RootMargin/RootVBox/Grid/BoardColumn/BoardCapacityLabel
@@ -21,18 +34,13 @@ const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 @onready var _discard_zone: Zone = $RootMargin/RootVBox/Grid/DiscardColumn/DiscardZone as Zone
 
 func _ready() -> void:
-	_populate_cards()
 	_wire_actions()
 	resized.connect(_queue_layout_refresh)
 	visibility_changed.connect(_queue_layout_refresh)
 	_queue_layout_refresh()
 	_refresh_guidance()
-	_set_status(ExampleSupport.compact_bilingual("规则实验室已就绪", "Policy lab is ready"))
+	_set_status(ready_status)
 	_schedule_headless_quit_if_root()
-
-func _populate_cards() -> void:
-	ExampleSupport.add_cards_from_specs(_deck_zone, deck_cards, false)
-	ExampleSupport.add_cards_from_specs(_hand_zone, hand_cards, true)
 
 func _wire_actions() -> void:
 	_deck_zone.item_double_clicked.connect(_draw_to_hand)
@@ -92,12 +100,12 @@ func _refresh_guidance() -> void:
 	var board_count = _board_zone.get_item_count()
 	var _board_capacity: ZoneCapacityTransferPolicy = ExampleSupport.get_zone_transfer_policy(_board_zone) as ZoneCapacityTransferPolicy
 	var board_limit = _board_capacity.max_items if _board_capacity != null else 0
-	board_capacity_label.text = "容量 %d / %d / Capacity %d / %d" % [board_count, board_limit, board_count, board_limit]
+	board_capacity_label.text = board_capacity_format % [board_count, board_limit, board_count, board_limit]
 	var _sanctum_rules: ZoneCompositeTransferPolicy = ExampleSupport.get_zone_transfer_policy(_sanctum_zone) as ZoneCompositeTransferPolicy
 	var sanctum_capacity = _resolve_capacity_policy(_sanctum_rules)
 	var sanctum_count = _sanctum_zone.get_item_count()
 	var sanctum_limit = sanctum_capacity.max_items if sanctum_capacity != null else 0
-	sanctum_capacity_label.text = "容量 %d / %d / Capacity %d / %d" % [sanctum_count, sanctum_limit, sanctum_count, sanctum_limit]
+	sanctum_capacity_label.text = sanctum_capacity_format % [sanctum_count, sanctum_limit, sanctum_count, sanctum_limit]
 
 func _resolve_capacity_policy(policy: ZoneCompositeTransferPolicy) -> ZoneCapacityTransferPolicy:
 	if policy == null:
@@ -108,7 +116,7 @@ func _resolve_capacity_policy(policy: ZoneCompositeTransferPolicy) -> ZoneCapaci
 	return null
 
 func _set_status(message: String, font_color: Color = NORMAL_STATUS_COLOR) -> void:
-	status_label.text = "%s: %s" % [ExampleSupport.compact_bilingual("最近", "Latest"), message]
+	status_label.text = "%s: %s" % [status_prefix, message]
 	status_label.add_theme_color_override("font_color", font_color)
 
 func _schedule_headless_quit_if_root() -> void:
@@ -121,5 +129,21 @@ func _schedule_headless_quit_if_root() -> void:
 func _queue_layout_refresh() -> void:
 	call_deferred("_apply_responsive_layout")
 
+func _pick_layout_value(mode: StringName, preset: Vector3) -> float:
+	return DemoLayoutSupport.pick_float(mode, preset.x, preset.y, preset.z)
+
 func _apply_responsive_layout() -> void:
-	DemoLayoutSupport.set_grid_columns(grid, DemoLayoutSupport.mode_for(self), 5, 3, 1)
+	var mode := DemoLayoutSupport.mode_for(self)
+	DemoLayoutSupport.set_grid_columns(grid, mode, grid_columns.x, grid_columns.y, grid_columns.z)
+	DemoLayoutSupport.set_minimum_width(deck_column, mode, edge_column_widths.x, edge_column_widths.y, edge_column_widths.z)
+	DemoLayoutSupport.set_minimum_width(discard_column, mode, edge_column_widths.x, edge_column_widths.y, edge_column_widths.z)
+	DemoLayoutSupport.set_minimum_width(hand_column, mode, middle_column_widths.x, middle_column_widths.y, middle_column_widths.z)
+	DemoLayoutSupport.set_minimum_width(board_column, mode, middle_column_widths.x, middle_column_widths.y, middle_column_widths.z)
+	DemoLayoutSupport.set_minimum_width(sanctum_column, mode, middle_column_widths.x, middle_column_widths.y, middle_column_widths.z)
+	DemoLayoutSupport.set_minimum_size(_deck_zone, _pick_layout_value(mode, edge_column_widths), _pick_layout_value(mode, zone_heights))
+	DemoLayoutSupport.set_minimum_size(_hand_zone, _pick_layout_value(mode, middle_column_widths), _pick_layout_value(mode, zone_heights))
+	DemoLayoutSupport.set_minimum_size(_board_zone, _pick_layout_value(mode, middle_column_widths), _pick_layout_value(mode, zone_heights))
+	DemoLayoutSupport.set_minimum_size(_sanctum_zone, _pick_layout_value(mode, middle_column_widths), _pick_layout_value(mode, zone_heights))
+	DemoLayoutSupport.set_minimum_size(_discard_zone, _pick_layout_value(mode, edge_column_widths), _pick_layout_value(mode, zone_heights))
+	for zone in [_deck_zone, _hand_zone, _board_zone, _sanctum_zone, _discard_zone]:
+		zone.refresh()

@@ -2,6 +2,17 @@
 
 [ext_resource type="Script" path="res://scenes/main_menu.gd" id="1_scene"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://scenes/demo.tscn" id="3_demo"]
+[ext_resource type="PackedScene" path="res://scenes/examples/freecell.tscn" id="4_freecell"]
+[ext_resource type="PackedScene" path="res://scenes/examples/xiangqi.tscn" id="5_xiangqi"]
+[ext_resource type="PackedScene" path="res://scenes/examples/transfer_playground.tscn" id="6_transfer"]
+[ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="7_layouts"]
+[ext_resource type="PackedScene" path="res://scenes/examples/policy_lab.tscn" id="8_rules"]
+[ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="9_recipes"]
+[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_square_lab.tscn" id="10_square"]
+[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_hex_lab.tscn" id="11_hex"]
+[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_transfer_modes.tscn" id="12_modes"]
+[ext_resource type="PackedScene" path="res://scenes/examples/targeting_lab.tscn" id="13_targeting"]
 
 [sub_resource type="StyleBoxFlat" id="MainMenuSidebarPanel"]
 bg_color = Color(0.14, 0.20, 0.29, 1)
@@ -44,6 +55,17 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("2_theme")
+demo_scene = ExtResource("3_demo")
+transfer_scene = ExtResource("6_transfer")
+layouts_scene = ExtResource("7_layouts")
+rules_scene = ExtResource("8_rules")
+recipes_scene = ExtResource("9_recipes")
+square_scene = ExtResource("10_square")
+hex_scene = ExtResource("11_hex")
+modes_scene = ExtResource("12_modes")
+targeting_scene = ExtResource("13_targeting")
+freecell_scene = ExtResource("4_freecell")
+xiangqi_scene = ExtResource("5_xiangqi")
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -76,17 +98,87 @@ text = "NascentSoul Launcher"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "Choose the demo hub from the menu, or jump straight into FreeCell from its own dedicated entry."
+text = "Transfer、Layouts、Rules、Recipes、Square、Hex、Modes、Targeting、FreeCell、Xiangqi 都从这里直接进入；不再需要先经过 Demo Lab。"
 
-[node name="DemoHubButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+[node name="TransferButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
-theme_type_variation = &"DemoDangerActionButton"
-text = "Open Demo Menu"
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Transfer"
+metadata/entry_scene_key = "transfer"
+metadata/entry_title = "Transfer"
+metadata/entry_summary = "Inspect linear transfers between deck, hand, board, and discard from the launcher."
+
+[node name="LayoutsButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Layouts"
+metadata/entry_scene_key = "layouts"
+metadata/entry_title = "Layouts"
+metadata/entry_summary = "Compare row, hand, grouped list, and pile layouts in one standalone scene."
+
+[node name="RulesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Rules"
+metadata/entry_scene_key = "rules"
+metadata/entry_title = "Rules"
+metadata/entry_summary = "Explore transfer restrictions, source checks, and capacity limits in the policy-focused demo."
+
+[node name="RecipesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Recipes"
+metadata/entry_scene_key = "recipes"
+metadata/entry_title = "Recipes"
+metadata/entry_summary = "Review the starter four-column recipe and its serialized zone setup."
+
+[node name="SquareButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Square"
+metadata/entry_scene_key = "square"
+metadata/entry_title = "Square"
+metadata/entry_summary = "Inspect square-grid battlefield placement and return flows."
+
+[node name="HexButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Hex"
+metadata/entry_scene_key = "hex"
+metadata/entry_title = "Hex"
+metadata/entry_summary = "Inspect hex-grid battlefield placement and return flows."
+
+[node name="ModesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Modes"
+metadata/entry_scene_key = "modes"
+metadata/entry_title = "Modes"
+metadata/entry_summary = "Compare direct placement and spawn-piece transfer modes."
+
+[node name="TargetingButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Targeting"
+metadata/entry_scene_key = "targeting"
+metadata/entry_title = "Targeting"
+metadata/entry_summary = "Preview targeting presets and style overrides."
 
 [node name="FreeCellButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
 theme_type_variation = &"DemoPrimaryActionButton"
-text = "Play FreeCell"
+text = "FreeCell"
+metadata/entry_scene_key = "freecell"
+metadata/entry_title = "FreeCell"
+metadata/entry_summary = "Launch the classic Windows XP style FreeCell implementation."
+
+[node name="XiangqiButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Xiangqi"
+metadata/entry_scene_key = "xiangqi"
+metadata/entry_title = "Xiangqi"
+metadata/entry_summary = "Launch the standalone Xiangqi board."
 
 [node name="SidebarFiller" type="Control" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
@@ -96,7 +188,7 @@ size_flags_vertical = 3
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "The content panel on the right swaps scenes in place, so you can bounce between the launcher, the demo hub, and FreeCell without leaving the app."
+text = "The content panel on the right swaps scenes in place, so you can jump between all 10 entries without leaving the app."
 
 [node name="ContentColumn" type="VBoxContainer" parent="RootMargin/RootHBox"]
 layout_mode = 2
@@ -113,7 +205,7 @@ text = "Main Menu"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "Pick an entry from the left."
+text = "Pick one of the 10 entries from the left."
 
 [node name="ContentPanel" type="PanelContainer" parent="RootMargin/RootHBox/ContentColumn"]
 layout_mode = 2

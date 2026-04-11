@@ -1,17 +1,47 @@
 [gd_scene format=3 uid="uid://lx5kwklh25li"]
 
 [ext_resource type="Script" uid="uid://ckym6xo6gjtu" path="res://scenes/demo.gd" id="1_demo"]
-[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="6_theme"]
 [ext_resource type="PackedScene" path="res://scenes/examples/transfer_playground.tscn" id="2_transfer"]
 [ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="3_layouts"]
 [ext_resource type="PackedScene" path="res://scenes/examples/policy_lab.tscn" id="4_rules"]
 [ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="5_recipes"]
+[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="6_theme"]
 [ext_resource type="PackedScene" path="res://scenes/examples/battlefield_square_lab.tscn" id="7_square"]
 [ext_resource type="PackedScene" path="res://scenes/examples/battlefield_hex_lab.tscn" id="8_hex"]
 [ext_resource type="PackedScene" path="res://scenes/examples/battlefield_transfer_modes.tscn" id="9_modes"]
 [ext_resource type="PackedScene" path="res://scenes/examples/targeting_lab.tscn" id="10_targeting"]
-[ext_resource type="PackedScene" path="res://scenes/examples/freecell.tscn" id="11_freecell"]
-[ext_resource type="PackedScene" path="res://scenes/examples/xiangqi.tscn" id="12_xiangqi"]
+
+[sub_resource type="StyleBoxFlat" id="DemoSidebarPanel"]
+bg_color = Color(0.14, 0.20, 0.29, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.28, 0.36, 0.46, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+
+[sub_resource type="StyleBoxFlat" id="DemoContentPanel"]
+bg_color = Color(0.07, 0.11, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.34, 0.45, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
 
 [node name="DemoHub" type="Control" unique_id=1823012048]
 layout_mode = 3
@@ -22,6 +52,14 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_demo")
 theme = ExtResource("6_theme")
+transfer_scene = ExtResource("2_transfer")
+layouts_scene = ExtResource("3_layouts")
+rules_scene = ExtResource("4_rules")
+recipes_scene = ExtResource("5_recipes")
+square_scene = ExtResource("7_square")
+hex_scene = ExtResource("8_hex")
+modes_scene = ExtResource("9_modes")
+targeting_scene = ExtResource("10_targeting")
 
 [node name="RootMargin" type="MarginContainer" parent="." unique_id=364584155]
 layout_mode = 1
@@ -32,95 +70,129 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_type_variation = &"DemoHubMargin"
 
-[node name="RootVBox" type="VBoxContainer" parent="RootMargin" unique_id=550835841]
-layout_mode = 2
-theme_type_variation = &"DemoRootVBox"
-
-[node name="TitleLabel" type="Label" parent="RootMargin/RootVBox" unique_id=1988887791]
-layout_mode = 2
-theme_type_variation = &"DemoHubTitle"
-text = "NascentSoul 示例总览 / NascentSoul Example Hub"
-
-[node name="TabContainer" type="TabContainer" parent="RootMargin/RootVBox" unique_id=554985846]
+[node name="RootHBox" type="HBoxContainer" parent="RootMargin"]
 layout_mode = 2
 size_flags_vertical = 3
-current_tab = 0
+theme_override_constants/separation = 18
 
-[node name="Transfer转移" type="Control" parent="RootMargin/RootVBox/TabContainer" unique_id=2082156427]
+[node name="Sidebar" type="PanelContainer" parent="RootMargin/RootHBox"]
+custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
-metadata/_tab_index = 0
+theme_override_styles/panel = SubResource("DemoSidebarPanel")
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Transfer转移" instance=ExtResource("2_transfer")]
+[node name="SidebarVBox" type="VBoxContainer" parent="RootMargin/RootHBox/Sidebar"]
 layout_mode = 2
+theme_override_constants/separation = 12
 
-[node name="Layouts布局" type="Control" parent="RootMargin/RootVBox/TabContainer" unique_id=207490087]
-visible = false
+[node name="TitleLabel" type="Label" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
-metadata/_tab_index = 1
+theme_type_variation = &"DemoHubTitle"
+text = "Editor Demo Shell"
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Layouts布局" instance=ExtResource("3_layouts")]
+[node name="SummaryLabel" type="Label" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "这是兼容保留的 8 个编辑器示例壳层；完整公开入口在 Main Menu。直接打开本场景时，仍可从左侧快速切换这些示例。"
 
-[node name="Rules规则" type="Control" parent="RootMargin/RootVBox/TabContainer" unique_id=1220656855]
-visible = false
+[node name="TransferButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
-metadata/_tab_index = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Transfer"
+metadata/demo_scene_key = "transfer"
+metadata/demo_title = "Transfer"
+metadata/demo_summary = "Inspect linear transfers between deck, hand, board, and discard inside this direct-open shell."
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Rules规则" instance=ExtResource("4_rules")]
+[node name="LayoutsButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Layouts"
+metadata/demo_scene_key = "layouts"
+metadata/demo_title = "Layouts"
+metadata/demo_summary = "Compare row, hand, grouped list, and pile layouts inside this direct-open shell."
 
-[node name="Recipes模板" type="Control" parent="RootMargin/RootVBox/TabContainer" unique_id=1691078307]
-visible = false
+[node name="RulesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
-metadata/_tab_index = 3
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Rules"
+metadata/demo_scene_key = "rules"
+metadata/demo_title = "Rules"
+metadata/demo_summary = "Explore transfer restrictions, source checks, and capacity limits in the policy-focused demo."
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Recipes模板" instance=ExtResource("5_recipes")]
+[node name="RecipesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Recipes"
+metadata/demo_scene_key = "recipes"
+metadata/demo_title = "Recipes"
+metadata/demo_summary = "Review the starter four-column recipe and its serialized zone setup inside this direct-open shell."
 
-[node name="Square战场" type="Control" parent="RootMargin/RootVBox/TabContainer"]
-visible = false
+[node name="SquareButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
-metadata/_tab_index = 4
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Square"
+metadata/demo_scene_key = "square"
+metadata/demo_title = "Square"
+metadata/demo_summary = "Inspect square-grid battlefield placement and return flows inside this direct-open shell."
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Square战场" instance=ExtResource("7_square")]
+[node name="HexButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Hex"
+metadata/demo_scene_key = "hex"
+metadata/demo_title = "Hex"
+metadata/demo_summary = "Inspect hex-grid battlefield placement and return flows inside this direct-open shell."
 
-[node name="Hex战场" type="Control" parent="RootMargin/RootVBox/TabContainer"]
-visible = false
+[node name="ModesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
-metadata/_tab_index = 5
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Modes"
+metadata/demo_scene_key = "modes"
+metadata/demo_title = "Modes"
+metadata/demo_summary = "Compare direct placement and spawn-piece transfer modes inside this direct-open shell."
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Hex战场" instance=ExtResource("8_hex")]
+[node name="TargetingButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Targeting"
+metadata/demo_scene_key = "targeting"
+metadata/demo_title = "Targeting"
+metadata/demo_summary = "Preview targeting presets and style overrides inside this direct-open shell."
 
-[node name="Modes模式" type="Control" parent="RootMargin/RootVBox/TabContainer"]
-visible = false
+[node name="SidebarFiller" type="Control" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
-metadata/_tab_index = 6
+size_flags_vertical = 3
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Modes模式" instance=ExtResource("9_modes")]
+[node name="HintLabel" type="Label" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "This compatibility shell keeps the eight editor demos together when opened directly; use main_menu.tscn for the full 10-entry launcher."
 
-[node name="Targeting选目标" type="Control" parent="RootMargin/RootVBox/TabContainer"]
-visible = false
+[node name="ContentColumn" type="VBoxContainer" parent="RootMargin/RootHBox"]
 layout_mode = 2
-metadata/_tab_index = 7
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Targeting选目标" instance=ExtResource("10_targeting")]
+[node name="ContentTitleLabel" type="Label" parent="RootMargin/RootHBox/ContentColumn"]
 layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Editor Demos"
 
-[node name="FreeCell空当接龙" type="Control" parent="RootMargin/RootVBox/TabContainer"]
-visible = false
+[node name="ContentSummaryLabel" type="Label" parent="RootMargin/RootHBox/ContentColumn"]
 layout_mode = 2
-metadata/_tab_index = 8
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Choose one of the eight editor demos from the left, or open main_menu.tscn for the full launcher."
 
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/FreeCell空当接龙" instance=ExtResource("11_freecell")]
+[node name="ContentPanel" type="PanelContainer" parent="RootMargin/RootHBox/ContentColumn"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("DemoContentPanel")
 
-[node name="Xiangqi象棋" type="Control" parent="RootMargin/RootVBox/TabContainer"]
-visible = false
+[node name="ContentHost" type="Control" parent="RootMargin/RootHBox/ContentColumn/ContentPanel"]
 layout_mode = 2
-metadata/_tab_index = 9
-
-[node name="Content" parent="RootMargin/RootVBox/TabContainer/Xiangqi象棋" instance=ExtResource("12_xiangqi")]
-layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3

@@ -12,6 +12,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_legal_moves_between_tableau_free_cells_and_foundations()
 	await _reset_root()
+	await _test_toolbar_buttons_and_undo_history()
+	await _reset_root()
 	await _test_slot_layout_matches_classic_freecell()
 	await _reset_root()
 	await _test_drag_drop_diamond_across_all_free_cells()
@@ -139,6 +141,54 @@ func _test_slot_layout_matches_classic_freecell() -> void:
 	_check(foundation_zone != null and foundation_zone.get_item_count() == 3, "freecell layout test should load three cards into one foundation")
 	_check(heart_ace != null and heart_three != null and abs(heart_ace.global_position.x - heart_three.global_position.x) <= 1.0, "freecell foundations should stack cards in one slot instead of spreading them horizontally")
 	_check(heart_ace != null and heart_three != null and abs(heart_ace.global_position.y - heart_three.global_position.y) <= 1.0, "freecell foundations should share the same stacked anchor position")
+
+func _test_toolbar_buttons_and_undo_history() -> void:
+	var scene = await _spawn_scene()
+	var new_game_button = scene.get_node_or_null("RootMargin/RootVBox/Toolbar/ToolbarRow/NewGameButton") as Button
+	var undo_button = scene.get_node_or_null("RootMargin/RootVBox/Toolbar/ToolbarRow/UndoButton") as Button
+	_check(new_game_button != null, "freecell should expose a New Game toolbar button")
+	_check(undo_button != null, "freecell should expose an Undo toolbar button")
+	_check(undo_button != null and undo_button.disabled, "freecell should disable Undo before any move has been made")
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["7C"],
+			["8D"],
+			[],
+			[],
+			[],
+			[],
+			[],
+			[]
+		],
+		"free_cells": ["", "", "", ""],
+		"foundations": {}
+	})
+	await _settle_frames(3)
+	var tableaus: Array = scene.call("get_tableau_zones")
+	_check(scene.call("try_move_cards", _card_array(scene, ["7C"]), tableaus[1]), "freecell undo test should make a valid tableau move first")
+	await _settle_frames(3)
+	_check(not undo_button.disabled and scene.call("can_undo"), "freecell should enable Undo after a successful move")
+	undo_button.pressed.emit()
+	await _settle_frames(3)
+	_check((tableaus[0] as Zone).get_item_count() == 1 and (tableaus[1] as Zone).get_item_count() == 1, "freecell undo should restore the previous tableau state")
+	_check(undo_button.disabled and not scene.call("can_undo"), "freecell should disable Undo again after returning to the initial snapshot")
+	new_game_button.pressed.emit()
+	await _settle_frames(3)
+	tableaus = scene.call("get_tableau_zones")
+	var free_cells: Array = scene.call("get_free_cell_zones")
+	var foundations: Array = scene.call("get_foundation_zones")
+	var total_cards := 0
+	for zone in tableaus:
+		if zone is Zone:
+			total_cards += (zone as Zone).get_item_count()
+	for zone in free_cells:
+		if zone is Zone:
+			_check((zone as Zone).get_item_count() == 0, "freecell new game should clear every free cell")
+	for zone in foundations:
+		if zone is Zone:
+			_check((zone as Zone).get_item_count() == 0, "freecell new game should clear every foundation")
+	_check(total_cards == 52, "freecell new game button should deal a fresh 52-card layout")
+	_check(undo_button.disabled and not scene.call("can_undo"), "freecell new game should reset the undo history")
 
 func _test_drag_drop_diamond_across_all_free_cells() -> void:
 	for target_index in range(4):

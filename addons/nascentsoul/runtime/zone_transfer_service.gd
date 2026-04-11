@@ -184,7 +184,9 @@ func _start_drag_internal(items: Array[ZoneItemControl], pointer_global_position
 	if coordinator == null:
 		return
 	input_service.clear_hover_for_items(valid_items, true)
-	var pointer_position = anchor_item.get_global_mouse_position()
+	var pointer_position = anchor_item.global_position + anchor_item.size * 0.5
+	if anchor_item.get_viewport() != null:
+		pointer_position = anchor_item.get_global_mouse_position()
 	if pointer_global_position is Vector2:
 		pointer_position = pointer_global_position as Vector2
 	var drag_offset = pointer_position - anchor_item.global_position

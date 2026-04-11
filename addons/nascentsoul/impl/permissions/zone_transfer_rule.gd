@@ -35,7 +35,7 @@ func build_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
 func _matches_item(item: Control) -> bool:
 	if not is_instance_valid(item):
 		return false
-	if source_item_script != null and item.get_script() != source_item_script:
+	if not _matches_item_script(item, source_item_script):
 		return false
 	if required_item_meta_key != "":
 		var metadata: Dictionary = {}
@@ -48,3 +48,15 @@ func _matches_item(item: Control) -> bool:
 		if required_item_meta_value != "" and str(metadata.get(required_item_meta_key)) != required_item_meta_value:
 			return false
 	return true
+
+func _matches_item_script(item: Object, script: Script) -> bool:
+	if script == null:
+		return true
+	if not is_instance_valid(item):
+		return false
+	var current_script = item.get_script()
+	while current_script != null:
+		if current_script == script:
+			return true
+		current_script = current_script.get_base_script()
+	return false

@@ -19,6 +19,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="17_sort"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="18_allow_all"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="19_space"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_zone_card.gd" id="20_example_card"]
 
 [sub_resource type="Resource" id="TransferBoardCapacityPolicy"]
 script = ExtResource("7_policy")
@@ -242,9 +243,20 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("9_theme")
-deck_cards = [SubResource("TransferDeckCardSpark"), SubResource("TransferDeckCardShell"), SubResource("TransferDeckCardFocus"), SubResource("TransferDeckCardGale"), SubResource("TransferDeckCardEcho"), SubResource("TransferDeckCardNova")]
-hand_cards = [SubResource("TransferHandCardTether"), SubResource("TransferHandCardBloom"), SubResource("TransferHandCardStrike"), SubResource("TransferHandCardWard"), SubResource("TransferHandCardOrbit")]
-board_cards = [SubResource("TransferBoardCardSentinel"), SubResource("TransferBoardCardPulse")]
+ready_status = "主线流程已就绪 / The main flow is ready"
+status_prefix = "最近 / Latest"
+board_capacity_format = "容量 %d / %d / Capacity %d / %d"
+deck_column_widths = Vector3(200, 176, 160)
+discard_column_widths = Vector3(200, 176, 160)
+deck_zone_heights = Vector3(240, 220, 200)
+board_zone_heights = Vector3(240, 220, 210)
+hand_zone_heights = Vector3(150, 144, 136)
+board_width_desktop_range = Vector2(420, 620)
+board_width_compact_range = Vector2(400, 520)
+board_width_narrow_range = Vector2(360, 460)
+desktop_board_gutter = 92.0
+compact_board_gutter = 72.0
+narrow_board_gutter = 56.0
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -282,6 +294,63 @@ theme_override_styles/panel = SubResource("TransferDeckZonePanel")
 script = ExtResource("2_zone")
 config = SubResource("TransferDeckZoneConfig")
 
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn/DeckZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Spark" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn/DeckZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Spark"
+card_cost = 1
+card_tags = PackedStringArray("attack")
+face_up = false
+
+[node name="Shell" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn/DeckZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Shell"
+card_cost = 1
+card_tags = PackedStringArray("skill")
+face_up = false
+
+[node name="Focus" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn/DeckZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Focus"
+card_cost = 2
+card_tags = PackedStringArray("power")
+face_up = false
+
+[node name="Gale" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn/DeckZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Gale"
+card_cost = 1
+card_tags = PackedStringArray("attack")
+face_up = false
+
+[node name="Echo" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn/DeckZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Echo"
+card_cost = 2
+card_tags = PackedStringArray("skill")
+face_up = false
+
+[node name="Nova" type="Control" parent="RootMargin/RootVBox/TopRow/DeckColumn/DeckZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Nova"
+card_cost = 3
+card_tags = PackedStringArray("attack")
+face_up = false
+
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -313,6 +382,31 @@ theme_override_styles/panel = SubResource("TransferBoardZonePanel")
 script = ExtResource("2_zone")
 config = SubResource("TransferBoardZoneConfig")
 
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/BoardColumn/BoardZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Sentinel" type="Control" parent="RootMargin/RootVBox/TopRow/BoardColumn/BoardZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Sentinel"
+card_cost = 3
+card_tags = PackedStringArray("power")
+highlighted = true
+
+[node name="Pulse" type="Control" parent="RootMargin/RootVBox/TopRow/BoardColumn/BoardZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Pulse"
+card_cost = 2
+card_tags = PackedStringArray("attack")
+highlighted = true
+
 [node name="DiscardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
@@ -331,6 +425,15 @@ theme_override_styles/panel = SubResource("TransferDiscardZonePanel")
 script = ExtResource("2_zone")
 config = SubResource("TransferDiscardZoneConfig")
 
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/DiscardColumn/DiscardZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
 [node name="HandLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2
 theme_type_variation = &"DemoGreenHeading"
@@ -343,6 +446,50 @@ size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("TransferHandZonePanel")
 script = ExtResource("2_zone")
 config = SubResource("TransferHandZoneConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/HandZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Tether" type="Control" parent="RootMargin/RootVBox/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Tether"
+card_cost = 1
+card_tags = PackedStringArray("skill")
+
+[node name="Bloom" type="Control" parent="RootMargin/RootVBox/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Bloom"
+card_cost = 2
+card_tags = PackedStringArray("power")
+
+[node name="Strike" type="Control" parent="RootMargin/RootVBox/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Strike"
+card_cost = 1
+card_tags = PackedStringArray("attack")
+
+[node name="Ward" type="Control" parent="RootMargin/RootVBox/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Ward"
+card_cost = 1
+card_tags = PackedStringArray("skill")
+
+[node name="Orbit" type="Control" parent="RootMargin/RootVBox/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Orbit"
+card_cost = 2
+card_tags = PackedStringArray("attack")
 
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2

@@ -1,6 +1,5 @@
 extends Control
 
-const DemoLayoutSupport = preload("res://scenes/examples/shared/demo_layout_support.gd")
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 const TargetingSupport = preload("res://scenes/examples/shared/targeting_support.gd")
 const XiangqiPieceScript = preload("res://scenes/examples/xiangqi/xiangqi_piece.gd")
@@ -10,6 +9,8 @@ const XiangqiBoardOverlayScript = preload("res://scenes/examples/xiangqi/xiangqi
 const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 const REJECT_STATUS_COLOR := Color(0.96, 0.60, 0.56)
 const WIN_STATUS_COLOR := Color(0.93, 0.88, 0.62)
+const HISTORY_LIMIT := 256
+const UNDO_ANIMATION_PADDING := 0.08
 const INVALID_COORDS := Vector2i(-1, -1)
 const BOARD_COLUMNS := 9
 const BOARD_ROWS := 10
@@ -60,19 +61,10 @@ const PIECE_DEFS := {
 @onready var root_vbox: VBoxContainer = $RootMargin/RootVBox
 @onready var toolbar: Control = $RootMargin/RootVBox/Toolbar
 @onready var new_game_button: Button = $RootMargin/RootVBox/Toolbar/NewGameButton
-@onready var cancel_button: Button = $RootMargin/RootVBox/Toolbar/CancelMoveButton
-@onready var state_row: Control = $RootMargin/RootVBox/StateRow
-@onready var turn_label: Label = $RootMargin/RootVBox/StateRow/TurnLabel
-@onready var status_label: Label = $RootMargin/RootVBox/StateRow/StatusLabel
-@onready var content_row: HFlowContainer = $RootMargin/RootVBox/ContentRow
-@onready var left_panel: Panel = $RootMargin/RootVBox/ContentRow/LeftPanel
+@onready var undo_button: Button = $RootMargin/RootVBox/Toolbar/UndoButton
+@onready var content_row: Control = $RootMargin/RootVBox/ContentRow
 @onready var board_column: VBoxContainer = $RootMargin/RootVBox/ContentRow/BoardColumn
-@onready var board_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardLabel
-@onready var board_caption: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardCaption
 @onready var board_panel: Panel = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel
-@onready var right_panel: Panel = $RootMargin/RootVBox/ContentRow/RightPanel
-@onready var red_capture_label: Label = $RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox/RedCaptureLabel
-@onready var black_capture_label: Label = $RootMargin/RootVBox/ContentRow/RightPanel/RightVBox/BlackCaptureLabel
 @onready var board_host: Control = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost
 
 var _board_zone: BattlefieldZone = null
@@ -83,6 +75,12 @@ var _game_over: bool = false
 var _winner_side: StringName = &""
 var _captured_by_red: Array[String] = []
 var _captured_by_black: Array[String] = []
+var _history_states: Array[Dictionary] = []
+var _history_signatures: Array[String] = []
+var _history_transitions: Array[Dictionary] = []
+var _last_status_message: String = ""
+var _last_status_color: Color = NORMAL_STATUS_COLOR
+var _undo_animation_active: bool = false
 
 func _ready() -> void:
 	_build_board()
@@ -96,6 +94,25 @@ func _exit_tree() -> void:
 	if _board_zone != null and _board_zone.is_targeting():
 		_board_zone.cancel_targeting()
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is not InputEventKey or not event.pressed or event.echo:
+		return
+	var key_event := event as InputEventKey
+	if _undo_animation_active:
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_ESCAPE:
+		_cancel_targeting()
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.keycode == KEY_F2:
+		start_new_game()
+		get_viewport().set_input_as_handled()
+		return
+	if key_event.ctrl_pressed and key_event.keycode == KEY_Z:
+		if undo_last_move():
+			get_viewport().set_input_as_handled()
+
 func start_new_game() -> void:
 	load_debug_state({
 		"current_side": "red",
@@ -104,9 +121,46 @@ func start_new_game() -> void:
 	_set_status("Red moves first. Click a red piece to begin targeting.", NORMAL_STATUS_COLOR)
 
 func load_debug_state(state: Dictionary) -> void:
+	_apply_serialized_state(state, true)
+
+func get_current_side() -> StringName:
+	return _current_side
+
+func can_undo() -> bool:
+	return _history_states.size() > 1
+
+func get_last_status_message() -> String:
+	return _last_status_message
+
+func get_captured_glyphs(side: StringName) -> Array[String]:
+	return _captured_by_red.duplicate() if side == &"red" else _captured_by_black.duplicate()
+
+func undo_last_move() -> bool:
+	if _undo_animation_active:
+		_set_status("The undo animation is still playing.", REJECT_STATUS_COLOR)
+		return false
+	if not can_undo():
+		_update_undo_button_state()
+		_set_status("There is no move to undo.", REJECT_STATUS_COLOR)
+		return false
+	var transition = _history_transitions.pop_back() if not _history_transitions.is_empty() else {}
+	_history_states.pop_back()
+	_history_signatures.pop_back()
+	var snapshot = _history_states[_history_states.size() - 1].duplicate(true)
+	if _restore_state_from_undo_transition(snapshot, transition):
+		_set_status("Undoing the last move...")
+	else:
+		_set_status("Undid the last move.")
+	return true
+
+func _apply_serialized_state(state: Dictionary, reset_history: bool) -> void:
 	_clear_board()
-	_captured_by_red.clear()
-	_captured_by_black.clear()
+	_captured_by_red = []
+	_captured_by_black = []
+	for glyph in state.get("captured_by_red", []):
+		_captured_by_red.append(str(glyph))
+	for glyph in state.get("captured_by_black", []):
+		_captured_by_black.append(str(glyph))
 	_current_side = StringName(str(state.get("current_side", "red")))
 	_game_over = false
 	_winner_side = &""
@@ -122,6 +176,10 @@ func load_debug_state(state: Dictionary) -> void:
 	_refresh_side_panels()
 	_refresh_turn_label()
 	_update_terminal_state_after_move()
+	if reset_history:
+		_reset_history_to_current_state()
+	else:
+		_update_undo_button_state()
 
 func get_piece_at_coords(coords: Vector2i) -> Control:
 	for piece in _typed_pieces():
@@ -130,6 +188,8 @@ func get_piece_at_coords(coords: Vector2i) -> Control:
 	return null
 
 func try_move_at(from_coords: Vector2i, to_coords: Vector2i) -> bool:
+	if _undo_animation_active:
+		return false
 	var piece = get_piece_at_coords(from_coords)
 	if piece is not XiangqiPieceScript:
 		return false
@@ -142,6 +202,8 @@ func get_winner() -> StringName:
 	return _winner_side
 
 func evaluate_xiangqi_target(request: ZoneTargetRequest) -> ZoneTargetDecision:
+	if _undo_animation_active:
+		return ZoneTargetDecision.new(false, "Finish the undo animation before moving again.", ZoneTargetCandidate.invalid())
 	if request == null or request.source_item is not XiangqiPieceScript:
 		return ZoneTargetDecision.new(false, "Only Xiangqi pieces can target the board.", ZoneTargetCandidate.invalid())
 	var piece := request.source_item as XiangqiPieceScript
@@ -194,9 +256,12 @@ func _build_board() -> void:
 
 func _wire_controls() -> void:
 	new_game_button.pressed.connect(start_new_game)
-	cancel_button.pressed.connect(_cancel_targeting)
+	undo_button.pressed.connect(undo_last_move)
+	_update_undo_button_state()
 
 func _clear_board() -> void:
+	if _board_zone == null:
+		return
 	if _board_zone != null and _board_zone.is_targeting():
 		_board_zone.cancel_targeting()
 	for item in _board_zone.get_items():
@@ -211,6 +276,8 @@ func _create_piece(side: StringName, piece_type: StringName) -> Control:
 	return piece
 
 func _on_board_item_clicked(item: Control) -> void:
+	if _undo_animation_active:
+		return
 	if item is not XiangqiPieceScript:
 		return
 	var piece := item as XiangqiPieceScript
@@ -266,6 +333,13 @@ func _attempt_piece_move(piece: XiangqiPieceScript, target_coords: Vector2i, ann
 		return false
 	var from_coords = _piece_coords(piece)
 	var captured_piece = target_piece as XiangqiPieceScript if target_piece is XiangqiPieceScript else null
+	var captured_transition: Dictionary = {}
+	if captured_piece != null:
+		captured_transition = {
+			"side": String(captured_piece.side),
+			"type": String(captured_piece.piece_type),
+			"coords": target_coords
+		}
 	if captured_piece != null:
 		_record_capture(piece.side, captured_piece)
 		if _board_zone.remove_item(captured_piece):
@@ -284,6 +358,15 @@ func _attempt_piece_move(piece: XiangqiPieceScript, target_coords: Vector2i, ann
 		else:
 			_set_status("%s moved from %s to %s." % [piece.display_name(), _coords_label(from_coords), _coords_label(target_coords)])
 	_update_terminal_state_after_move()
+	_commit_history_checkpoint({
+		"moving": {
+			"side": String(piece.side),
+			"type": String(piece.piece_type),
+			"from": from_coords,
+			"to": target_coords
+		},
+		"captured": captured_transition
+	})
 	return true
 
 func _update_terminal_state_after_move() -> void:
@@ -593,14 +676,10 @@ func _record_capture(capturing_side: StringName, captured_piece: XiangqiPieceScr
 		_captured_by_black.append(captured_piece.glyph)
 
 func _refresh_side_panels() -> void:
-	red_capture_label.text = "Red captures: %s" % (" ".join(_captured_by_red) if not _captured_by_red.is_empty() else "None")
-	black_capture_label.text = "Black captures: %s" % (" ".join(_captured_by_black) if not _captured_by_black.is_empty() else "None")
+	pass
 
 func _refresh_turn_label() -> void:
-	if _game_over:
-		turn_label.text = "Winner: %s" % _side_name(_winner_side)
-		return
-	turn_label.text = "Side to move: %s" % _side_name(_current_side)
+	pass
 
 func _coords_label(coords: Vector2i) -> String:
 	return "(%d, %d)" % [coords.x, coords.y]
@@ -609,51 +688,27 @@ func _side_name(side: StringName) -> String:
 	return "Red" if side == &"red" else "Black"
 
 func _set_status(message: String, color: Color = NORMAL_STATUS_COLOR) -> void:
-	status_label.text = message
-	status_label.add_theme_color_override("font_color", color)
+	_last_status_message = message
+	_last_status_color = color
 
 func _queue_layout_refresh() -> void:
 	call_deferred("_apply_responsive_layout")
 
 func _apply_responsive_layout() -> void:
-	var mode = DemoLayoutSupport.mode_for(self)
-	var content_width = max(root_vbox.size.x, DemoLayoutSupport.resolved_width(self) - 40.0)
-	var row_spacing = float(content_row.get_theme_constant("h_separation"))
 	var board_padding := Vector2(12.0, 12.0)
 	var root_spacing = float(root_vbox.get_theme_constant("separation"))
-	var board_spacing = float(board_column.get_theme_constant("separation"))
-	var side_panel_height = 0.0
-	if mode == DemoLayoutSupport.COMPACT:
-		side_panel_height = 220.0 + row_spacing
-	elif mode == DemoLayoutSupport.NARROW:
-		side_panel_height = 180.0 * 2.0 + row_spacing * 2.0
-	var available_content_height = max(420.0, root_vbox.size.y - _control_height(toolbar) - _control_height(state_row) - root_spacing * 2.0)
-	var board_chrome_height = _control_height(board_label) + _control_height(board_caption) + board_spacing * 2.0
-	var max_board_panel_height = max(400.0, available_content_height - side_panel_height - board_chrome_height)
-	var cell_from_width = floor((content_width - board_padding.x * 2.0) / float(BOARD_COLUMNS))
-	var cell_from_height = floor((max_board_panel_height - board_padding.y * 2.0) / float(BOARD_ROWS))
-	var min_cell = 48.0 if mode == DemoLayoutSupport.DESKTOP else 40.0
-	var resolved_cell = clamp(min(cell_from_width, cell_from_height), min_cell, 72.0)
+	var available_width = max(420.0, root_vbox.size.x - 40.0)
+	var available_height = max(420.0, root_vbox.size.y - _control_height(toolbar) - root_spacing * 2.0)
+	var cell_from_width = floor((available_width - board_padding.x * 2.0) / float(BOARD_COLUMNS))
+	var cell_from_height = floor((available_height - board_padding.y * 2.0) / float(BOARD_ROWS))
+	var resolved_cell = clamp(min(cell_from_width, cell_from_height), 40.0, 72.0)
 	var cell_size := Vector2(resolved_cell, resolved_cell)
 	var board_size = Vector2(
 		board_padding.x * 2.0 + cell_size.x * BOARD_COLUMNS,
 		board_padding.y * 2.0 + cell_size.y * BOARD_ROWS
 	)
-	if mode == DemoLayoutSupport.DESKTOP:
-		DemoLayoutSupport.ensure_child_order(content_row, [left_panel, board_column, right_panel])
-		DemoLayoutSupport.set_minimum_size(left_panel, 180.0, board_size.y)
-		DemoLayoutSupport.set_minimum_size(right_panel, 180.0, board_size.y)
-		DemoLayoutSupport.set_minimum_width(board_column, mode, board_size.x, board_size.x, board_size.x)
-	else:
-		DemoLayoutSupport.ensure_child_order(content_row, [board_column, left_panel, right_panel])
-		var compact_panel_width = max(220.0, floor((content_width - row_spacing) * 0.5))
-		var narrow_panel_width = max(0.0, content_width)
-		var panel_width = compact_panel_width if mode == DemoLayoutSupport.COMPACT else narrow_panel_width
-		var panel_height = 220.0 if mode == DemoLayoutSupport.COMPACT else 180.0
-		DemoLayoutSupport.set_minimum_size(left_panel, panel_width, panel_height)
-		DemoLayoutSupport.set_minimum_size(right_panel, panel_width, panel_height)
-		DemoLayoutSupport.set_minimum_width(board_column, mode, board_size.x, content_width, content_width)
-	DemoLayoutSupport.set_minimum_size(board_panel, board_size.x, board_size.y)
+	board_column.custom_minimum_size = board_size
+	board_panel.custom_minimum_size = board_size
 	if _space_model != null:
 		_space_model.cell_size = cell_size
 		_space_model.padding = board_padding
@@ -673,3 +728,167 @@ func _control_height(control: Control) -> float:
 	if control == null:
 		return 0.0
 	return control.size.y if control.size.y > 0.0 else control.get_combined_minimum_size().y
+
+func _serialize_state() -> Dictionary:
+	var pieces: Array = []
+	for piece in _typed_pieces():
+		pieces.append({
+			"side": String(piece.side),
+			"type": String(piece.piece_type),
+			"coords": _piece_coords(piece)
+		})
+	pieces.sort_custom(Callable(self, "_sort_piece_states"))
+	return {
+		"current_side": String(_current_side),
+		"pieces": pieces,
+		"captured_by_red": _captured_by_red.duplicate(),
+		"captured_by_black": _captured_by_black.duplicate()
+	}
+
+func _sort_piece_states(a: Dictionary, b: Dictionary) -> bool:
+	var a_coords: Vector2i = a.get("coords", INVALID_COORDS)
+	var b_coords: Vector2i = b.get("coords", INVALID_COORDS)
+	if a_coords.y != b_coords.y:
+		return a_coords.y < b_coords.y
+	if a_coords.x != b_coords.x:
+		return a_coords.x < b_coords.x
+	var a_side = str(a.get("side", ""))
+	var b_side = str(b.get("side", ""))
+	if a_side != b_side:
+		return a_side < b_side
+	return str(a.get("type", "")) < str(b.get("type", ""))
+
+func _state_signature(state: Dictionary) -> String:
+	var parts: Array[String] = ["turn=%s" % str(state.get("current_side", "red"))]
+	for piece_state in state.get("pieces", []):
+		var coords: Vector2i = piece_state.get("coords", INVALID_COORDS)
+		parts.append("%s:%s@%d,%d" % [str(piece_state.get("side", "")), str(piece_state.get("type", "")), coords.x, coords.y])
+	parts.append("red=" + ",".join(PackedStringArray(state.get("captured_by_red", []))))
+	parts.append("black=" + ",".join(PackedStringArray(state.get("captured_by_black", []))))
+	return "|".join(parts)
+
+func _reset_history_to_current_state() -> void:
+	var snapshot = _serialize_state()
+	_history_states = [snapshot.duplicate(true)]
+	_history_signatures = [_state_signature(snapshot)]
+	_history_transitions = [{}]
+	_update_undo_button_state()
+
+func _commit_history_checkpoint(transition: Dictionary = {}) -> void:
+	var snapshot = _serialize_state()
+	var signature = _state_signature(snapshot)
+	if not _history_signatures.is_empty() and _history_signatures[_history_signatures.size() - 1] == signature:
+		_update_undo_button_state()
+		return
+	_history_states.append(snapshot.duplicate(true))
+	_history_signatures.append(signature)
+	_history_transitions.append(transition.duplicate(true))
+	if _history_states.size() > HISTORY_LIMIT:
+		_history_states.pop_front()
+		_history_signatures.pop_front()
+		_history_transitions.pop_front()
+	_update_undo_button_state()
+
+func _update_undo_button_state() -> void:
+	if is_instance_valid(new_game_button):
+		new_game_button.disabled = _undo_animation_active
+	if not is_instance_valid(undo_button):
+		return
+	undo_button.disabled = _undo_animation_active or not can_undo()
+
+func _restore_state_from_undo_transition(state: Dictionary, transition: Dictionary) -> bool:
+	var should_animate = _xiangqi_animation_duration() > 0.0 and DisplayServer.get_name() != "headless"
+	if should_animate:
+		_undo_animation_active = true
+		_update_undo_button_state()
+	var restored = _apply_undo_transition(state, transition)
+	if not restored:
+		_undo_animation_active = false
+		_apply_serialized_state(state, false)
+		return false
+	_current_side = StringName(str(state.get("current_side", "red")))
+	_captured_by_red = []
+	_captured_by_black = []
+	for glyph in state.get("captured_by_red", []):
+		_captured_by_red.append(str(glyph))
+	for glyph in state.get("captured_by_black", []):
+		_captured_by_black.append(str(glyph))
+	_game_over = false
+	_winner_side = &""
+	_refresh_side_panels()
+	_refresh_turn_label()
+	_update_terminal_state_after_move()
+	if not should_animate:
+		_undo_animation_active = false
+		_update_undo_button_state()
+		return false
+	var timer = get_tree().create_timer(_xiangqi_animation_duration() + UNDO_ANIMATION_PADDING)
+	timer.timeout.connect(_finish_undo_animation, CONNECT_ONE_SHOT)
+	return true
+
+func _apply_undo_transition(state: Dictionary, transition: Dictionary) -> bool:
+	if transition.is_empty() or _board_zone == null:
+		return false
+	_cancel_targeting()
+	var moving = transition.get("moving", {})
+	if moving.is_empty():
+		return false
+	var from_coords = moving.get("from", INVALID_COORDS)
+	var to_coords = moving.get("to", INVALID_COORDS)
+	if from_coords is not Vector2i or to_coords is not Vector2i:
+		return false
+	var moving_piece = get_piece_at_coords(to_coords)
+	if moving_piece is not XiangqiPieceScript:
+		return false
+	var moved_piece := moving_piece as XiangqiPieceScript
+	if String(moved_piece.side) != str(moving.get("side", "")) or String(moved_piece.piece_type) != str(moving.get("type", "")):
+		return false
+	var restore_snapshot = _piece_restore_snapshot(moved_piece)
+	if not ExampleSupport.move_item(_board_zone, moved_piece, _board_zone, ZonePlacementTarget.square(from_coords.x, from_coords.y)):
+		return false
+	var captured = transition.get("captured", {})
+	if not captured.is_empty():
+		var captured_side = StringName(str(captured.get("side", "")))
+		var captured_type = StringName(str(captured.get("type", "")))
+		var captured_coords = captured.get("coords", INVALID_COORDS)
+		if captured_coords is not Vector2i:
+			return false
+		var restored_piece = _create_piece(captured_side, captured_type)
+		_board_zone._get_transfer_service().set_transfer_handoff(restored_piece, restore_snapshot)
+		if not _board_zone.add_item(restored_piece, ZonePlacementTarget.square(captured_coords.x, captured_coords.y)):
+			restored_piece.queue_free()
+			return false
+	_board_zone.refresh()
+	return _state_matches_board(state)
+
+func _piece_restore_snapshot(piece: XiangqiPieceScript) -> Dictionary:
+	if not is_instance_valid(piece):
+		return {}
+	return {
+		"global_position": piece.global_position,
+		"rotation": piece.rotation,
+		"scale": Vector2(0.55, 0.55)
+	}
+
+func _xiangqi_animation_duration() -> float:
+	if _board_zone == null:
+		return 0.0
+	var display_style = ExampleSupport.get_zone_display_style(_board_zone)
+	if display_style is ZoneTweenDisplay:
+		return max(0.0, (display_style as ZoneTweenDisplay).duration)
+	return 0.0
+
+func _finish_undo_animation() -> void:
+	_undo_animation_active = false
+	_update_undo_button_state()
+	_set_status("Undid the last move.")
+
+func _state_matches_board(state: Dictionary) -> bool:
+	return _piece_layout_signature(state) == _piece_layout_signature(_serialize_state())
+
+func _piece_layout_signature(state: Dictionary) -> String:
+	var parts: Array[String] = []
+	for piece_state in state.get("pieces", []):
+		var coords: Vector2i = piece_state.get("coords", INVALID_COORDS)
+		parts.append("%s:%s@%d,%d" % [str(piece_state.get("side", "")), str(piece_state.get("type", "")), coords.x, coords.y])
+	return "|".join(parts)

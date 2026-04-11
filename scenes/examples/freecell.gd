@@ -12,8 +12,11 @@ const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone
 const GAME_MENU_NEW := 1
 const GAME_MENU_SELECT := 2
 const GAME_MENU_RESTART := 3
+const GAME_MENU_UNDO := 4
 const HELP_MENU_RULES := 11
 const HELP_MENU_ABOUT := 12
+const HISTORY_LIMIT := 256
+const UNDO_ANIMATION_PADDING := 0.08
 
 const NORMAL_STATUS_COLOR := Color(0.10, 0.10, 0.10, 1.0)
 const REJECT_STATUS_COLOR := Color(0.72, 0.09, 0.12, 1.0)
@@ -45,6 +48,8 @@ const RANK_LABELS := FreeCellRulesScript.RANK_LABELS
 @onready var window_title_label: Label = $RootMargin/RootVBox/TitleBar/TitleBarRow/WindowTitleLabel
 @onready var toolbar: PanelContainer = $RootMargin/RootVBox/Toolbar
 @onready var game_menu_button: MenuButton = $RootMargin/RootVBox/Toolbar/ToolbarRow/GameMenuButton
+@onready var new_game_button: Button = $RootMargin/RootVBox/Toolbar/ToolbarRow/NewGameButton
+@onready var undo_button: Button = $RootMargin/RootVBox/Toolbar/ToolbarRow/UndoButton
 @onready var help_menu_button: MenuButton = $RootMargin/RootVBox/Toolbar/ToolbarRow/HelpMenuButton
 @onready var deal_label: Label = $RootMargin/RootVBox/Toolbar/ToolbarRow/SeedLabel
 @onready var top_row: HBoxContainer = $RootMargin/RootVBox/TopRow
@@ -68,6 +73,10 @@ var _zone_info: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _last_deal_number: int = 1
 var _game_won: bool = false
+var _history_states: Array[Dictionary] = []
+var _history_signatures: Array[String] = []
+var _history_checkpoint_pending: bool = false
+var _undo_animation_active: bool = false
 
 func _ready() -> void:
 	_build_zones()
@@ -85,6 +94,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is not InputEventKey or not event.pressed or event.echo:
 		return
 	var key_event := event as InputEventKey
+	if _undo_animation_active:
+		get_viewport().set_input_as_handled()
+		return
 	if select_game_overlay.visible:
 		if key_event.keycode == KEY_ESCAPE:
 			_hide_select_game_overlay()
@@ -98,6 +110,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		start_new_game()
 		get_viewport().set_input_as_handled()
 		return
+	if key_event.ctrl_pressed and key_event.keycode == KEY_Z:
+		if undo_last_move():
+			get_viewport().set_input_as_handled()
+		return
 	if key_event.keycode == KEY_F5:
 		start_new_game(_last_deal_number)
 		get_viewport().set_input_as_handled()
@@ -108,41 +124,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func start_new_game(deal_number: int = -1) -> void:
 	_last_deal_number = deal_number if deal_number > 0 else _random_deal_number()
-	_game_won = false
-	victory_label.visible = false
-	_hide_select_game_overlay()
-	_clear_all_cards()
-	var deck_codes = FreeCellRulesScript.deal_codes(_last_deal_number)
-	for index in range(deck_codes.size()):
-		var zone = _tableau_zones[index % _tableau_zones.size()]
-		zone.add_item(_make_card_from_code(deck_codes[index]))
-	_refresh_chrome()
+	_apply_state(_build_deal_state(_last_deal_number), true)
 	_set_status("Classic FreeCell ready. Drag cards or double-click to send exposed cards home.")
 
 func load_debug_state(state: Dictionary) -> void:
-	_game_won = false
-	victory_label.visible = false
-	_hide_select_game_overlay()
-	_clear_all_cards()
-	var tableaus: Array = state.get("tableaus", [])
-	for index in range(min(tableaus.size(), _tableau_zones.size())):
-		for code in tableaus[index]:
-			_tableau_zones[index].add_item(_make_card_from_code(str(code)))
-	var free_cells: Array = state.get("free_cells", [])
-	for index in range(min(free_cells.size(), _free_cell_zones.size())):
-		var code = str(free_cells[index])
-		if code != "":
-			_free_cell_zones[index].add_item(_make_card_from_code(code))
-	var foundations = state.get("foundations", {})
-	for suit_name in foundations.keys():
-		var suit = StringName(str(suit_name))
-		var zone = _preferred_foundation_zone_for_suit(suit)
-		if zone == null:
-			continue
-		for code in foundations[suit_name]:
-			zone.add_item(_make_card_from_code(str(code)))
-	_refresh_chrome()
-	_update_victory_state()
+	_apply_state(state, true)
 	if not _game_won:
 		_set_status("Loaded a FreeCell position for debugging.")
 
@@ -165,6 +151,9 @@ func get_card_by_code(code: String) -> Control:
 func has_won() -> bool:
 	return _game_won
 
+func can_undo() -> bool:
+	return _history_states.size() > 1
+
 func foundation_total() -> int:
 	var count := 0
 	for zone in _foundation_zones:
@@ -172,6 +161,8 @@ func foundation_total() -> int:
 	return count
 
 func try_move_cards(items: Array[ZoneItemControl], target_zone: Zone) -> bool:
+	if _undo_animation_active:
+		return false
 	if items.is_empty() or target_zone == null:
 		return false
 	var source_zone = _zone_for_item(items[0])
@@ -180,6 +171,8 @@ func try_move_cards(items: Array[ZoneItemControl], target_zone: Zone) -> bool:
 	return ExampleSupport.transfer_items(source_zone, items, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
 
 func try_auto_foundation(card: Control) -> bool:
+	if _undo_animation_active:
+		return false
 	if card is not FreeCellCardScript:
 		return false
 	var freecell_card := card as FreeCellCardScript
@@ -195,7 +188,27 @@ func try_auto_foundation(card: Control) -> bool:
 		return false
 	return _move_card_to_foundation(freecell_card)
 
+func undo_last_move() -> bool:
+	if _undo_animation_active:
+		_set_status("The undo animation is still playing.", REJECT_STATUS_COLOR)
+		return false
+	if not can_undo():
+		_update_undo_button_state()
+		_set_status("There is no move to undo.", REJECT_STATUS_COLOR)
+		return false
+	_history_checkpoint_pending = false
+	_history_states.pop_back()
+	_history_signatures.pop_back()
+	var snapshot = _history_states[_history_states.size() - 1].duplicate(true)
+	if _restore_state_from_history(snapshot):
+		_set_status("Undoing the last move...")
+	else:
+		_set_status("Undid the last move.")
+	return true
+
 func evaluate_freecell_transfer(zone_role: StringName, zone_index: int, _context: ZoneContext, request: ZoneTransferRequest) -> ZoneTransferDecision:
+	if _undo_animation_active:
+		return ZoneTransferDecision.new(false, "Finish the undo animation before making another move.", ZonePlacementTarget.invalid())
 	if request == null:
 		return ZoneTransferDecision.new(false, "Missing transfer request.", ZonePlacementTarget.invalid())
 	if request.source_zone is not Zone or request.target_zone is not Zone:
@@ -223,6 +236,8 @@ func evaluate_freecell_transfer(zone_role: StringName, zone_index: int, _context
 			return ZoneTransferDecision.new(false, "Unknown FreeCell destination.", ZonePlacementTarget.invalid())
 
 func evaluate_freecell_drag_start(zone_role: StringName, _zone_index: int, context: ZoneContext, anchor_item: ZoneItemControl, _selected_items: Array[ZoneItemControl]):
+	if _undo_animation_active:
+		return ZoneDragStartDecisionScript.new(false, "Finish the undo animation before dragging again.", [anchor_item] if is_instance_valid(anchor_item) else [])
 	if context == null or anchor_item is not FreeCellCardScript or not context.has_item(anchor_item):
 		return ZoneDragStartDecisionScript.new(false, "This card can no longer move.", [])
 	var source_cards = _typed_cards(context.get_items_ordered())
@@ -300,12 +315,15 @@ func _wire_controls() -> void:
 	select_game_spin_box.min_value = 1
 	select_game_spin_box.max_value = DEAL_MAX
 	select_game_spin_box.step = 1
+	new_game_button.pressed.connect(_on_new_game_button_pressed)
+	undo_button.pressed.connect(_on_undo_button_pressed)
 	select_game_ok_button.pressed.connect(_on_select_game_confirmed)
 	select_game_cancel_button.pressed.connect(_hide_select_game_overlay)
 
 	var game_popup = game_menu_button.get_popup()
 	game_popup.clear()
 	game_popup.add_item("New Game\tF2", GAME_MENU_NEW)
+	game_popup.add_item("Undo\tCtrl+Z", GAME_MENU_UNDO)
 	game_popup.add_item("Select Game...\tCtrl+G", GAME_MENU_SELECT)
 	game_popup.add_item("Restart This Game\tF5", GAME_MENU_RESTART)
 	game_popup.id_pressed.connect(_on_game_menu_id_pressed)
@@ -315,6 +333,7 @@ func _wire_controls() -> void:
 	help_popup.add_item("How to Play", HELP_MENU_RULES)
 	help_popup.add_item("About This Showcase", HELP_MENU_ABOUT)
 	help_popup.id_pressed.connect(_on_help_menu_id_pressed)
+	_update_undo_button_state()
 
 func _bind_zone_events(zone: Zone) -> void:
 	zone.item_transferred.connect(_on_item_transferred.bind(zone))
@@ -371,6 +390,8 @@ func _make_card_from_code(code: String) -> Control:
 	return card
 
 func _on_zone_item_clicked(item: Control, zone: Zone) -> void:
+	if _undo_animation_active:
+		return
 	if zone == null or item == null:
 		return
 	var role = StringName(_zone_info.get(zone, {}).get("role", &""))
@@ -380,11 +401,15 @@ func _on_zone_item_clicked(item: Control, zone: Zone) -> void:
 	_select_single_card(zone, item)
 
 func _on_item_double_clicked(item: Control, _zone: Zone) -> void:
+	if _undo_animation_active:
+		return
 	if try_auto_foundation(item):
 		return
 	_set_status("%s cannot move to the foundations yet." % _card_label(item), REJECT_STATUS_COLOR)
 
 func _on_item_right_clicked(item: Control, _zone: Zone) -> void:
+	if _undo_animation_active:
+		return
 	if try_auto_foundation(item):
 		return
 	_set_status("%s stays where it is." % _card_label(item), REJECT_STATUS_COLOR)
@@ -392,6 +417,7 @@ func _on_item_right_clicked(item: Control, _zone: Zone) -> void:
 func _on_item_transferred(item: Control, source_zone: Zone, target_zone: Zone, _target, emitter_zone: Zone) -> void:
 	if emitter_zone != target_zone:
 		return
+	_schedule_history_checkpoint()
 	_refresh_chrome()
 	_update_victory_state()
 	if _game_won:
@@ -414,6 +440,8 @@ func _on_game_menu_id_pressed(id: int) -> void:
 	match id:
 		GAME_MENU_NEW:
 			start_new_game()
+		GAME_MENU_UNDO:
+			undo_last_move()
 		GAME_MENU_SELECT:
 			_show_select_game_overlay()
 		GAME_MENU_RESTART:
@@ -425,6 +453,12 @@ func _on_help_menu_id_pressed(id: int) -> void:
 			_set_status("Build down by alternating color. Build the foundations up from Ace to King in suit.")
 		HELP_MENU_ABOUT:
 			_set_status("Windows XP style FreeCell showcase built on NascentSoul card zones.")
+
+func _on_new_game_button_pressed() -> void:
+	start_new_game()
+
+func _on_undo_button_pressed() -> void:
+	undo_last_move()
 
 func _on_select_game_confirmed() -> void:
 	var next_deal = int(select_game_spin_box.value)
@@ -607,6 +641,7 @@ func _rank_value_from_text(rank_text: String) -> int:
 func _refresh_chrome() -> void:
 	window_title_label.text = "FreeCell Game #%d" % _last_deal_number
 	deal_label.text = "Game #%d" % _last_deal_number
+	_update_undo_button_state()
 
 func _random_deal_number() -> int:
 	_rng.seed = int(Time.get_unix_time_from_system()) ^ int(Time.get_ticks_usec())
@@ -622,6 +657,264 @@ func _move_card_to_foundation(card: FreeCellCardScript) -> bool:
 	if target_zone == null:
 		return false
 	return ExampleSupport.move_item(source_zone, card, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
+
+func _build_deal_state(deal_number: int) -> Dictionary:
+	var tableaus: Array = [[], [], [], [], [], [], [], []]
+	var deck_codes = FreeCellRulesScript.deal_codes(deal_number)
+	for index in range(deck_codes.size()):
+		tableaus[index % tableaus.size()].append(deck_codes[index])
+	return {
+		"deal_number": deal_number,
+		"tableaus": tableaus,
+		"free_cells": ["", "", "", ""],
+		"foundation_slots": [[], [], [], []]
+	}
+
+func _apply_state(state: Dictionary, reset_history: bool) -> void:
+	_history_checkpoint_pending = false
+	_game_won = false
+	victory_label.visible = false
+	_hide_select_game_overlay()
+	_clear_all_cards()
+	_last_deal_number = int(state.get("deal_number", _last_deal_number))
+	var tableaus: Array = state.get("tableaus", [])
+	for index in range(min(tableaus.size(), _tableau_zones.size())):
+		for code in tableaus[index]:
+			_tableau_zones[index].add_item(_make_card_from_code(str(code)))
+	var free_cells: Array = state.get("free_cells", [])
+	for index in range(min(free_cells.size(), _free_cell_zones.size())):
+		var code = str(free_cells[index])
+		if code != "":
+			_free_cell_zones[index].add_item(_make_card_from_code(code))
+	if state.has("foundation_slots"):
+		var foundation_slots: Array = state.get("foundation_slots", [])
+		for index in range(min(foundation_slots.size(), _foundation_zones.size())):
+			for code in foundation_slots[index]:
+				_foundation_zones[index].add_item(_make_card_from_code(str(code)))
+	else:
+		var foundations = state.get("foundations", {})
+		for suit_name in foundations.keys():
+			var suit = StringName(str(suit_name))
+			var zone = _preferred_foundation_zone_for_suit(suit)
+			if zone == null:
+				continue
+			for code in foundations[suit_name]:
+				zone.add_item(_make_card_from_code(str(code)))
+	_refresh_chrome()
+	_update_victory_state()
+	for zone in _all_zones():
+		zone.refresh()
+	if reset_history:
+		_reset_history_to_current_state()
+
+func _serialize_state() -> Dictionary:
+	var tableaus: Array = []
+	for zone in _tableau_zones:
+		tableaus.append(_zone_codes(zone))
+	var free_cells: Array = []
+	for zone in _free_cell_zones:
+		var codes = _zone_codes(zone)
+		free_cells.append(codes[0] if not codes.is_empty() else "")
+	var foundation_slots: Array = []
+	for zone in _foundation_zones:
+		foundation_slots.append(_zone_codes(zone))
+	return {
+		"deal_number": _last_deal_number,
+		"tableaus": tableaus,
+		"free_cells": free_cells,
+		"foundation_slots": foundation_slots
+	}
+
+func _zone_codes(zone: Zone) -> Array[String]:
+	var codes: Array[String] = []
+	if zone == null:
+		return codes
+	for item in zone.get_items():
+		if item is FreeCellCardScript:
+			codes.append((item as FreeCellCardScript).code)
+	return codes
+
+func _state_signature(state: Dictionary) -> String:
+	var parts: Array[String] = ["deal=%d" % int(state.get("deal_number", 0))]
+	for tableau in state.get("tableaus", []):
+		parts.append("T:" + _join_codes(tableau))
+	for cell in state.get("free_cells", []):
+		parts.append("C:" + str(cell))
+	for foundation in state.get("foundation_slots", []):
+		parts.append("F:" + _join_codes(foundation))
+	return "|".join(parts)
+
+func _reset_history_to_current_state() -> void:
+	var snapshot = _serialize_state()
+	_history_states = [snapshot.duplicate(true)]
+	_history_signatures = [_state_signature(snapshot)]
+	_update_undo_button_state()
+
+func _schedule_history_checkpoint() -> void:
+	if _history_checkpoint_pending:
+		return
+	_history_checkpoint_pending = true
+	call_deferred("_commit_history_checkpoint")
+
+func _commit_history_checkpoint() -> void:
+	_history_checkpoint_pending = false
+	var snapshot = _serialize_state()
+	var signature = _state_signature(snapshot)
+	if not _history_signatures.is_empty() and _history_signatures[_history_signatures.size() - 1] == signature:
+		_update_undo_button_state()
+		return
+	_history_states.append(snapshot.duplicate(true))
+	_history_signatures.append(signature)
+	if _history_states.size() > HISTORY_LIMIT:
+		_history_states.pop_front()
+		_history_signatures.pop_front()
+	_update_undo_button_state()
+
+func _update_undo_button_state() -> void:
+	if is_instance_valid(new_game_button):
+		new_game_button.disabled = _undo_animation_active
+	if is_instance_valid(game_menu_button):
+		game_menu_button.disabled = _undo_animation_active
+	if is_instance_valid(help_menu_button):
+		help_menu_button.disabled = _undo_animation_active
+	if not is_instance_valid(undo_button):
+		return
+	undo_button.disabled = _undo_animation_active or not can_undo()
+
+func _join_codes(values: Array) -> String:
+	var codes: Array[String] = []
+	for value in values:
+		codes.append(str(value))
+	return ",".join(PackedStringArray(codes))
+
+func _restore_state_from_history(state: Dictionary) -> bool:
+	var should_animate = _freecell_animation_duration() > 0.0 and DisplayServer.get_name() != "headless"
+	if should_animate:
+		_undo_animation_active = true
+		_update_undo_button_state()
+	var restored = _restore_state_with_existing_cards(state)
+	if not restored:
+		_undo_animation_active = false
+		_apply_state(state, false)
+		return false
+	_refresh_chrome()
+	_update_victory_state()
+	for zone in _all_zones():
+		zone.refresh()
+	if not should_animate:
+		_undo_animation_active = false
+		_update_undo_button_state()
+		return false
+	var timer = get_tree().create_timer(_freecell_animation_duration() + UNDO_ANIMATION_PADDING)
+	timer.timeout.connect(_finish_undo_animation, CONNECT_ONE_SHOT)
+	return true
+
+func _restore_state_with_existing_cards(state: Dictionary) -> bool:
+	var card_lookup = _card_lookup_by_code()
+	var zone_plan = _state_zone_plan(state)
+	if card_lookup.is_empty() or zone_plan.is_empty():
+		return false
+	_hide_select_game_overlay()
+	_clear_selection_all()
+	_game_won = false
+	victory_label.visible = false
+	_last_deal_number = int(state.get("deal_number", _last_deal_number))
+	for entry in zone_plan:
+		var zone = entry["zone"] as Zone
+		var codes: Array = entry["codes"]
+		if zone == null:
+			return false
+		for target_index in range(codes.size()):
+			var code = str(codes[target_index])
+			if not card_lookup.has(code):
+				return false
+			var card = card_lookup[code] as ZoneItemControl
+			var current_zone = _zone_for_item(card)
+			if current_zone == null:
+				return false
+			if current_zone == zone:
+				continue
+			if not _move_card_for_restore(card, current_zone, zone, target_index):
+				return false
+	for entry in zone_plan:
+		var zone = entry["zone"] as Zone
+		var desired_items: Array[ZoneItemControl] = []
+		for code in entry["codes"]:
+			var resolved = card_lookup.get(str(code), null)
+			if resolved is not ZoneItemControl:
+				return false
+			desired_items.append(resolved as ZoneItemControl)
+		if desired_items.size() != zone.get_item_count():
+			return false
+		if desired_items.is_empty():
+			zone.refresh()
+			continue
+		if not ExampleSupport.reorder_items(zone, desired_items, ZonePlacementTarget.linear(0)):
+			return false
+	return true
+
+func _state_zone_plan(state: Dictionary) -> Array[Dictionary]:
+	var plan: Array[Dictionary] = []
+	var free_cells: Array = state.get("free_cells", [])
+	for index in range(_free_cell_zones.size()):
+		var codes: Array[String] = []
+		if index < free_cells.size():
+			var code = str(free_cells[index])
+			if code != "":
+				codes.append(code)
+		plan.append({"zone": _free_cell_zones[index], "codes": codes})
+	var foundation_slots = _normalized_foundation_slot_codes(state)
+	for index in range(_foundation_zones.size()):
+		var codes: Array = foundation_slots[index] if index < foundation_slots.size() else []
+		plan.append({"zone": _foundation_zones[index], "codes": codes})
+	var tableaus: Array = state.get("tableaus", [])
+	for index in range(_tableau_zones.size()):
+		var codes: Array = tableaus[index] if index < tableaus.size() else []
+		plan.append({"zone": _tableau_zones[index], "codes": codes})
+	return plan
+
+func _normalized_foundation_slot_codes(state: Dictionary) -> Array:
+	if state.has("foundation_slots"):
+		return state.get("foundation_slots", [])
+	var slots: Array = [[], [], [], []]
+	var foundations = state.get("foundations", {})
+	for suit_name in foundations.keys():
+		var suit = StringName(str(suit_name))
+		var suit_index = SUIT_ORDER.find(suit)
+		if suit_index < 0 or suit_index >= slots.size():
+			continue
+		slots[suit_index] = foundations[suit_name]
+	return slots
+
+func _card_lookup_by_code() -> Dictionary:
+	var lookup: Dictionary = {}
+	for zone in _all_zones():
+		for item in zone.get_items():
+			if item is FreeCellCardScript:
+				lookup[(item as FreeCellCardScript).code] = item
+	return lookup
+
+func _move_card_for_restore(card: ZoneItemControl, source_zone: Zone, target_zone: Zone, target_index: int) -> bool:
+	if card == null or source_zone == null or target_zone == null:
+		return false
+	var snapshots = source_zone._get_transfer_service().build_transfer_snapshots([card], null, card)
+	if not source_zone.remove_item(card):
+		return false
+	target_zone._get_transfer_service().set_transfer_handoff(card, snapshots.get(card, {}))
+	return target_zone.add_item(card, ZonePlacementTarget.linear(target_index))
+
+func _freecell_animation_duration() -> float:
+	for zone in _all_zones():
+		var display_style = ExampleSupport.get_zone_display_style(zone)
+		if display_style is ZoneTweenDisplay:
+			return max(0.0, (display_style as ZoneTweenDisplay).duration)
+	return 0.0
+
+func _finish_undo_animation() -> void:
+	_undo_animation_active = false
+	_update_undo_button_state()
+	if not _game_won:
+		_set_status("Undid the last move.")
 
 func _is_exposed_card(card: FreeCellCardScript) -> bool:
 	if not is_instance_valid(card):

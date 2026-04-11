@@ -4,6 +4,9 @@ const CARD_SIZE := Vector2(80, 112)
 const CARD_FILL := Color(0.99, 0.99, 0.97, 1.0)
 const CARD_BORDER := Color(0.10, 0.10, 0.10, 1.0)
 const CARD_INNER_BORDER := Color(0.82, 0.84, 0.86, 1.0)
+const CARD_SHADOW := Color(0.00, 0.00, 0.00, 0.18)
+const CARD_FACE_HIGHLIGHT := Color(1.00, 1.00, 1.00, 0.55)
+const CARD_FACE_SHADE := Color(0.92, 0.94, 0.96, 0.35)
 const RED_INK := Color(0.71, 0.08, 0.12, 1.0)
 const BLACK_INK := Color(0.08, 0.09, 0.11, 1.0)
 const FACE_FILL := Color(0.94, 0.95, 0.98, 1.0)
@@ -114,15 +117,15 @@ func _draw() -> void:
 	var rect = Rect2(Vector2.ZERO, _resolved_card_size())
 	if rect.size == Vector2.ZERO:
 		return
-	draw_rect(rect, CARD_FILL)
-	draw_rect(rect.grow(-1.0), Color(1.0, 1.0, 1.0, 0.55), false, 1.0)
-	draw_rect(rect, _border_color(), false, 1.0)
+	_draw_card_shell(rect)
 	_draw_corners(rect)
 	if rank_value >= 11:
 		_draw_face_card(rect)
 	elif rank_value == 1:
 		_draw_center_symbol(rect, suit_symbol, 34, _ink_color())
+		_draw_center_symbol(rect, suit_symbol, 54, Color(_ink_color().r, _ink_color().g, _ink_color().b, 0.12))
 	else:
+		_draw_center_symbol(rect, suit_symbol, 42, Color(_ink_color().r, _ink_color().g, _ink_color().b, 0.08))
 		_draw_pips(rect)
 
 func _ensure_overlay() -> void:
@@ -153,23 +156,26 @@ func _draw_corners(rect: Rect2) -> void:
 	if font == null:
 		return
 	var ink = _ink_color()
-	var rank_font_size = 14
-	var suit_font_size = 12
-	var top_left = rect.position + Vector2(6.0, 6.0)
-	_draw_label(font, rank_label, top_left, rank_font_size, ink)
-	_draw_label(font, suit_symbol, top_left + Vector2(0.0, 13.0), suit_font_size, ink)
+	var rank_font_size = 15
+	var suit_font_size = 15
+	var badge_gap = 2.0
+	var top_left = rect.position + Vector2(6.0, 3.5)
 	var rank_width = font.get_string_size(rank_label, HORIZONTAL_ALIGNMENT_LEFT, -1, rank_font_size).x
+	_draw_label(font, rank_label, top_left, rank_font_size, ink)
+	_draw_label(font, suit_symbol, top_left + Vector2(rank_width + badge_gap, 0.0), suit_font_size, ink)
 	var suit_width = font.get_string_size(suit_symbol, HORIZONTAL_ALIGNMENT_LEFT, -1, suit_font_size).x
+	var total_width = rank_width + badge_gap + suit_width
 	var bottom_right = rect.end - Vector2(6.0, 6.0)
-	_draw_label(font, rank_label, Vector2(bottom_right.x - rank_width, bottom_right.y - 12.0), rank_font_size, ink)
-	_draw_label(font, suit_symbol, Vector2(bottom_right.x - suit_width, bottom_right.y - 24.0), suit_font_size, ink)
+	var bottom_badge = Vector2(bottom_right.x - total_width, bottom_right.y - 16.0)
+	_draw_label(font, rank_label, bottom_badge, rank_font_size, ink)
+	_draw_label(font, suit_symbol, bottom_badge + Vector2(rank_width + badge_gap, 0.0), suit_font_size, ink)
 
 func _draw_face_card(rect: Rect2) -> void:
-	var inner = rect.grow(-16.0)
-	draw_rect(inner, FACE_FILL)
-	draw_rect(inner, FACE_BORDER, false, 1.0)
-	_draw_center_symbol(rect, rank_label, 28, _ink_color())
-	_draw_center_symbol(Rect2(rect.position + Vector2(0.0, 16.0), rect.size), suit_symbol, 24, Color(_ink_color().r, _ink_color().g, _ink_color().b, 0.72))
+	var inner = rect.grow(-15.0)
+	draw_style_box(_make_style_box(FACE_FILL, FACE_BORDER, 4, 1), inner)
+	_draw_center_symbol(rect, rank_label, 30, _ink_color(), rect.get_center() + Vector2(0.0, -10.0))
+	_draw_center_symbol(rect, suit_symbol, 20, Color(_ink_color().r, _ink_color().g, _ink_color().b, 0.86), rect.get_center() + Vector2(0.0, 14.0))
+	_draw_center_symbol(rect, suit_symbol, 44, Color(_ink_color().r, _ink_color().g, _ink_color().b, 0.10))
 
 func _draw_pips(rect: Rect2) -> void:
 	var layout = PIP_LAYOUTS.get(rank_value, [])
@@ -190,6 +196,8 @@ func _draw_center_symbol(rect: Rect2, text: String, font_size: int, color: Color
 	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 func _draw_label(font: Font, text: String, top_left: Vector2, font_size: int, color: Color) -> void:
+	var shadow_baseline = top_left + Vector2(0.5, font.get_ascent(font_size) + 0.5)
+	draw_string(font, shadow_baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1.0, 1.0, 1.0, 0.20))
 	var baseline = top_left + Vector2(0.0, font.get_ascent(font_size))
 	draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
@@ -222,6 +230,28 @@ func _duplicate_card() -> Control:
 	clone.size = clone.custom_minimum_size
 	clone.apply_zone_visual_state(ZoneItemVisualState.new())
 	return clone
+
+func _draw_card_shell(rect: Rect2) -> void:
+	var shadow_rect = Rect2(rect.position + Vector2(1.0, 2.0), rect.size)
+	draw_style_box(_make_style_box(CARD_SHADOW, Color(0, 0, 0, 0), 6, 0), shadow_rect)
+	draw_style_box(_make_style_box(CARD_FILL, _border_color(), 6, 1), rect)
+	draw_style_box(_make_style_box(CARD_FACE_HIGHLIGHT, Color(0, 0, 0, 0), 5, 0), Rect2(rect.position + Vector2(2.0, 2.0), Vector2(rect.size.x - 4.0, 18.0)))
+	draw_rect(Rect2(rect.position + Vector2(3.0, 20.0), Vector2(rect.size.x - 6.0, rect.size.y - 23.0)), CARD_FACE_SHADE, false, 1.0)
+	draw_style_box(_make_style_box(Color(0, 0, 0, 0), CARD_INNER_BORDER, 5, 1), rect.grow(-2.0))
+
+func _make_style_box(fill: Color, border: Color, radius: int, border_width: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.border_width_left = border_width
+	style.border_width_top = border_width
+	style.border_width_right = border_width
+	style.border_width_bottom = border_width
+	style.corner_radius_top_left = radius
+	style.corner_radius_top_right = radius
+	style.corner_radius_bottom_left = radius
+	style.corner_radius_bottom_right = radius
+	return style
 
 func _group_cards(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Array[ZoneItemControl]:
 	var cards: Array[ZoneItemControl] = []

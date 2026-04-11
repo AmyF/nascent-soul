@@ -16,10 +16,10 @@ class_name ZoneTargetRule extends Resource
 func matches(request: ZoneTargetRequest) -> bool:
 	if request == null or request.candidate == null or not request.candidate.is_valid() or not is_instance_valid(request.source_item):
 		return false
-	if source_item_script != null and request.source_item.get_script() != source_item_script:
+	if not _matches_item_script(request.source_item, source_item_script):
 		return false
 	if target_item_script != null:
-		if not is_instance_valid(request.candidate.target_item) or request.candidate.target_item.get_script() != target_item_script:
+		if not _matches_item_script(request.candidate.target_item, target_item_script):
 			return false
 	if target_zone_name != "":
 		var target_zone = request.candidate.target_zone as Zone
@@ -62,3 +62,15 @@ func _matches_candidate_meta(candidate: ZoneTargetCandidate) -> bool:
 	if required_candidate_meta_value == "":
 		return true
 	return str(candidate.metadata.get(required_candidate_meta_key)) == required_candidate_meta_value
+
+func _matches_item_script(item: Object, script: Script) -> bool:
+	if script == null:
+		return true
+	if not is_instance_valid(item):
+		return false
+	var current_script = item.get_script()
+	while current_script != null:
+		if current_script == script:
+			return true
+		current_script = current_script.get_base_script()
+	return false

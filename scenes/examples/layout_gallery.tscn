@@ -19,6 +19,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="17_allow_all"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="18_space"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="19_factory"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_zone_card.gd" id="20_example_card"]
 
 [sub_resource type="Resource" id="LayoutRowLayout"]
 script = ExtResource("5_hbox_layout")
@@ -188,7 +189,19 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("10_theme")
-gallery_cards = [SubResource("LayoutCardPulse"), SubResource("LayoutCardWard"), SubResource("LayoutCardAnchor"), SubResource("LayoutCardBurst"), SubResource("LayoutCardLoom")]
+ready_status = "布局对照已就绪 / Layout gallery is ready"
+row_sort_status_format = "Row 费用%s / Row cost %s"
+toggle_status_format = "Row 费用%s，List 仍按 primary tag 分组 / Row is now cost-%s, List still groups by primary tag"
+reset_status = "布局画廊已重置，Row 回到费用升序 / The gallery has been reset and Row is back to ascending cost"
+status_prefix = "最近 / Latest"
+grid_columns = Vector3i(4, 2, 2)
+column_widths = Vector3(260, 212, 176)
+hand_zone_heights = Vector3(220, 196, 184)
+stack_zone_heights = Vector3(240, 212, 192)
+ascending_sort_name = "升序"
+descending_sort_name = "降序"
+ascending_sort_name_en = "ascending"
+descending_sort_name_en = "descending"
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -254,6 +267,50 @@ theme_override_styles/panel = SubResource("LayoutHandZonePanel")
 script = ExtResource("2_zone")
 config = ExtResource("3_hand")
 
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn/HandZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Pulse" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Pulse"
+card_cost = 2
+card_tags = PackedStringArray("attack")
+
+[node name="Ward" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Ward"
+card_cost = 1
+card_tags = PackedStringArray("skill")
+
+[node name="Anchor" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Anchor"
+card_cost = 3
+card_tags = PackedStringArray("power")
+
+[node name="Burst" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Burst"
+card_cost = 1
+card_tags = PackedStringArray("attack")
+
+[node name="Loom" type="Control" parent="RootMargin/RootVBox/Grid/HandColumn/HandZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Loom"
+card_cost = 2
+card_tags = PackedStringArray("skill")
+
 [node name="RowColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
@@ -277,6 +334,50 @@ size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("LayoutRowZonePanel")
 script = ExtResource("2_zone")
 config = SubResource("LayoutRowZoneConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn/RowZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Pulse" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn/RowZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Pulse"
+card_cost = 2
+card_tags = PackedStringArray("attack")
+
+[node name="Ward" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn/RowZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Ward"
+card_cost = 1
+card_tags = PackedStringArray("skill")
+
+[node name="Anchor" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn/RowZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Anchor"
+card_cost = 3
+card_tags = PackedStringArray("power")
+
+[node name="Burst" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn/RowZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Burst"
+card_cost = 1
+card_tags = PackedStringArray("attack")
+
+[node name="Loom" type="Control" parent="RootMargin/RootVBox/Grid/RowColumn/RowZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Loom"
+card_cost = 2
+card_tags = PackedStringArray("skill")
 
 [node name="ListColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
@@ -303,6 +404,50 @@ theme_override_styles/panel = SubResource("LayoutListZonePanel")
 script = ExtResource("2_zone")
 config = SubResource("LayoutListZoneConfig")
 
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn/ListZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Pulse" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn/ListZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Pulse"
+card_cost = 2
+card_tags = PackedStringArray("attack")
+
+[node name="Ward" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn/ListZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Ward"
+card_cost = 1
+card_tags = PackedStringArray("skill")
+
+[node name="Anchor" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn/ListZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Anchor"
+card_cost = 3
+card_tags = PackedStringArray("power")
+
+[node name="Burst" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn/ListZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Burst"
+card_cost = 1
+card_tags = PackedStringArray("attack")
+
+[node name="Loom" type="Control" parent="RootMargin/RootVBox/Grid/ListColumn/ListZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Loom"
+card_cost = 2
+card_tags = PackedStringArray("skill")
+
 [node name="PileColumn" type="VBoxContainer" parent="RootMargin/RootVBox/Grid"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 0)
@@ -326,6 +471,55 @@ size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("LayoutPileZonePanel")
 script = ExtResource("2_zone")
 config = SubResource("LayoutPileZoneConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn/PileZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Pulse" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn/PileZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Pulse"
+card_cost = 2
+card_tags = PackedStringArray("attack")
+face_up = false
+
+[node name="Ward" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn/PileZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Ward"
+card_cost = 1
+card_tags = PackedStringArray("skill")
+face_up = false
+
+[node name="Anchor" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn/PileZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Anchor"
+card_cost = 3
+card_tags = PackedStringArray("power")
+face_up = false
+
+[node name="Burst" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn/PileZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Burst"
+card_cost = 1
+card_tags = PackedStringArray("attack")
+face_up = false
+
+[node name="Loom" type="Control" parent="RootMargin/RootVBox/Grid/PileColumn/PileZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("20_example_card")
+card_title = "Loom"
+card_cost = 2
+card_tags = PackedStringArray("skill")
+face_up = false
 
 [node name="StatusLabel" type="Label" parent="RootMargin/RootVBox"]
 layout_mode = 2

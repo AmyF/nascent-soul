@@ -2,7 +2,44 @@ extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 
+@export var transfer_scene: PackedScene
+@export var layouts_scene: PackedScene
+@export var rules_scene: PackedScene
+@export var recipes_scene: PackedScene
+@export var square_scene: PackedScene
+@export var hex_scene: PackedScene
+@export var modes_scene: PackedScene
+@export var targeting_scene: PackedScene
+
+@onready var transfer_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/TransferButton
+@onready var layouts_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/LayoutsButton
+@onready var rules_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/RulesButton
+@onready var recipes_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/RecipesButton
+@onready var square_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/SquareButton
+@onready var hex_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/HexButton
+@onready var modes_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/ModesButton
+@onready var targeting_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/TargetingButton
+@onready var content_title_label: Label = $RootMargin/RootHBox/ContentColumn/ContentTitleLabel
+@onready var content_summary_label: Label = $RootMargin/RootHBox/ContentColumn/ContentSummaryLabel
+@onready var content_host: Control = $RootMargin/RootHBox/ContentColumn/ContentPanel/ContentHost
+
+var _current_content: Control = null
+var _demo_scene_by_key: Dictionary = {}
+
 func _ready() -> void:
+	_demo_scene_by_key = {
+		&"transfer": transfer_scene,
+		&"layouts": layouts_scene,
+		&"rules": rules_scene,
+		&"recipes": recipes_scene,
+		&"square": square_scene,
+		&"hex": hex_scene,
+		&"modes": modes_scene,
+		&"targeting": targeting_scene
+	}
+	for button in _demo_buttons():
+		button.pressed.connect(_on_demo_button_pressed.bind(button))
+	_show_demo_from_button(transfer_button)
 	_schedule_headless_quit_if_root()
 
 func _schedule_headless_quit_if_root() -> void:
@@ -24,6 +61,7 @@ func _shutdown_headless() -> void:
 	await _cleanup_before_quit()
 
 func _cleanup_before_quit() -> void:
+	_cleanup_current_content()
 	_cleanup_viewport_helpers()
 	ExampleSupport.clear_card_texture_cache()
 	var tree = get_tree()
@@ -36,6 +74,70 @@ func _cleanup_before_quit() -> void:
 	await tree.process_frame
 	await tree.process_frame
 	tree.quit()
+
+func _demo_buttons() -> Array[Button]:
+	return [
+		transfer_button,
+		layouts_button,
+		rules_button,
+		recipes_button,
+		square_button,
+		hex_button,
+		modes_button,
+		targeting_button
+	]
+
+func _on_demo_button_pressed(button: Button) -> void:
+	_show_demo_from_button(button)
+
+func _show_demo_from_button(button: Button) -> void:
+	if button == null:
+		push_error("Demo shell requires a valid button to mount content.")
+		return
+	var scene_key := StringName(str(button.get_meta("demo_scene_key", "")))
+	var title := str(button.get_meta("demo_title", button.text))
+	var summary := str(button.get_meta("demo_summary", ""))
+	var scene_resource = _demo_scene_by_key.get(scene_key)
+	var content = _instantiate_control_scene(scene_resource, title)
+	if content == null:
+		return
+	_mount_content(content, title, summary)
+	_set_button_states(button)
+
+func _instantiate_control_scene(scene_resource: PackedScene, title: String) -> Control:
+	if scene_resource == null:
+		push_error("Demo shell scene for %s is not assigned." % title)
+		return null
+	var instance := scene_resource.instantiate()
+	if instance is not Control:
+		push_error("Demo shell scene for %s must inherit Control." % title)
+		if instance is Node:
+			(instance as Node).free()
+		return null
+	return instance as Control
+
+func _mount_content(content: Control, title: String, summary: String) -> void:
+	_cleanup_current_content()
+	_current_content = content
+	content_title_label.text = title
+	content_summary_label.text = summary
+	content_host.add_child(content)
+	content.set_anchors_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 0.0
+	content.offset_top = 0.0
+	content.offset_right = 0.0
+	content.offset_bottom = 0.0
+
+func _set_button_states(active_button: Button) -> void:
+	for button in _demo_buttons():
+		button.disabled = button == active_button
+
+func _cleanup_current_content() -> void:
+	if _current_content == null or not is_instance_valid(_current_content):
+		return
+	_cleanup_viewport_helpers()
+	_current_content.queue_free()
+	_current_content = null
 
 func _cleanup_viewport_helpers() -> void:
 	var viewport := get_viewport()

@@ -8,6 +8,8 @@ func _init() -> void:
 func _run_suite() -> void:
 	await _test_initial_setup_and_turn_state()
 	await _reset_root()
+	await _test_toolbar_buttons_and_undo_history()
+	await _reset_root()
 	await _test_general_advisor_and_elephant_rules()
 	await _reset_root()
 	await _test_horse_chariot_cannon_and_soldier_rules()
@@ -40,15 +42,43 @@ func _load_state(scene: Control, current_side: String, pieces: Array) -> void:
 func _test_initial_setup_and_turn_state() -> void:
 	var scene = await _spawn_scene()
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
-	var turn_label = scene.get_node_or_null("RootMargin/RootVBox/StateRow/TurnLabel") as Label
 	_check(board_zone != null and board_zone.get_item_count() == 32, "xiangqi should load the full 32-piece starting setup")
-	_check(turn_label != null and turn_label.text.contains("Red"), "xiangqi should begin with red to move")
+	_check(scene.call("get_current_side") == &"red", "xiangqi should begin with red to move")
 	var red_general = scene.call("get_piece_at_coords", Vector2i(4, 9))
 	var black_general = scene.call("get_piece_at_coords", Vector2i(4, 0))
 	_check(red_general != null and red_general.piece_type == &"general", "xiangqi should place the red general at the standard home square")
 	_check(black_general != null and black_general.piece_type == &"general", "xiangqi should place the black general at the standard home square")
 	_check(not scene.call("is_side_in_check", &"red"), "xiangqi initial setup should not start with red in check")
 	_check(not scene.call("is_side_in_check", &"black"), "xiangqi initial setup should not start with black in check")
+
+func _test_toolbar_buttons_and_undo_history() -> void:
+	var scene = await _spawn_scene()
+	var new_game_button = scene.get_node_or_null("RootMargin/RootVBox/Toolbar/NewGameButton") as Button
+	var undo_button = scene.get_node_or_null("RootMargin/RootVBox/Toolbar/UndoButton") as Button
+	_check(new_game_button != null, "xiangqi should expose a New Game toolbar button")
+	_check(undo_button != null, "xiangqi should expose an Undo toolbar button")
+	_check(undo_button != null and undo_button.disabled, "xiangqi should disable Undo before any move has been made")
+	await _load_state(scene, "red", [
+		_piece("black", "general", Vector2i(3, 0)),
+		_piece("red", "general", Vector2i(5, 9)),
+		_piece("red", "horse", Vector2i(4, 7))
+	])
+	_check(scene.call("try_move_at", Vector2i(4, 7), Vector2i(6, 8)), "xiangqi undo test should make a legal move first")
+	await _settle_frames(2)
+	_check(scene.call("get_current_side") == &"black", "xiangqi should pass the turn after a successful move")
+	_check(undo_button != null and not undo_button.disabled and scene.call("can_undo"), "xiangqi should enable Undo after a successful move")
+	undo_button.pressed.emit()
+	await _settle_frames(2)
+	_check(scene.call("get_current_side") == &"red", "xiangqi undo should restore the previous side to move")
+	_check(scene.call("get_piece_at_coords", Vector2i(4, 7)) != null, "xiangqi undo should restore the moved piece to its original square")
+	_check(scene.call("get_piece_at_coords", Vector2i(6, 8)) == null, "xiangqi undo should clear the destination square")
+	_check(undo_button != null and undo_button.disabled and not scene.call("can_undo"), "xiangqi should disable Undo again after returning to the initial snapshot")
+	new_game_button.pressed.emit()
+	await _settle_frames(2)
+	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
+	_check(board_zone != null and board_zone.get_item_count() == 32, "xiangqi new game should restore the full starting setup")
+	_check(scene.call("get_current_side") == &"red", "xiangqi new game should restore red to move")
+	_check(undo_button != null and undo_button.disabled and not scene.call("can_undo"), "xiangqi new game should reset the undo history")
 
 func _test_general_advisor_and_elephant_rules() -> void:
 	var scene = await _spawn_scene()
@@ -143,8 +173,7 @@ func _test_horse_chariot_cannon_and_soldier_rules() -> void:
 	])
 	_check(scene.call("try_move_at", Vector2i(1, 7), Vector2i(1, 3)), "xiangqi should allow a cannon capture with exactly one intervening screen")
 	await _settle_frames(2)
-	var red_capture_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox/RedCaptureLabel") as Label
-	_check(red_capture_label != null and red_capture_label.text.contains("卒"), "xiangqi should record cannon captures in the side panel")
+	_check((scene.call("get_captured_glyphs", &"red") as Array).has("卒"), "xiangqi should record cannon captures for the moving side")
 
 	await _load_state(scene, "red", [
 		_piece("black", "general", Vector2i(3, 0)),
@@ -193,10 +222,8 @@ func _test_turn_capture_and_facing_generals_constraints() -> void:
 	])
 	_check(scene.call("try_move_at", Vector2i(1, 7), Vector2i(2, 5)), "xiangqi should allow a legal capture on the active side's turn")
 	await _settle_frames(2)
-	var turn_label = scene.get_node_or_null("RootMargin/RootVBox/StateRow/TurnLabel") as Label
-	var red_capture_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox/RedCaptureLabel") as Label
-	_check(turn_label != null and turn_label.text.contains("Black"), "xiangqi should pass the turn after a successful move")
-	_check(red_capture_label != null and red_capture_label.text.contains("卒"), "xiangqi should list captured pieces for the side that moved")
+	_check(scene.call("get_current_side") == &"black", "xiangqi should pass the turn after a successful move")
+	_check((scene.call("get_captured_glyphs", &"red") as Array).has("卒"), "xiangqi should list captured pieces for the side that moved")
 
 	await _load_state(scene, "red", [
 		_piece("black", "general", Vector2i(4, 0)),
@@ -218,20 +245,17 @@ func _test_checkmate_game_over_detection() -> void:
 	_check(scene.call("try_move_at", Vector2i(4, 3), Vector2i(4, 2)), "xiangqi should allow the mating move into the checking file")
 	await _settle_frames(2)
 	_check(scene.call("get_winner") == &"red", "xiangqi should declare the moving side as the winner after checkmate")
-	var status_label = scene.get_node_or_null("RootMargin/RootVBox/StateRow/StatusLabel") as Label
-	_check(status_label != null and status_label.text.to_lower().contains("checkmate"), "xiangqi should explain checkmate in the status label")
+	_check(scene.call("get_last_status_message").to_lower().contains("checkmate"), "xiangqi should explain checkmate in the status state")
 
 func _test_compact_layout_keeps_board_targetable() -> void:
 	var scene = await _spawn_scene_in_host(Vector2(960, 900))
 	await _settle_frames(3)
+	var content_row = scene.get_node_or_null("RootMargin/RootVBox/ContentRow") as Control
 	var board_column = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn") as Control
 	var board_panel = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel") as Panel
-	var left_panel = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/LeftPanel") as Panel
-	var right_panel = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/RightPanel") as Panel
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
 	_check(board_panel != null and board_zone != null and _rect_inside(board_panel.get_global_rect(), board_zone.get_global_rect(), 4.0), "xiangqi compact layout should keep the board zone inside the visible board panel")
-	_check(board_column != null and left_panel != null and right_panel != null and left_panel.get_global_rect().position.y >= board_column.get_global_rect().end.y - 1.0 and right_panel.get_global_rect().position.y >= board_column.get_global_rect().end.y - 1.0, "xiangqi compact layout should reflow both side panels below the board")
-	_check(left_panel != null and right_panel != null and absf(left_panel.global_position.y - right_panel.global_position.y) <= 4.0, "xiangqi compact layout should keep the side panels on one wrapped row at compact widths")
+	_check(content_row != null and board_column != null and content_row.get_child_count() == 1 and content_row.get_child(0) == board_column, "xiangqi compact layout should keep the simplified board-only content centered")
 	await _load_state(scene, "red", [
 		_piece("black", "general", Vector2i(3, 0)),
 		_piece("red", "general", Vector2i(5, 9)),

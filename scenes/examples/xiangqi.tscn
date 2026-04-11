@@ -50,95 +50,36 @@ theme_type_variation = &"DemoSceneMargin"
 layout_mode = 2
 theme_type_variation = &"DemoRootVBox"
 
-[node name="Toolbar" type="HFlowContainer" parent="RootMargin/RootVBox"]
+[node name="Toolbar" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 theme_type_variation = &"DemoToolbarFlow"
 
 [node name="NewGameButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
 theme_type_variation = &"DemoPrimaryActionButton"
-text = "Reset Board"
+text = "New Game"
 
-[node name="CancelMoveButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
+[node name="UndoButton" type="Button" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
 theme_type_variation = &"DemoDangerActionButton"
-text = "Cancel Targeting"
+disabled = true
+text = "Undo"
 
-[node name="StateRow" type="HFlowContainer" parent="RootMargin/RootVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoToolbarFlow"
-
-[node name="TurnLabel" type="Label" parent="RootMargin/RootVBox/StateRow"]
-layout_mode = 2
-theme_type_variation = &"DemoGoldHeading"
-text = "Side to move: Red"
-
-[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox/StateRow"]
+[node name="ToolbarSpacer" type="Control" parent="RootMargin/RootVBox/Toolbar"]
 layout_mode = 2
 size_flags_horizontal = 3
-autowrap_mode = 3
-theme_type_variation = &"DemoStatusLabel"
-text = "Click a red piece to begin."
 
-[node name="ContentRow" type="HFlowContainer" parent="RootMargin/RootVBox"]
+[node name="ContentRow" type="CenterContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_type_variation = &"DemoWideFlow"
-
-[node name="LeftPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow"]
-custom_minimum_size = Vector2(180, 760)
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("XiangqiSidePanel")
-
-[node name="LeftVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/LeftPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_type_variation = &"DemoColumnVBox"
-
-[node name="Title" type="Label" parent="RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoRoseHeading"
-text = "Red"
-
-[node name="HintLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox"]
-layout_mode = 2
-autowrap_mode = 3
-theme_type_variation = &"DemoDetailLabel"
-text = "Click a piece, then choose an empty point or enemy piece. The controller enforces full local rules."
-
-[node name="RedCaptureLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/LeftPanel/LeftVBox"]
-layout_mode = 2
-autowrap_mode = 3
-theme_type_variation = &"DemoDetailLabel"
-text = "Red captures: None"
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
-
-[node name="BoardLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn"]
-layout_mode = 2
-theme_type_variation = &"DemoGreenHeading"
-text = "Xiangqi Board"
-
-[node name="BoardCaption" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn"]
-layout_mode = 2
-autowrap_mode = 3
-theme_type_variation = &"DemoDetailLabel"
-text = "Targeting previews legal moves, captures, check restrictions, and the facing-generals rule."
 
 [node name="BoardPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/BoardColumn"]
 custom_minimum_size = Vector2(688, 760)
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
 theme_override_styles/panel = SubResource("XiangqiBoardPanel")
 
 [node name="BoardHost" type="Control" parent="RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel"]
@@ -148,35 +89,3 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="RightPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow"]
-custom_minimum_size = Vector2(180, 760)
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_styles/panel = SubResource("XiangqiSidePanel")
-
-[node name="RightVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/RightPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_type_variation = &"DemoColumnVBox"
-
-[node name="Title" type="Label" parent="RootMargin/RootVBox/ContentRow/RightPanel/RightVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoBlueHeading"
-text = "Black"
-
-[node name="HintLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/RightPanel/RightVBox"]
-layout_mode = 2
-autowrap_mode = 3
-theme_type_variation = &"DemoDetailLabel"
-text = "Checkmate and no-legal-move end states are evaluated after every move. No AI is involved in this showcase."
-
-[node name="BlackCaptureLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/RightPanel/RightVBox"]
-layout_mode = 2
-autowrap_mode = 3
-theme_type_variation = &"DemoDetailLabel"
-text = "Black captures: None"

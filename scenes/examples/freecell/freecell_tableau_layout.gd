@@ -1,7 +1,7 @@
 @tool
 extends ZoneLayoutPolicy
 
-@export var reveal_y: float = 18.0
+@export var reveal_y: float = 20.0
 @export var padding_left: float = 1.0
 @export var padding_top: float = 1.0
 

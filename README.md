@@ -100,9 +100,31 @@ battlefield.begin_targeting(
 
 ## Showcases
 
-The launcher scene is [`scenes/main_menu.tscn`](scenes/main_menu.tscn). It exposes a dedicated `FreeCell` entry alongside the broader example hub in [`scenes/demo.tscn`](scenes/demo.tscn).
+The launcher scene is [`scenes/main_menu.tscn`](scenes/main_menu.tscn). It is the public first screen and exposes direct entries for all 10 examples:
 
-The demo hub includes 10 embedded examples, including two full playable showcases:
+- `Transfer`
+- `Layouts`
+- `Rules`
+- `Recipes`
+- `Square`
+- `Hex`
+- `Modes`
+- `Targeting`
+- `FreeCell`
+- `Xiangqi`
+
+[`scenes/demo.tscn`](scenes/demo.tscn) remains as a compatibility shell when you open it directly. It keeps only the eight editor-facing demos together:
+
+- `Transfer`
+- `Layouts`
+- `Rules`
+- `Recipes`
+- `Square`
+- `Hex`
+- `Modes`
+- `Targeting`
+
+The two full playable showcases still live separately:
 
 - `FreeCell`: a complete single-player FreeCell implementation built from `CardZone`, transfer policies, and an example-side tableau layout.
 - `Xiangqi`: a complete local two-player Xiangqi implementation built on `BattlefieldZone`, square placement targets, and zone targeting.
@@ -126,9 +148,9 @@ The showcase scenes live at:
 
 Validated on Godot 4.6.1:
 
-- Headless regression runner passes with `522` checks.
+- Headless regression runner passes with `697` checks.
 - Headless editor load succeeds with the plugin enabled.
-- Demo smoke coverage confirms the 10-tab hub and both showcase scenes.
+- Demo smoke coverage confirms the main-menu launcher, the compatibility shell, and both showcase scenes.
 
 Run the full suite with:
 

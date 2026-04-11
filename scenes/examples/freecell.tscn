@@ -136,6 +136,15 @@ layout_mode = 2
 flat = true
 text = "Game"
 
+[node name="NewGameButton" type="Button" parent="RootMargin/RootVBox/Toolbar/ToolbarRow"]
+layout_mode = 2
+text = "New Game"
+
+[node name="UndoButton" type="Button" parent="RootMargin/RootVBox/Toolbar/ToolbarRow"]
+layout_mode = 2
+disabled = true
+text = "Undo"
+
 [node name="HelpMenuButton" type="MenuButton" parent="RootMargin/RootVBox/Toolbar/ToolbarRow"]
 layout_mode = 2
 flat = true

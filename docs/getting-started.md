@@ -93,4 +93,4 @@ Each action creates a zone node, assigns a preset config, and drops it into the 
 - Read [Card Zones](card-zones.md) for linear containers.
 - Read [Battlefields](battlefields.md) for square and hex spaces.
 - Read [Transfers and Targeting](transfers-and-targeting.md) for cross-zone actions and targeting flows.
-- Open [`scenes/demo.tscn`](../scenes/demo.tscn) and inspect the examples in motion.
+- Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and choose any of the 10 first-screen entries: `Transfer`, `Layouts`, `Rules`, `Recipes`, `Square`, `Hex`, `Modes`, `Targeting`, `FreeCell`, or `Xiangqi`. Open [`scenes/demo.tscn`](../scenes/demo.tscn) only if you specifically want the compatibility shell that keeps the eight editor-facing demos together when launched directly.

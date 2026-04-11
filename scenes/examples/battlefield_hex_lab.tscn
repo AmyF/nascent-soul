@@ -1,7 +1,63 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/examples/battlefield_hex_lab.gd" id="1_script"]
+[ext_resource type="Script" path="res://scenes/examples/battlefield_hex_lab.gd" id="1_scene"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/zone.gd" id="3_zone"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/battlefield_zone.gd" id="4_battlefield_zone"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/battlefield_hex_zone_config.tres" id="5_hex_preset"]
+[ext_resource type="Script" path="res://scenes/examples/shared/example_zone_card.gd" id="6_example_card"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="7_config"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_hbox_layout.gd" id="8_hbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="9_display"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="10_interaction"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="11_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="12_allow_all"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="13_linear_space"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="14_factory"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_hex_grid_space_model.gd" id="15_hex_space"]
+
+[sub_resource type="Resource" id="HexSourceLayout"]
+script = ExtResource("8_hbox_layout")
+item_spacing = 16.0
+padding_left = 16.0
+padding_top = 18.0
+
+[sub_resource type="Resource" id="HexSourceDisplay"]
+script = ExtResource("9_display")
+
+[sub_resource type="Resource" id="HexSourceInteraction"]
+script = ExtResource("10_interaction")
+
+[sub_resource type="Resource" id="HexSourceSort"]
+script = ExtResource("11_sort")
+
+[sub_resource type="Resource" id="HexSourcePolicy"]
+script = ExtResource("12_allow_all")
+
+[sub_resource type="Resource" id="HexSourceSpace"]
+script = ExtResource("13_linear_space")
+
+[sub_resource type="Resource" id="HexSourceFactory"]
+script = ExtResource("14_factory")
+
+[sub_resource type="Resource" id="HexSourceZoneConfig"]
+script = ExtResource("7_config")
+space_model = SubResource("HexSourceSpace")
+layout_policy = SubResource("HexSourceLayout")
+display_style = SubResource("HexSourceDisplay")
+interaction = SubResource("HexSourceInteraction")
+sort_policy = SubResource("HexSourceSort")
+transfer_policy = SubResource("HexSourcePolicy")
+drag_visual_factory = SubResource("HexSourceFactory")
+
+[sub_resource type="Resource" id="HexBattlefieldSpace"]
+script = ExtResource("15_hex_space")
+columns = 4
+rows = 3
+cell_size = Vector2(116, 100)
+cell_spacing_x = 10.0
+row_spacing = 12.0
+padding = Vector2(20, 20)
 
 [node name="BattlefieldHexLab" type="Control"]
 layout_mode = 3
@@ -10,8 +66,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_script")
+script = ExtResource("1_scene")
 theme = ExtResource("2_theme")
+ready_status = "双击卡牌进入六边形战场，右键返回 / Double-click cards into the hex battlefield, right-click to return"
+source_widths = Vector3(320, 232, 216)
+battlefield_gap_widths = Vector3(96, 72, 56)
+battlefield_width_limits_desktop = Vector2(520, 560)
+battlefield_width_limits_compact = Vector2(500, 540)
+battlefield_width_limits_mobile = Vector2(480, 520)
+source_panel_heights = Vector3(220, 200, 184)
+battlefield_panel_heights = Vector3(420, 400, 380)
+battlefield_min_scale = 0.82
 
 [node name="RootMargin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -35,6 +100,8 @@ text = "Hex Battlefield / 六边形战场"
 layout_mode = 2
 theme_type_variation = &"DemoStatusLabel"
 autowrap_mode = 3
+theme_override_colors/font_color = Color(0.97, 0.98, 1, 1)
+text = "最近 / Latest: 双击卡牌进入六边形战场，右键返回 / Double-click cards into the hex battlefield, right-click to return"
 
 [node name="ContentRow" type="HFlowContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -47,6 +114,7 @@ size_flags_horizontal = 3
 
 [node name="SourceLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/SourceColumn"]
 layout_mode = 2
+theme_type_variation = &"DemoGoldHeading"
 text = "Cards"
 
 [node name="SourcePanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/SourceColumn"]
@@ -54,15 +122,76 @@ custom_minimum_size = Vector2(360, 220)
 layout_mode = 2
 size_flags_vertical = 3
 
+[node name="HexSourceZone" type="Control" parent="RootMargin/RootVBox/ContentRow/SourceColumn/SourcePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_zone")
+config = SubResource("HexSourceZoneConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/ContentRow/SourceColumn/SourcePanel/HexSourceZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Ember" type="Control" parent="RootMargin/RootVBox/ContentRow/SourceColumn/SourcePanel/HexSourceZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("6_example_card")
+card_title = "Ember"
+card_cost = 1
+card_tags = PackedStringArray("spell")
+
+[node name="Rook" type="Control" parent="RootMargin/RootVBox/ContentRow/SourceColumn/SourcePanel/HexSourceZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("6_example_card")
+card_title = "Rook"
+card_cost = 2
+card_tags = PackedStringArray("unit")
+
+[node name="Bloom" type="Control" parent="RootMargin/RootVBox/ContentRow/SourceColumn/SourcePanel/HexSourceZone/ItemsRoot"]
+custom_minimum_size = Vector2(120, 180)
+script = ExtResource("6_example_card")
+card_title = "Bloom"
+card_cost = 3
+card_tags = PackedStringArray("summon")
+
 [node name="BattlefieldColumn" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="BattlefieldLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BattlefieldColumn"]
 layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
 text = "Hex Field"
 
 [node name="BattlefieldPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/BattlefieldColumn"]
 custom_minimum_size = Vector2(560, 420)
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="HexBattlefieldZone" type="Control" parent="RootMargin/RootVBox/ContentRow/BattlefieldColumn/BattlefieldPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("4_battlefield_zone")
+config = ExtResource("5_hex_preset")
+config/space_model = SubResource("HexBattlefieldSpace")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/ContentRow/BattlefieldColumn/BattlefieldPanel/HexBattlefieldZone"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

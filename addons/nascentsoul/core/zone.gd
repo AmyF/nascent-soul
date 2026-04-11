@@ -101,6 +101,8 @@ func _draw() -> void:
 		draw_style_box(stylebox, Rect2(Vector2.ZERO, size))
 
 func _get_configuration_warnings() -> PackedStringArray:
+	if not is_inside_tree():
+		return PackedStringArray()
 	_ensure_internal_nodes()
 	_ensure_services()
 	var warnings := PackedStringArray()
@@ -509,12 +511,13 @@ func _ensure_internal_nodes() -> void:
 func _ensure_internal_root(existing: Control, node_name: String) -> Control:
 	var root = existing
 	if root == null or not is_instance_valid(root) or root.get_parent() != self:
-		root = get_node_or_null(node_name) as Control
+		root = _find_internal_root(node_name)
 	if root == null:
 		root = Control.new()
 		root.name = node_name
 		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(root)
+	_merge_duplicate_internal_roots(root, node_name)
 	_sync_internal_root_owner(root)
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.offset_left = 0.0
@@ -525,6 +528,28 @@ func _ensure_internal_root(existing: Control, node_name: String) -> Control:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.clip_contents = false
 	return root
+
+func _find_internal_root(node_name: String) -> Control:
+	for child in get_children():
+		if child is Control and child.name == node_name:
+			return child as Control
+	return null
+
+func _merge_duplicate_internal_roots(root: Control, node_name: String) -> void:
+	if root == null:
+		return
+	var duplicate_roots: Array[Control] = []
+	for child in get_children():
+		if child == root:
+			continue
+		if child is Control and child.name == node_name:
+			duplicate_roots.append(child as Control)
+	for duplicate_root in duplicate_roots:
+		for duplicate_child in duplicate_root.get_children():
+			if duplicate_child == null:
+				continue
+			duplicate_child.reparent(root, true)
+		duplicate_root.queue_free()
 
 func _sync_internal_root_owner(root: Node) -> void:
 	if root == null:
@@ -538,6 +563,8 @@ func _is_expected_direct_child(child: Node) -> bool:
 		or child.name.begins_with("__NascentSoul")
 
 func _handle_configuration_changed() -> void:
+	if not is_inside_tree():
+		return
 	_ensure_internal_nodes()
 	_ensure_services()
 	_context.update_config(_resolved_config())

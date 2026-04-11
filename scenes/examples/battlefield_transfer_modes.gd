@@ -1,67 +1,60 @@
 extends Control
 
+const DemoLayoutSupport = preload("res://scenes/examples/shared/demo_layout_support.gd")
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
-const ZoneRuleTableTransferPolicyScript = preload("res://addons/nascentsoul/impl/permissions/zone_rule_table_transfer_policy.gd")
-const ZoneTransferRuleScript = preload("res://addons/nascentsoul/impl/permissions/zone_transfer_rule.gd")
-const ZoneCardScript = preload("res://addons/nascentsoul/cards/zone_card.gd")
-const ZonePieceScript = preload("res://addons/nascentsoul/pieces/zone_piece.gd")
 
 const REJECT_COLOR := Color(0.96, 0.60, 0.56)
 const NORMAL_STATUS_COLOR := Color(0.97, 0.98, 1.0)
 
+@export_group("Status Copy")
+@export_multiline var ready_status: String = ""
+
+@export_group("Layout")
+@export var source_widths: Vector3 = Vector3(240.0, 212.0, 180.0)
+@export var battlefield_widths: Vector3 = Vector3(340.0, 292.0, 280.0)
+@export var source_panel_heights: Vector3 = Vector3(220.0, 196.0, 180.0)
+@export var battlefield_panel_heights: Vector3 = Vector3(320.0, 296.0, 280.0)
+@export var battlefield_min_cell_size: float = 88.0
+
 @onready var status_label: Label = $RootMargin/RootVBox/StatusLabel
+@onready var content_row: HFlowContainer = $RootMargin/RootVBox/ContentRow
+@onready var source_column: VBoxContainer = $RootMargin/RootVBox/ContentRow/SourceColumn
+@onready var direct_column: VBoxContainer = $RootMargin/RootVBox/ContentRow/DirectColumn
+@onready var summon_column: VBoxContainer = $RootMargin/RootVBox/ContentRow/SummonColumn
 @onready var source_panel: Panel = $RootMargin/RootVBox/ContentRow/SourceColumn/SourcePanel
 @onready var direct_panel: Panel = $RootMargin/RootVBox/ContentRow/DirectColumn/DirectPanel
 @onready var summon_panel: Panel = $RootMargin/RootVBox/ContentRow/SummonColumn/SummonPanel
+@onready var _source_zone: Zone = $RootMargin/RootVBox/ContentRow/SourceColumn/SourcePanel/ModeSourceZone as Zone
+@onready var _direct_zone: BattlefieldZone = $RootMargin/RootVBox/ContentRow/DirectColumn/DirectPanel/DirectBattlefieldZone as BattlefieldZone
+@onready var _summon_zone: BattlefieldZone = $RootMargin/RootVBox/ContentRow/SummonColumn/SummonPanel/SummonBattlefieldZone as BattlefieldZone
 
-var _source_zone: Zone
-var _direct_zone: BattlefieldZone
-var _summon_zone: BattlefieldZone
 var _direct_space: ZoneSquareGridSpaceModel
 var _summon_space: ZoneSquareGridSpaceModel
+var _direct_base_cell_size := Vector2.ZERO
+var _direct_padding := Vector2.ZERO
+var _summon_base_cell_size := Vector2.ZERO
+var _summon_padding := Vector2.ZERO
 
 func _ready() -> void:
-	_source_zone = ExampleSupport.make_zone(source_panel, "ModeSourceZone", ZoneHBoxLayout.new())
-	ExampleSupport.set_zone_transfer_policy(_source_zone, _make_cards_only_rule_table(ExampleSupport.compact_bilingual("Cards 只接受卡牌，不能接收已生成的棋子", "Cards only accept cards, not spawned pieces")))
-	_direct_space = ZoneSquareGridSpaceModel.new()
-	_direct_space.columns = 3
-	_direct_space.rows = 2
-	_summon_space = ZoneSquareGridSpaceModel.new()
-	_summon_space.columns = 3
-	_summon_space.rows = 2
-	var direct_composite = ZoneCompositeTransferPolicy.new()
-	var direct_rules = _make_cards_only_rule_table(ExampleSupport.compact_bilingual("Direct Place 保持卡牌形态，棋子不能进入", "Direct Place keeps card form, so pieces cannot enter"))
-	var direct_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyTransferPolicy.new(), direct_rules]
-	direct_composite.policies = direct_policies
-	_direct_zone = ExampleSupport.make_battlefield_zone(direct_panel, "DirectBattlefieldZone", _direct_space, direct_composite)
-	var rule_table = ZoneRuleTableTransferPolicyScript.new()
-	var rule = ZoneTransferRuleScript.new()
-	rule.source_item_script = ZoneCardScript
-	rule.target_kind = ZonePlacementTarget.TargetKind.SQUARE
-	rule.transfer_mode = ZoneTransferDecision.TransferMode.SPAWN_PIECE
-	var piece_scene := PackedScene.new()
-	var prototype := ZonePiece.new()
-	piece_scene.pack(prototype)
-	prototype.free()
-	rule.spawn_scene = piece_scene
-	var typed_rules: Array[ZoneTransferRule] = [rule]
-	rule_table.rules = typed_rules
-	var summon_composite = ZoneCompositeTransferPolicy.new()
-	var typed_policies: Array[ZoneTransferPolicy] = [ZoneOccupancyTransferPolicy.new(), rule_table]
-	summon_composite.policies = typed_policies
-	_summon_zone = ExampleSupport.make_battlefield_zone(summon_panel, "SummonBattlefieldZone", _summon_space, summon_composite)
-	for spec in [
-		{"title": "Aegis", "cost": 1, "tags": ["unit"]},
-		{"title": "Bloom", "cost": 2, "tags": ["summon"]},
-		{"title": "Beacon", "cost": 3, "tags": ["spell"]}
-	]:
-		_source_zone.add_item(ExampleSupport.make_card(spec["title"], spec["cost"], spec["tags"], true))
+	_direct_space = ExampleSupport.get_zone_space_model(_direct_zone) as ZoneSquareGridSpaceModel
+	_summon_space = ExampleSupport.get_zone_space_model(_summon_zone) as ZoneSquareGridSpaceModel
+	if _direct_space != null:
+		_direct_base_cell_size = _direct_space.cell_size
+		_direct_padding = _direct_space.padding
+	if _summon_space != null:
+		_summon_base_cell_size = _summon_space.cell_size
+		_summon_padding = _summon_space.padding
 	_source_zone.item_double_clicked.connect(_send_to_direct)
 	_source_zone.item_right_clicked.connect(_send_to_summon)
 	for zone in [_source_zone, _direct_zone, _summon_zone]:
 		zone.item_transferred.connect(_on_item_transferred.bind(zone))
 		zone.drop_rejected.connect(_on_drop_rejected.bind(zone))
-	_set_status(ExampleSupport.compact_bilingual("源区双击进入 Direct Place 并保持卡牌；源区右键进入 Spawn Piece 并生成棋子；生成的棋子默认不能回到 Cards 或 Direct Place", "Double-click in source to enter Direct Place as a card; right-click in source to enter Spawn Piece and become a piece; spawned pieces do not return to Cards or Direct Place by default"))
+	resized.connect(_queue_layout_refresh)
+	visibility_changed.connect(_queue_layout_refresh)
+	_queue_layout_refresh()
+	if ready_status != "":
+		_set_status(ready_status)
+	_schedule_headless_quit_if_root()
 
 func _send_to_direct(item: Control) -> void:
 	if not _source_zone.has_item(item):
@@ -93,12 +86,56 @@ func _set_status(message: String, font_color: Color = NORMAL_STATUS_COLOR) -> vo
 	status_label.text = "%s: %s" % [ExampleSupport.compact_bilingual("最近", "Latest"), message]
 	status_label.add_theme_color_override("font_color", font_color)
 
-func _make_cards_only_rule_table(reject_reason: String) -> ZoneRuleTableTransferPolicy:
-	var rule_table = ZoneRuleTableTransferPolicyScript.new()
-	var rule = ZoneTransferRuleScript.new()
-	rule.source_item_script = ZonePieceScript
-	rule.allowed = false
-	rule.reject_reason = reject_reason
-	var typed_rules: Array[ZoneTransferRule] = [rule]
-	rule_table.rules = typed_rules
-	return rule_table
+func _queue_layout_refresh() -> void:
+	call_deferred("_apply_responsive_layout")
+
+func _apply_responsive_layout() -> void:
+	var mode: StringName = DemoLayoutSupport.mode_for(self)
+	var source_width: float = _pick_mode_value(mode, source_widths)
+	var battlefield_width: float = _pick_mode_value(mode, battlefield_widths)
+	DemoLayoutSupport.ensure_child_order(content_row, [source_column, direct_column, summon_column])
+	DemoLayoutSupport.set_minimum_size(source_column, source_width, 0.0)
+	DemoLayoutSupport.set_minimum_size(direct_column, battlefield_width, 0.0)
+	DemoLayoutSupport.set_minimum_size(summon_column, battlefield_width, 0.0)
+	DemoLayoutSupport.set_minimum_size(source_panel, source_width, _pick_mode_value(mode, source_panel_heights))
+	DemoLayoutSupport.set_minimum_size(direct_panel, battlefield_width, _pick_mode_value(mode, battlefield_panel_heights))
+	DemoLayoutSupport.set_minimum_size(summon_panel, battlefield_width, _pick_mode_value(mode, battlefield_panel_heights))
+	_apply_square_grid_layout(
+		_direct_space,
+		direct_panel.custom_minimum_size,
+		_direct_base_cell_size,
+		_direct_padding,
+		battlefield_min_cell_size
+	)
+	_apply_square_grid_layout(
+		_summon_space,
+		summon_panel.custom_minimum_size,
+		_summon_base_cell_size,
+		_summon_padding,
+		battlefield_min_cell_size
+	)
+	for zone in [_source_zone, _direct_zone, _summon_zone]:
+		if zone != null:
+			zone.refresh()
+
+func _pick_mode_value(mode: StringName, values: Vector3) -> float:
+	return DemoLayoutSupport.pick_float(mode, values.x, values.y, values.z)
+
+func _schedule_headless_quit_if_root() -> void:
+	if DisplayServer.get_name() != "headless":
+		return
+	if get_tree().current_scene != self:
+		return
+	get_tree().create_timer(0.5).timeout.connect(get_tree().quit)
+
+func _apply_square_grid_layout(space_model: ZoneSquareGridSpaceModel, panel_size: Vector2, base_cell_size: Vector2, padding: Vector2, min_cell: float) -> void:
+	if space_model == null:
+		return
+	var columns: int = max(space_model.columns, 1)
+	var rows: int = max(space_model.rows, 1)
+	var inner_width: float = max(1.0, panel_size.x - padding.x * 2.0)
+	var inner_height: float = max(1.0, panel_size.y - padding.y * 2.0)
+	var max_cell_extent: float = max(min(base_cell_size.x, base_cell_size.y), min_cell)
+	var cell_extent: float = clamp(floor(min(inner_width / float(columns), inner_height / float(rows))), min_cell, max_cell_extent)
+	space_model.cell_size = Vector2(cell_extent, cell_extent)
+	space_model.padding = padding
