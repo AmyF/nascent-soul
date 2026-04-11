@@ -20,7 +20,9 @@ Validated on Godot 4.6.1:
 
 ## What The Suite Covers
 
-- core zone state
+- core zone contracts
+- core transfer contracts
+- core runtime resilience and cleanup
 - card-zone interaction
 - battlefield behavior
 - layout visual contracts
@@ -55,6 +57,16 @@ The launcher-facing suite now lives at:
 - [`scenes/tests/suites/demo_smoke_suite.gd`](../scenes/tests/suites/demo_smoke_suite.gd)
 
 It checks the two-entry main menu plus the compatibility shell that swaps between `FreeCell` and `Xiangqi`.
+
+## Core Contract Suites
+
+The addon-core contract coverage now splits into:
+
+- [`scenes/tests/suites/core_state_suite.gd`](../scenes/tests/suites/core_state_suite.gd) for zone/config/runtime-port surface
+- [`scenes/tests/suites/core_transfer_suite.gd`](../scenes/tests/suites/core_transfer_suite.gd) for transfer behavior, signal chains, and drag-finalize flow
+- [`scenes/tests/suites/core_runtime_resilience_suite.gd`](../scenes/tests/suites/core_runtime_resilience_suite.gd) for rejection cleanup, drag visuals, reconciliation, and resilience cases
+
+That keeps the core regression output closer to the way a maintainer reads the addon surface: first the facade, then transfer behavior, then failure and cleanup guarantees.
 
 ## Useful Commands
 

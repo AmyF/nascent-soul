@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/tests/suites/core_state_suite.gd" id="1_h6c6n"]
 
-[node name="CoreStateSuite" type="Control"]
+[node name="CoreZoneContractSuite" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
