@@ -1,5 +1,5 @@
 @tool
-class_name FreeCellSlotLayout extends ZoneLayoutPolicy
+extends ZoneLayoutPolicy
 
 @export var padding_left: float = 1.0
 @export var padding_top: float = 1.0

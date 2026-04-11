@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/showcases/xiangqi/xiangqi_board_overlay.gd" id="1_overlay"]
+[ext_resource type="Script" path="res://scenes/showcases/xiangqi/board/xiangqi_board_overlay.gd" id="1_overlay"]
 [ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="2_zone_config"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_square_grid_space_model.gd" id="3_space_model"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd" id="4_battlefield_layout"]

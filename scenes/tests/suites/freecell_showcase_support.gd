@@ -3,7 +3,7 @@ extends "res://scenes/tests/shared/test_harness.gd"
 # Shared test bodies for the split FreeCell showcase suites.
 
 const FREECELL_SCENE = preload("res://scenes/showcases/freecell/showcase.tscn")
-const FREECELL_HISTORY_SCRIPT = preload("res://scenes/showcases/freecell/freecell_history.gd")
+const FREECELL_HISTORY_SCRIPT = preload("res://scenes/showcases/freecell/state/freecell_history.gd")
 const ZONE_TRANSFER_REQUEST_SCRIPT = preload("res://addons/nascentsoul/model/zone_transfer_request.gd")
 
 func _init() -> void:

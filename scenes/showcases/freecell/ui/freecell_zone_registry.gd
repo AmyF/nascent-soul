@@ -1,9 +1,9 @@
 extends RefCounted
 
 const ExampleZoneSupport = preload("res://scenes/showcases/shared/example_zone_support.gd")
-const FreeCellCardScript = preload("res://scenes/showcases/freecell/freecell_card.gd")
+const FreeCellCardScript = preload("res://scenes/showcases/freecell/cards/freecell_card.gd")
 const ShowcaseZoneLaneViewScript = preload("res://scenes/showcases/shared/ui/showcase_zone_lane_view.gd")
-const FreeCellZonePolicyScript = preload("res://scenes/showcases/freecell/freecell_zone_policy.gd")
+const FreeCellZonePolicyScript = preload("res://scenes/showcases/freecell/rules/freecell_zone_policy.gd")
 
 var _tableau_zones: Array[Zone] = []
 var _free_cell_zones: Array[Zone] = []

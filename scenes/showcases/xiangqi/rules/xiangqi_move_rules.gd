@@ -1,6 +1,6 @@
 extends RefCounted
 
-const XiangqiStateModelScript = preload("res://scenes/showcases/xiangqi/xiangqi_state_model.gd")
+const XiangqiStateModelScript = preload("res://scenes/showcases/xiangqi/state/xiangqi_state_model.gd")
 
 var _state_model = XiangqiStateModelScript.new()
 

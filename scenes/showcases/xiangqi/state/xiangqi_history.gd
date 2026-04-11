@@ -1,6 +1,6 @@
 extends RefCounted
 
-const XiangqiStateModelScript = preload("res://scenes/showcases/xiangqi/xiangqi_state_model.gd")
+const XiangqiStateModelScript = preload("res://scenes/showcases/xiangqi/state/xiangqi_state_model.gd")
 
 var _history_limit: int = 256
 var _history_states: Array = []

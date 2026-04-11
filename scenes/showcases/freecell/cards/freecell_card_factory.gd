@@ -1,7 +1,7 @@
 extends RefCounted
 
-const FreeCellCardScript = preload("res://scenes/showcases/freecell/freecell_card.gd")
-const FreeCellRulesScript = preload("res://scenes/showcases/freecell/freecell_rules.gd")
+const FreeCellCardScript = preload("res://scenes/showcases/freecell/cards/freecell_card.gd")
+const FreeCellRulesScript = preload("res://scenes/showcases/freecell/rules/freecell_rules.gd")
 
 const SUIT_SYMBOLS := {
 	&"clubs": "♣",
