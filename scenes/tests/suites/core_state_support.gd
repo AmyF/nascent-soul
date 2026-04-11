@@ -429,17 +429,17 @@ func _test_transfer_handoff_cleanup() -> void:
 	await _settle_frames(2)
 	_check(_move_item(source_zone, alpha, target_zone, ZonePlacementTarget.linear(0)), "handoff cleanup smoke should move the card into the target zone")
 	await _settle_frames(2)
-	_check(source_zone._runtime_get_transfer_handoff_count() == 0, "source runtime should not retain transfer handoff data after a completed move")
-	_check(target_zone._runtime_get_transfer_handoff_count() == 0, "target runtime should consume transfer handoff data during refresh")
-	target_zone._runtime_set_transfer_handoff(alpha, {"global_position": Vector2(10, 10)})
+	_check(_transfer_handoff_count(source_zone) == 0, "source runtime should not retain transfer handoff data after a completed move")
+	_check(_transfer_handoff_count(target_zone) == 0, "target runtime should consume transfer handoff data during refresh")
+	_set_transfer_handoff(target_zone, alpha, {"global_position": Vector2(10, 10)})
 	target_zone.remove_item(alpha)
 	await _settle_frames(1)
-	_check(target_zone._runtime_get_transfer_handoff_count() == 0, "remove_item should clear any pending handoff for the removed card")
+	_check(_transfer_handoff_count(target_zone) == 0, "remove_item should clear any pending handoff for the removed card")
 	target_zone.add_item(alpha)
 	await _settle_frames(2)
-	target_zone._runtime_set_transfer_handoff(alpha, {"global_position": Vector2(20, 20)})
+	_set_transfer_handoff(target_zone, alpha, {"global_position": Vector2(20, 20)})
 	target_zone.clear_display_state()
-	_check(target_zone._runtime_get_transfer_handoff_count() == 0, "clear_display_state should clear pending handoff data")
+	_check(_transfer_handoff_count(target_zone) == 0, "clear_display_state should clear pending handoff data")
 
 func _test_public_drag_finalize_transfers_between_zones() -> void:
 	var hand_panel = _make_panel("DragFixtureHandPanel", Vector2(24, 24), Vector2(620, 260))
@@ -465,7 +465,7 @@ func _test_public_drag_finalize_transfers_between_zones() -> void:
 		return
 	session.hover_zone = board_zone
 	session.preview_target = ZonePlacementTarget.linear(board_zone.get_item_count())
-	hand_zone._runtime_finalize_drag_session(session)
+	_finalize_drag_session(hand_zone, session)
 	await _settle_frames(3)
 	if DisplayServer.get_name() != "headless":
 		await get_tree().create_timer(0.25).timeout

@@ -1,6 +1,7 @@
 extends Control
 
 const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
+const ZoneRuntimeHooksScript = preload("res://addons/nascentsoul/runtime/zone_runtime_hooks.gd")
 const TargetingSupport = preload("res://scenes/examples/shared/targeting_support.gd")
 const XiangqiBoardOverlayScript = preload("res://scenes/examples/xiangqi/xiangqi_board_overlay.gd")
 const XiangqiBoardRegistryScript = preload("res://scenes/examples/xiangqi/xiangqi_board_registry.gd")
@@ -488,7 +489,11 @@ func _apply_undo_transition(state: Dictionary, transition: Dictionary) -> bool:
 		if captured_coords is not Vector2i:
 			return false
 		var restored_piece = _board.spawn_piece(captured_side, captured_type)
-		_board_zone._runtime_set_transfer_handoff(restored_piece, restore_snapshot)
+		var runtime_hooks = ZoneRuntimeHooksScript.for_zone(_board_zone)
+		if runtime_hooks == null:
+			restored_piece.queue_free()
+			return false
+		runtime_hooks.set_transfer_handoff(restored_piece, restore_snapshot)
 		if not _board_zone.add_item(restored_piece, ZonePlacementTarget.square(captured_coords.x, captured_coords.y)):
 			restored_piece.queue_free()
 			return false

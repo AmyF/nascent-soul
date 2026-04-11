@@ -10,6 +10,7 @@ const TARGETING_ZONE_GROUP := "__NascentSoulZones"
 const ZoneConfigurationWarningsScript := preload("res://addons/nascentsoul/runtime/zone_configuration_warnings.gd")
 const ZoneInternalRootsScript := preload("res://addons/nascentsoul/runtime/zone_internal_roots.gd")
 const ZoneRuntimeBootstrapScript := preload("res://addons/nascentsoul/runtime/zone_runtime_bootstrap.gd")
+const ZoneRuntimePortScript := preload("res://addons/nascentsoul/runtime/zone_runtime_port.gd")
 
 # Public interaction surface.
 signal item_clicked(item: ZoneItemControl)
@@ -82,12 +83,12 @@ func _ready() -> void:
 		resized.connect(resized_callable)
 
 func _exit_tree() -> void:
-	var drag_coordinator = _get_drag_coordinator(false)
+	var drag_coordinator = ZoneRuntimePortScript.resolve_drag_coordinator(self, false)
 	if drag_coordinator != null and drag_coordinator.get_session() != null:
 		var drag_session = drag_coordinator.get_session()
 		if drag_session.source_zone == self or drag_session.hover_zone == self:
 			drag_coordinator.clear_session()
-	var targeting_coordinator = _get_targeting_coordinator(false)
+	var targeting_coordinator = ZoneRuntimePortScript.resolve_targeting_coordinator(self, false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		var session = targeting_coordinator.get_session()
 		if session.source_zone == self or session.candidate.target_zone == self:
@@ -265,49 +266,11 @@ func clear_display_state() -> void:
 	_ensure_services()
 	_render_service.clear_display_state()
 
-func _runtime_get_transfer_handoff_count() -> int:
-	_ensure_services()
-	return _store.get_transfer_handoff_count()
-
-func _runtime_has_transfer_handoff(item: ZoneItemControl) -> bool:
-	_ensure_services()
-	return _store.has_transfer_handoff(item)
-
-func _runtime_set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
-	_ensure_services()
-	_store.set_transfer_handoff(item, snapshot)
-
-func _runtime_clear_transfer_handoffs() -> void:
-	_ensure_services()
-	_store.clear_transfer_handoffs()
-
-# Internal runtime hooks. Coordinators, showcase scaffolding, and implementation
-# tests may use these, but gameplay code should stay on the public Zone surface.
-
-func _runtime_capture_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
-	_ensure_services()
-	return _transfer_service.build_transfer_snapshots(moving_items, drop_position, anchor_item)
-
-func _runtime_resolve_transfer_origin(moving_items: Array[ZoneItemControl]):
-	_ensure_services()
-	return _transfer_service.resolve_programmatic_transfer_global_position(moving_items)
-
-func _runtime_preview_transfer(items: Array[ZoneItemControl], source_zone: Node, placement_target: ZonePlacementTarget, global_position: Vector2, preview_source: ZoneItemControl = null) -> ZoneTransferDecision:
-	_ensure_services()
-	var request = _transfer_service.make_transfer_request(self, source_zone, items, placement_target, global_position)
-	var decision = _transfer_service.resolve_drop_decision(request)
-	var resolved_preview_source = preview_source
-	if resolved_preview_source == null and not items.is_empty():
-		resolved_preview_source = items[0]
-	if _render_service.apply_hover_feedback(items, decision, decision.resolved_target if decision.allowed else ZonePlacementTarget.invalid(), resolved_preview_source):
-		refresh()
-	return decision
-
 func is_targeting() -> bool:
 	return get_targeting_session() != null
 
 func get_drag_session() -> ZoneDragSession:
-	var coordinator = _get_drag_coordinator(false)
+	var coordinator = ZoneRuntimePortScript.resolve_drag_coordinator(self, false)
 	if coordinator == null:
 		return null
 	var session = coordinator.get_session()
@@ -318,7 +281,7 @@ func get_drag_session() -> ZoneDragSession:
 	return null
 
 func get_targeting_session() -> ZoneTargetingSession:
-	var coordinator = _get_targeting_coordinator(false)
+	var coordinator = ZoneRuntimePortScript.resolve_targeting_coordinator(self, false)
 	if coordinator == null:
 		return null
 	var session = coordinator.get_session()
@@ -340,53 +303,6 @@ func get_first_open_target(item: Control) -> ZonePlacementTarget:
 func resolve_target_anchor(target: ZonePlacementTarget) -> Vector2:
 	_ensure_services()
 	return _context.resolve_target_anchor(target)
-
-func _runtime_update_targeting_session(session: ZoneTargetingSession, global_position: Vector2) -> void:
-	_ensure_services()
-	_targeting_service.update_targeting_session(session, global_position)
-
-func _runtime_finalize_targeting_session(session: ZoneTargetingSession) -> void:
-	_ensure_services()
-	_targeting_service.finalize_targeting_session(session)
-
-func _runtime_cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) -> void:
-	_ensure_services()
-	_targeting_service.cancel_targeting_session(session, emit_signal)
-
-func _runtime_clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
-	_ensure_services()
-	_targeting_service.clear_targeting_feedback(emit_clear_signals, source_item)
-
-func _runtime_finalize_drag_session(session: ZoneDragSession = null) -> void:
-	_ensure_services()
-	_transfer_service.finalize_drag_session(session)
-
-# Internal lifecycle wiring.
-func _get_drag_coordinator(create_if_missing: bool = true) -> ZoneDragCoordinator:
-	if not is_inside_tree():
-		return null
-	if create_if_missing:
-		return ZoneDragCoordinator.ensure_for(self)
-	var viewport = get_viewport()
-	if viewport == null:
-		return null
-	var existing = viewport.get_node_or_null(ZoneDragCoordinator.COORDINATOR_NAME)
-	if existing is ZoneDragCoordinator:
-		return existing as ZoneDragCoordinator
-	return null
-
-func _get_targeting_coordinator(create_if_missing: bool = true) -> ZoneTargetingCoordinator:
-	if not is_inside_tree():
-		return null
-	if create_if_missing:
-		return ZoneTargetingCoordinator.ensure_for(self)
-	var viewport = get_viewport()
-	if viewport == null:
-		return null
-	var existing = viewport.get_node_or_null(ZoneTargetingCoordinator.COORDINATOR_NAME)
-	if existing is ZoneTargetingCoordinator:
-		return existing as ZoneTargetingCoordinator
-	return null
 
 func _ensure_services() -> void:
 	if _runtime_bootstrap == null:
@@ -489,7 +405,7 @@ func _handle_items_root_structure_changed() -> void:
 	_ensure_services()
 	_transfer_service.rebuild_items_from_root()
 	_input_service.sync_item_bindings()
-	var coordinator = _get_drag_coordinator(false)
+	var coordinator = ZoneRuntimePortScript.resolve_drag_coordinator(self, false)
 	if coordinator == null or coordinator.get_session() == null:
 		refresh()
 		layout_changed.emit()

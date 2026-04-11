@@ -3,6 +3,7 @@ class_name ZoneTestHarness
 
 const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
 const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
+const ZoneRuntimeHooksScript = preload("res://addons/nascentsoul/runtime/zone_runtime_hooks.gd")
 
 var _checks_run: int = 0
 var _failures: Array[String] = []
@@ -71,15 +72,61 @@ func _drag_session(zone: Zone) -> ZoneDragSession:
 	return zone.get_drag_session() if zone != null else null
 
 func _preview_transfer(target_zone: Zone, source_zone: Node, items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, global_position: Vector2, preview_source: ZoneItemControl = null) -> ZoneTransferDecision:
-	if target_zone == null:
+	var hooks = _runtime_hooks(target_zone)
+	if hooks == null:
 		return ZoneTransferDecision.new()
-	return target_zone._runtime_preview_transfer(items, source_zone, placement_target, global_position, preview_source)
+	return hooks.preview_transfer(items, source_zone, placement_target, global_position, preview_source)
 
 func _capture_transfer_snapshots(zone: Zone, moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
-	return zone._runtime_capture_transfer_snapshots(moving_items, drop_position, anchor_item) if zone != null else {}
+	var hooks = _runtime_hooks(zone)
+	return hooks.capture_transfer_snapshots(moving_items, drop_position, anchor_item) if hooks != null else {}
 
 func _resolve_transfer_origin(zone: Zone, moving_items: Array[ZoneItemControl]):
-	return zone._runtime_resolve_transfer_origin(moving_items) if zone != null else Vector2.ZERO
+	var hooks = _runtime_hooks(zone)
+	return hooks.resolve_transfer_origin(moving_items) if hooks != null else Vector2.ZERO
+
+func _update_targeting_session(zone: Zone, session: ZoneTargetingSession, global_position: Vector2) -> void:
+	var hooks = _runtime_hooks(zone)
+	if hooks != null:
+		hooks.update_targeting_session(session, global_position)
+
+func _finalize_targeting_session(zone: Zone, session: ZoneTargetingSession) -> void:
+	var hooks = _runtime_hooks(zone)
+	if hooks != null:
+		hooks.finalize_targeting_session(session)
+
+func _cancel_targeting_session(zone: Zone, session: ZoneTargetingSession, emit_signal: bool) -> void:
+	var hooks = _runtime_hooks(zone)
+	if hooks != null:
+		hooks.cancel_targeting_session(session, emit_signal)
+
+func _clear_targeting_feedback(zone: Zone, emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
+	var hooks = _runtime_hooks(zone)
+	if hooks != null:
+		hooks.clear_targeting_feedback(emit_clear_signals, source_item)
+
+func _finalize_drag_session(zone: Zone, session: ZoneDragSession = null) -> void:
+	var hooks = _runtime_hooks(zone)
+	if hooks != null:
+		hooks.finalize_drag_session(session)
+
+func _transfer_handoff_count(zone: Zone) -> int:
+	var hooks = _runtime_hooks(zone)
+	return hooks.get_transfer_handoff_count() if hooks != null else 0
+
+func _has_transfer_handoff(zone: Zone, item: ZoneItemControl) -> bool:
+	var hooks = _runtime_hooks(zone)
+	return hooks.has_transfer_handoff(item) if hooks != null else false
+
+func _set_transfer_handoff(zone: Zone, item: ZoneItemControl, snapshot: Dictionary) -> void:
+	var hooks = _runtime_hooks(zone)
+	if hooks != null:
+		hooks.set_transfer_handoff(item, snapshot)
+
+func _clear_transfer_handoffs(zone: Zone) -> void:
+	var hooks = _runtime_hooks(zone)
+	if hooks != null:
+		hooks.clear_transfer_handoffs()
 
 func _managed_control_names(container: Control) -> Array[String]:
 	var names: Array[String] = []
@@ -233,3 +280,6 @@ func _resolve_child_zone(control: Control) -> Zone:
 		if child is Zone:
 			return child as Zone
 	return null
+
+func _runtime_hooks(zone: Zone):
+	return ZoneRuntimeHooksScript.for_zone(zone) if zone != null else null

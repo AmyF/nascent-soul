@@ -4,6 +4,7 @@ class_name ZoneDragCoordinator extends Node
 
 const COORDINATOR_NAME := "__NascentSoulDragCoordinator"
 const CURSOR_PROXY_Z_INDEX := 2048
+const ZoneRuntimeHooksScript = preload("res://addons/nascentsoul/runtime/zone_runtime_hooks.gd")
 
 var active_session: ZoneDragSession = null
 
@@ -17,7 +18,11 @@ func _process(_delta: float) -> void:
 		return
 	var source_zone = active_session.source_zone as Zone
 	if source_zone != null:
-		source_zone._runtime_finalize_drag_session(active_session)
+		var runtime_hooks = ZoneRuntimeHooksScript.for_zone(source_zone)
+		if runtime_hooks != null:
+			runtime_hooks.finalize_drag_session(active_session)
+		else:
+			clear_session()
 	else:
 		clear_session()
 

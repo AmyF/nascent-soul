@@ -196,6 +196,10 @@ static func resolve_drag_coordinator(target_zone, create_if_missing: bool = fals
 	var port = for_zone(target_zone)
 	return port.get_drag_coordinator(create_if_missing) if port != null else null
 
+static func resolve_targeting_coordinator(target_zone, create_if_missing: bool = false):
+	var port = for_zone(target_zone)
+	return port.get_targeting_coordinator(create_if_missing) if port != null else null
+
 static func request_refresh_for(target_zone) -> void:
 	var port = for_zone(target_zone)
 	if port != null:

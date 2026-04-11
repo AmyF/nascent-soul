@@ -5,6 +5,7 @@ class_name ZoneTargetingCoordinator extends Node
 const COORDINATOR_NAME := "__NascentSoulTargetingCoordinator"
 const ZONE_GROUP := "__NascentSoulZones"
 const OVERLAY_LAYER_NAME := "__NascentSoulTargetingLayer"
+const ZoneRuntimeHooksScript = preload("res://addons/nascentsoul/runtime/zone_runtime_hooks.gd")
 
 var active_session: ZoneTargetingSession = null
 var _overlay: Control = null
@@ -24,7 +25,11 @@ func _process(_delta: float) -> void:
 		clear_session(false)
 		return
 	active_session.pointer_global_position = get_viewport().get_mouse_position()
-	source_zone._runtime_update_targeting_session(active_session, active_session.pointer_global_position)
+	var runtime_hooks = ZoneRuntimeHooksScript.for_zone(source_zone)
+	if runtime_hooks == null:
+		clear_session(false)
+		return
+	runtime_hooks.update_targeting_session(active_session, active_session.pointer_global_position)
 	_update_overlay(source_zone)
 
 func _input(event: InputEvent) -> void:
@@ -35,14 +40,22 @@ func _input(event: InputEvent) -> void:
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
 			var source_zone = active_session.source_zone as Zone
 			if source_zone != null:
-				source_zone._runtime_finalize_targeting_session(active_session)
+				var runtime_hooks = ZoneRuntimeHooksScript.for_zone(source_zone)
+				if runtime_hooks != null:
+					runtime_hooks.finalize_targeting_session(active_session)
+				else:
+					clear_session(false)
 			else:
 				clear_session(false)
 			return
 		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
 			var cancel_zone = active_session.source_zone as Zone
 			if cancel_zone != null:
-				cancel_zone._runtime_cancel_targeting_session(active_session, true)
+				var runtime_hooks = ZoneRuntimeHooksScript.for_zone(cancel_zone)
+				if runtime_hooks != null:
+					runtime_hooks.cancel_targeting_session(active_session, true)
+				else:
+					clear_session(false)
 			else:
 				clear_session(false)
 			return
@@ -51,7 +64,11 @@ func _input(event: InputEvent) -> void:
 		if action_event.pressed and action_event.action == &"ui_cancel":
 			var cancel_zone = active_session.source_zone as Zone
 			if cancel_zone != null:
-				cancel_zone._runtime_cancel_targeting_session(active_session, true)
+				var runtime_hooks = ZoneRuntimeHooksScript.for_zone(cancel_zone)
+				if runtime_hooks != null:
+					runtime_hooks.cancel_targeting_session(active_session, true)
+				else:
+					clear_session(false)
 			else:
 				clear_session(false)
 
@@ -96,8 +113,10 @@ func start_targeting(
 	set_process(true)
 	set_process_input(true)
 	if source_zone != null:
-		source_zone._runtime_update_targeting_session(active_session, pointer_global_position)
-		refresh_overlay()
+		var runtime_hooks = ZoneRuntimeHooksScript.for_zone(source_zone)
+		if runtime_hooks != null:
+			runtime_hooks.update_targeting_session(active_session, pointer_global_position)
+			refresh_overlay()
 	return active_session
 
 func clear_session(keep_process_input: bool = false) -> void:
@@ -109,7 +128,9 @@ func clear_session(keep_process_input: bool = false) -> void:
 		return
 	var source_zone = active_session.source_zone as Zone
 	if source_zone != null and is_instance_valid(source_zone):
-		source_zone._runtime_clear_targeting_feedback(false, active_session.source_item)
+		var runtime_hooks = ZoneRuntimeHooksScript.for_zone(source_zone)
+		if runtime_hooks != null:
+			runtime_hooks.clear_targeting_feedback(false, active_session.source_item)
 	active_session.cleanup()
 	active_session = null
 	set_process(false)

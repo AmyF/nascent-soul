@@ -97,13 +97,13 @@ func _test_explicit_begin_targeting_resolves_placement_and_emits_result() -> voi
 	_check(session != null and session.entry_mode == &"explicit", "explicit targeting should store the explicit entry mode")
 	if session == null:
 		return
-	battlefield._runtime_update_targeting_session(session, battlefield.resolve_target_anchor(target))
+	_update_targeting_session(battlefield, session, battlefield.resolve_target_anchor(target))
 	_check(session.candidate.is_placement(), "explicit targeting should resolve empty or occupied board cells as placement candidates")
 	_check(session.decision.allowed, "placement targeting should allow a valid board cell")
 	_check(session.decision.resolved_candidate.placement_target.grid_coordinates == Vector2i(2, 1), "explicit targeting should retain the resolved square coordinates")
 	_check(not preview_candidates.is_empty() and preview_candidates[preview_candidates.size() - 1] != null and preview_candidates[preview_candidates.size() - 1].has_method("describe"), "target preview callbacks should emit candidate objects instead of index semantics")
 	_check(not hover_decisions.is_empty() and hover_decisions[hover_decisions.size() - 1] != null and hover_decisions[hover_decisions.size() - 1].resolved_candidate != null, "target hover callbacks should emit decision objects")
-	battlefield._runtime_finalize_targeting_session(session)
+	_finalize_targeting_session(battlefield, session)
 	await _settle_frames(1)
 	_check(resolved_candidates.size() == 1 and resolved_candidates[0].placement_target.grid_coordinates == Vector2i(2, 1), "releasing a valid targeting session should emit the resolved placement candidate")
 	_check(battlefield.has_item(piece), "targeting resolution should not consume the source piece by default")
@@ -129,7 +129,7 @@ func _test_item_priority_and_placement_only_skip_item_targets() -> void:
 	var session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone._runtime_update_targeting_session(session, piece_anchor)
+	_update_targeting_session(source_zone, session, piece_anchor)
 	_check(session.candidate.is_item() and session.candidate.target_item == target_piece, "entity targeting should take priority over cell targeting when both are allowed")
 	source_zone.cancel_targeting()
 	await _settle_frames(1)
@@ -137,7 +137,7 @@ func _test_item_priority_and_placement_only_skip_item_targets() -> void:
 	session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone._runtime_update_targeting_session(session, piece_anchor)
+	_update_targeting_session(source_zone, session, piece_anchor)
 	_check(session.candidate.is_placement(), "placement-only targeting should skip overlapped items and continue resolving the board cell")
 	_check(session.candidate.placement_target.grid_coordinates == Vector2i(1, 0), "placement-only targeting should still resolve the correct occupied square")
 	source_zone.cancel_targeting()
@@ -161,10 +161,10 @@ func _test_source_and_target_policies_merge_with_reasons() -> void:
 	var session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone._runtime_update_targeting_session(session, ally_piece.global_position + ally_piece.size * 0.5)
+	_update_targeting_session(source_zone, session, ally_piece.global_position + ally_piece.size * 0.5)
 	_check(not session.decision.allowed, "target zone policy should be able to reject a candidate after source policy allows it")
 	_check(session.decision.reason == "Spells in this zone cannot target allies.", "target zone rejection should surface its explicit reason")
-	source_zone._runtime_update_targeting_session(session, enemy_piece.global_position + enemy_piece.size * 0.5)
+	_update_targeting_session(source_zone, session, enemy_piece.global_position + enemy_piece.size * 0.5)
 	_check(session.decision.allowed, "target zone should allow enemy piece candidates after source and target policies both pass")
 	_check(session.decision.resolved_candidate.target_item == enemy_piece, "policy merge should preserve the resolved entity candidate")
 	source_zone.cancel_targeting()
@@ -191,7 +191,7 @@ func _test_overlay_state_and_highlight_cleanup() -> void:
 	var session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone._runtime_update_targeting_session(session, ally_piece.global_position + ally_piece.size * 0.5)
+	_update_targeting_session(source_zone, session, ally_piece.global_position + ally_piece.size * 0.5)
 	var overlay = _find_targeting_overlay()
 	var ally_overlay = ally_piece.get_node_or_null("PieceOverlay") as ColorRect
 	_check(overlay != null and overlay.get_script() == ZoneTargetingOverlayHostScript, "targeting should render through a dedicated overlay host")
@@ -199,7 +199,7 @@ func _test_overlay_state_and_highlight_cleanup() -> void:
 	_check(overlay != null and overlay.get_visual_state() == ZoneTargetingVisualFrame.VisualState.INVALID, "rejected hover candidates should switch the overlay host into the invalid state")
 	_check(overlay != null and overlay.get_debug_layer_keys().has("classic_path"), "classic targeting should expose the classic path layer through the overlay host")
 	_check(ally_overlay != null and ally_overlay.visible and ally_overlay.color.r > ally_overlay.color.g, "invalid item candidates should show the target highlight in an invalid color")
-	source_zone._runtime_update_targeting_session(session, enemy_piece.global_position + enemy_piece.size * 0.5)
+	_update_targeting_session(source_zone, session, enemy_piece.global_position + enemy_piece.size * 0.5)
 	var enemy_overlay = enemy_piece.get_node_or_null("PieceOverlay") as ColorRect
 	_check(overlay != null and overlay.get_visual_state() == ZoneTargetingVisualFrame.VisualState.VALID, "valid hover candidates should switch the overlay host into the valid state")
 	_check(enemy_overlay != null and enemy_overlay.visible and enemy_overlay.color.g > enemy_overlay.color.r, "valid item candidates should show the target highlight in a valid color")

@@ -1,6 +1,7 @@
 extends Control
 
 const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
+const ZoneRuntimeHooksScript = preload("res://addons/nascentsoul/runtime/zone_runtime_hooks.gd")
 const FreeCellCardFactoryScript = preload("res://scenes/examples/freecell/freecell_card_factory.gd")
 const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card.gd")
 const FreeCellHistoryScript = preload("res://scenes/examples/freecell/freecell_history.gd")
@@ -458,10 +459,15 @@ func _restore_state_from_history(state: Dictionary) -> bool:
 func _move_card_for_restore(card: ZoneItemControl, source_zone: Zone, target_zone: Zone, target_index: int) -> bool:
 	if card == null or source_zone == null or target_zone == null:
 		return false
-	var snapshots = source_zone._runtime_capture_transfer_snapshots([card], null, card)
+	var source_hooks = ZoneRuntimeHooksScript.for_zone(source_zone)
+	var target_hooks = ZoneRuntimeHooksScript.for_zone(target_zone)
+	if source_hooks == null or target_hooks == null:
+		return false
+	var moving_items: Array[ZoneItemControl] = [card]
+	var snapshots = source_hooks.capture_transfer_snapshots(moving_items, null, card)
 	if not source_zone.remove_item(card):
 		return false
-	target_zone._runtime_set_transfer_handoff(card, snapshots.get(card, {}))
+	target_hooks.set_transfer_handoff(card, snapshots.get(card, {}))
 	return target_zone.add_item(card, ZonePlacementTarget.linear(target_index))
 
 func _freecell_animation_duration() -> float:
