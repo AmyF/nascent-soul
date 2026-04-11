@@ -46,6 +46,8 @@ func handle_zone_gui_input(event: InputEvent) -> void:
 	if interaction == null:
 		return
 	var targeting_coordinator = input_service.get_targeting_coordinator(false)
+	# While a targeting session is active, pointer input belongs to target choice
+	# instead of background selection-clearing behavior on the zone surface.
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if input_service.handle_keyboard_navigation(event, interaction):
@@ -105,6 +107,8 @@ func handle_mouse_motion(event: InputEventMouseMotion, item: ZoneItemControl) ->
 	has_dragged = true
 	is_pressed = false
 	stop_long_press_timer()
+	# Some interactions reuse the drag gesture to pick a target instead of moving
+	# the item, so targeting gets first refusal before transfer drag starts.
 	if input_service.targeting_service != null and input_service.targeting_service.try_start_drag_targeting(item, event.global_position):
 		return
 	var drag_items = input_service.resolve_drag_items(item)

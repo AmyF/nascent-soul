@@ -18,6 +18,8 @@ func cleanup() -> void:
 func cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit_layout_changed: bool) -> void:
 	session.prune_invalid_items()
 	var involved_zones = _collect_involved_drag_zones(session)
+	# Drag previews and hover state can outlive the source zone while the pointer
+	# is over another zone, so cleanup must sweep every involved zone together.
 	for involved_zone in involved_zones:
 		var render_service = ZoneRuntimePortScript.resolve_render_service(involved_zone)
 		if render_service != null:

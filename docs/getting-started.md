@@ -1,57 +1,52 @@
 # Getting Started
 
-NascentSoul is easiest to understand if you start with three ideas:
+This guide is for your **first successful contact** with NascentSoul.
 
-- `Zone` is the runtime node.
-- `ZoneConfig` is the behavior bundle.
-- `ZoneItemControl` is the managed item base.
+The goal is not to learn every extension seam at once. The goal is to build a small working zone, understand the public types, and know what to read next.
 
-Everything else builds on that.
+## Learn These Three Names First
 
-If you plan to extend the addon itself, or want to understand which types are public vs. internal, read the repo-level [Architecture](../ARCHITECTURE.md) guide before diving into `runtime/`.
+| Type | What it is | Why it matters |
+| --- | --- | --- |
+| `Zone` | The runtime surface | Owns items, input, layout refresh, transfer, and targeting |
+| `ZoneConfig` | The behavior bundle | Decides how a zone lays out, sorts, animates, accepts drops, and resolves targets |
+| `ZoneItemControl` | The managed item base | The base class for what the player sees, selects, drags, or targets |
 
-## Installation
+Two supporting ideas complete the first mental model:
 
-1. Copy `addons/nascentsoul` into your project.
-2. Enable the `NascentSoul` plugin in `Project Settings > Plugins`.
-3. Use the preset configs in `addons/nascentsoul/presets/` to get working zones immediately.
+- `ZonePlacementTarget` describes **where** something should land
+- **transfer** moves or spawns items, while **targeting** chooses without moving the source item yet
 
-Available preset configs:
+If you keep those ideas in mind, most of the public API will feel much more predictable.
 
-- `hand_zone_config.tres`
-- `pile_zone_config.tres`
-- `board_zone_config.tres`
-- `discard_zone_config.tres`
-- `battlefield_square_zone_config.tres`
-- `battlefield_hex_zone_config.tres`
+## Install
 
-## Config Workflow
+1. Copy `addons/nascentsoul/` into your project.
+2. Enable the **NascentSoul** plugin in `Project Settings > Plugins`.
+3. Reopen the project if Godot asks you to.
 
-Pick one of two composition styles:
+The plugin adds three editor actions:
 
-1. **Inspector-first**: assign one of the preset `.tres` files, then duplicate it into a local resource or local subresource before applying scene-specific overrides.
-2. **Script-first**: start from `ZoneConfig.make_card_defaults()` or `ZoneConfig.make_battlefield_defaults()` and use `with_overrides(...)` for the fields you want to replace.
+- `Create Card Zone`
+- `Create Square Battlefield Zone`
+- `Create Hex Battlefield Zone`
 
-```gdscript
-var config := ZoneConfig.make_card_defaults().with_overrides({
-	"layout_policy": ZoneHBoxLayout.new(),
-	"transfer_policy": my_transfer_policy
-})
-hand.config = config
-```
+## Fastest Way To See The Addon Working
 
-## Common Setup Guardrails
+Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and launch **Workflow Board** first.
 
-Keep the built-in zone families and config pieces aligned:
+That starter scene shows the smallest useful public setup in this repository:
 
-- `CardZone` -> `ZoneLinearSpaceModel`
-- `BattlefieldZone` -> `ZoneSquareGridSpaceModel` or `ZoneHexGridSpaceModel`
-- `ZoneBattlefieldLayout` -> board-style grid spaces
-- `ZoneHBoxLayout`, `ZoneHandLayout`, `ZonePileLayout` -> linear spaces
+- three scene-authored `CardZone` nodes
+- two local `ZoneConfig` resources
+- one small example-side transfer rule
+- a thin controller that only seeds data and updates visible status copy
 
-NascentSoul now surfaces these built-in mismatches as editor configuration warnings. If a zone shows warnings in the Inspector, fix that pairing before debugging transfer or targeting behavior.
+If you want to understand the addon from a real scene before writing code, inspect that showcase first and then come back here.
 
-## First Card Zone
+## Your First Card Zone
+
+The simplest first zone is still a card lane.
 
 ```gdscript
 var hand := CardZone.new()
@@ -68,15 +63,19 @@ card.face_up = true
 hand.add_item(card)
 ```
 
-This gives you:
+What you get immediately:
 
 - managed item ownership
 - selection
-- drag/drop
-- layout
+- drag and drop
+- layout + display refresh
 - hover and drag visuals
 
-## First Battlefield
+You did **not** need to manually wire the runtime services yourself. `Zone` handles that behind the public facade.
+
+## Your First Battlefield
+
+Battlefields use the same public API family, but placement is explicit instead of purely ordered.
 
 ```gdscript
 var field := BattlefieldZone.new()
@@ -92,21 +91,50 @@ piece.data.title = "Guardian"
 field.add_item(piece, ZonePlacementTarget.square(1, 1))
 ```
 
-Battlefields use the same zone API, but placement is explicit instead of linear.
+The important difference is the target:
 
-Read the shared target type the same way: ordered zones resolve `ZonePlacementTarget.linear(...)` and expose `linear_index`, while battlefields expose `grid_coordinates` and optional `grid_cell_id`.
+- card lanes usually use `ZonePlacementTarget.linear(...)`
+- battlefields use square or hex coordinates such as `ZonePlacementTarget.square(...)` or `ZonePlacementTarget.hex(...)`
 
-## Editor Workflow
+## Two Configuration Styles
 
-The plugin adds three menu actions:
+### Inspector-first
 
-- `Create Card Zone`
-- `Create Square Battlefield Zone`
-- `Create Hex Battlefield Zone`
+Use this when the zone should be readable from the scene:
 
-Each action creates a zone node, assigns a preset config, and drops it into the edited scene.
+1. assign a preset `.tres`
+2. duplicate it into a local resource or local subresource
+3. override only the fields that differ for this scene
 
-## The Types You Will Use Most
+This is the preferred style for public showcases and for most scene-authored game UIs.
+
+### Script-first
+
+Use this when zones are created dynamically or when you want reusable code-side composition.
+
+```gdscript
+var config := ZoneConfig.make_card_defaults().with_overrides({
+	"layout_policy": ZoneHBoxLayout.new(),
+	"transfer_policy": my_transfer_policy
+})
+
+zone.config = config
+```
+
+Use `ZoneConfig.make_zone_defaults()` when you want a simpler straight lane, and `ZoneConfig.make_battlefield_defaults()` when you want an explicit-cell board.
+
+## Keep The Built-In Pieces Aligned
+
+The built-in zone families, layouts, and space models are meant to match:
+
+- `CardZone` -> `ZoneLinearSpaceModel`
+- `BattlefieldZone` -> `ZoneSquareGridSpaceModel` or `ZoneHexGridSpaceModel`
+- `ZoneHandLayout`, `ZoneHBoxLayout`, `ZoneVBoxLayout`, `ZonePileLayout` -> linear spaces
+- `ZoneBattlefieldLayout` -> grid spaces
+
+NascentSoul surfaces these mismatches as editor configuration warnings. If Godot shows a warning in the Inspector, fix the pairing before debugging rules or visuals.
+
+## Public Types You Will Touch Most Often
 
 - `Zone`
 - `CardZone`
@@ -114,17 +142,20 @@ Each action creates a zone node, assigns a preset config, and drops it into the 
 - `ZoneConfig`
 - `ZonePlacementTarget`
 - `ZoneTransferCommand`
-- `ZoneTargetingIntent`
+- `ZoneTargetingCommand`
+- `ZoneTransferPolicy`
+- `ZoneTargetingPolicy`
 - `ZoneCard`
 - `ZonePiece`
 
 ## Where To Go Next
 
-- Read [Decision Framework](decision-framework.md) if you are unsure which surface to extend.
-- Read [Card Zones](card-zones.md) for linear containers.
-- Read [Battlefields](battlefields.md) for square and hex spaces.
-- Read [Transfers and Targeting](transfers-and-targeting.md) for cross-zone actions and targeting flows.
-- Read [Showcase: Workflow Board](showcase-workflow-board.md) for the smallest useful scene-authored starter.
-- Read [Extending Policies](extending-policies.md) and [Extending Layouts](extending-layouts.md) once the stock presets are no longer enough.
-- Read [Game Implementation Checklist](game-implementation-checklist.md) when you are turning a prototype into a real game scene.
-- Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and walk the public showcases in order: `Workflow Board`, then `FreeCell`, then `Xiangqi`. Open [`scenes/demo.tscn`](../scenes/demo.tscn) only if you specifically want the compatibility shell that keeps the two full game showcases together when launched directly.
+Choose the next document based on your question:
+
+- read [Decision Framework](decision-framework.md) if you are unsure which seam to extend
+- read [Card Zones](card-zones.md) if your UI mainly cares about order
+- read [Battlefields](battlefields.md) if your UI mainly cares about explicit cells
+- read [Transfers and Targeting](transfers-and-targeting.md) if you are deciding between movement and choice
+- read [Showcase: Workflow Board](showcase-workflow-board.md) if you want the smallest real scene to inspect
+- read [Showcase: FreeCell](showcase-freecell.md) or [Showcase: Xiangqi](showcase-xiangqi.md) once you want full reference implementations
+- read [Architecture](../ARCHITECTURE.md) only after the public surface already feels familiar

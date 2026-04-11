@@ -17,6 +17,9 @@ func _init(p_zone, p_store = null, p_config = null, p_display_state_cache = null
 	attach(p_zone, p_store, p_config, p_display_state_cache, p_transfer_staging)
 
 func attach(p_zone, p_store, p_config, p_display_state_cache = null, p_transfer_staging = null) -> void:
+	# The context is a non-owning lens over the current zone/config/runtime state.
+	# Bootstrap reattaches the same context instance so services keep one stable
+	# object while the underlying collaborators are swapped underneath it.
 	zone = p_zone
 	store = p_store
 	config = p_config

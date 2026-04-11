@@ -19,6 +19,8 @@ var transfer_service: ZoneTransferService = null
 var targeting_service: ZoneTargetingService = null
 
 func ensure(zone, config: ZoneConfig) -> void:
+	# ensure() is intentionally idempotent so Zone can re-enter, refresh config,
+	# or lazy-bootstrap peer lookups without rebuilding a brand new service graph.
 	if store == null:
 		store = ZoneStore.new()
 	if display_state_cache == null:
@@ -45,6 +47,8 @@ func ensure(zone, config: ZoneConfig) -> void:
 		runtime_hooks = ZoneRuntimeHooksScript.new(zone, self, runtime_port)
 	else:
 		runtime_hooks.attach(zone, self, runtime_port)
+	# Services stay stable once created; the context/port are what get rebound to
+	# the current zone and config so collaborators all keep the same runtime view.
 	input_service.bind_runtime_services(transfer_service, targeting_service)
 	transfer_service.bind_services(input_service, render_service)
 

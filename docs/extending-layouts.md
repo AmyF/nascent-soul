@@ -1,23 +1,25 @@
 # Extending Layouts
 
-Use this guide when the built-in lane and battlefield layouts are close, but not quite what your game needs.
+Use this guide when the built-in lane or battlefield layouts are close, but not quite right for your game.
 
-## Three Different Responsibilities
+The most important thing to remember is that NascentSoul splits spatial behavior across **three different responsibilities**.
 
-NascentSoul keeps spatial work split across three extension points:
+## Three Responsibilities
 
-| You want to change... | Extend... |
-| --- | --- |
-| where items should be placed in a container | `ZoneLayoutPolicy` |
-| how board targets and anchors are resolved | `ZoneSpaceModel` |
-| how placements are applied visually | `ZoneDisplayStyle` |
+| You want to change... | Extend... | Why |
+| --- | --- | --- |
+| where items should be placed | `ZoneLayoutPolicy` | layout owns placement math |
+| how targets and anchors are resolved in a geometry | `ZoneSpaceModel` | space owns target math |
+| how placements are applied visually | `ZoneDisplayStyle` | display owns motion and visual application |
 
-If you only want different animation or interpolation, do **not** rewrite the layout.  
-If you only want different board geometry, do **not** rewrite the display.
+If you only want different animation, do **not** rewrite the layout.  
+If you only want different geometry, do **not** rewrite the display.
 
 ## Extending `ZoneLayoutPolicy`
 
-`ZoneLayoutPolicy` exposes:
+`ZoneLayoutPolicy` is for placement math inside a container.
+
+Important hooks:
 
 ```gdscript
 func calculate(context: ZoneContext, items: Array[ZoneItemControl], container_size: Vector2, ghost_item: Control = null, ghost_hint = null) -> Array[ZonePlacement]
@@ -27,15 +29,15 @@ func resolve_item_size(item: Control) -> Vector2
 
 ### What `calculate(...)` Should Do
 
-Turn the current item list into `ZonePlacement` values.
+Turn the current render state into `ZonePlacement` values.
 
 Each placement controls:
 
-- `position`
-- `rotation`
-- `scale`
-- `z_index`
-- `instant`
+- position
+- rotation
+- scale
+- z-index
+- whether the placement should apply instantly
 
 If your layout supports drag previews, respect `ghost_item` and `ghost_hint`.
 
@@ -73,9 +75,11 @@ func get_insertion_index(items: Array[ZoneItemControl], _container_size: Vector2
 
 ## Extending `ZoneSpaceModel`
 
-Use `ZoneSpaceModel` when the question is **what target exists in this geometry**.
+Use `ZoneSpaceModel` when the question is:
 
-Important hooks:
+> **What target exists in this geometry?**
+
+Important hooks include:
 
 - `resolve_hover_target(...)`
 - `normalize_target(...)`
@@ -85,7 +89,7 @@ Important hooks:
 - `resolve_target_size(...)`
 - `resolve_target_anchor(...)`
 
-That is usually the right place for:
+This is usually the right place for:
 
 - square-grid math
 - hex-grid math
@@ -94,28 +98,36 @@ That is usually the right place for:
 
 ## Extending `ZoneDisplayStyle`
 
-Use `ZoneDisplayStyle` when the placements are already correct, but you want different application behavior:
+Use `ZoneDisplayStyle` when the placements are already correct, but the way they are applied should change.
+
+Examples:
 
 - tweens
-- snap vs animate rules
+- snap vs. animate rules
 - card-face presentation
 - custom z-index handling during transitions
 
-The surface is intentionally small:
+The core surface stays intentionally small:
 
 ```gdscript
 func apply(context: ZoneContext, placements: Array[ZonePlacement]) -> void
 ```
 
-`ZoneDisplayStyle` should trust the layout's `ZonePlacement`s instead of recomputing layout semantics from scratch.
+`ZoneDisplayStyle` should trust the layout's placements instead of recomputing layout semantics from scratch.
 
 ## Good Design Rules
 
-- Keep layout code focused on placement math.
-- Keep space-model code focused on target math.
-- Keep display code focused on visual application.
-- Reuse `resolve_item_size(...)` instead of hard-coding item dimensions when possible.
-- Prefer starting from a built-in layout or space model and adjusting it.
+- keep layout code focused on placement math
+- keep space-model code focused on target math
+- keep display code focused on visual application
+- reuse `resolve_item_size(...)` instead of hard-coding dimensions when possible
+- start from a built-in layout or space model when you can
+
+## Which Example Matches Which Need?
+
+- use **Workflow Board** when you want to understand a straightforward vertical lane
+- use **FreeCell** when you want to study a richer custom card layout
+- use **Xiangqi** when you want to study explicit-cell board rendering and targeting anchors
 
 ## Good Files To Inspect
 
@@ -123,6 +135,7 @@ func apply(context: ZoneContext, placements: Array[ZonePlacement]) -> void
 - [`addons/nascentsoul/resources/zone_space_model.gd`](../addons/nascentsoul/resources/zone_space_model.gd)
 - [`addons/nascentsoul/resources/zone_display_style.gd`](../addons/nascentsoul/resources/zone_display_style.gd)
 - [`addons/nascentsoul/impl/layouts/zone_hbox_layout.gd`](../addons/nascentsoul/impl/layouts/zone_hbox_layout.gd)
+- [`addons/nascentsoul/impl/layouts/zone_vbox_layout.gd`](../addons/nascentsoul/impl/layouts/zone_vbox_layout.gd)
 - [`addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd`](../addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd)
 - [`addons/nascentsoul/impl/spaces/zone_square_grid_space_model.gd`](../addons/nascentsoul/impl/spaces/zone_square_grid_space_model.gd)
 - [`addons/nascentsoul/impl/spaces/zone_hex_grid_space_model.gd`](../addons/nascentsoul/impl/spaces/zone_hex_grid_space_model.gd)

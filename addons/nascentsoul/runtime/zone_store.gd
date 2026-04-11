@@ -24,6 +24,8 @@ func get_item_target(context: ZoneContext, item: ZoneItemControl) -> ZonePlaceme
 		var existing = item_targets[item]
 		if existing is ZonePlacementTarget:
 			return (existing as ZonePlacementTarget).duplicate_target()
+	# item_targets stores explicit placement chosen by transfer/layout flows. When
+	# no cached target exists, derive one from the current logical order instead.
 	var space_model = context.get_space_model()
 	if space_model == null:
 		return ZonePlacementTarget.invalid()
@@ -74,6 +76,8 @@ func rebuild_items_from_root(context: ZoneContext, items_root: Control) -> bool:
 		if context != null:
 			context.clear_transfer_handoffs()
 		return false
+	# The scene tree becomes authoritative after editor edits, restore flows, and
+	# failed-transfer rollback. Reconcile logical state back to that container.
 	var selection_changed = false
 	var container_items: Array[ZoneItemControl] = []
 	for child in items_root.get_children():

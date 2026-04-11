@@ -1,38 +1,44 @@
 # Card Zones
 
-`CardZone` is the ordered, linear branch of NascentSoul.
+`CardZone` is the ordered branch of NascentSoul.
 
-Use it for:
+Use it when the main question is:
+
+> **What order are these items in?**
+
+Typical uses:
 
 - hands
 - decks
 - discard piles
 - market rows
 - tableau lanes
+- kanban columns
 - board rows
 
-## How A Card Zone Works
+If your UI mainly cares about explicit cells instead of order, read [Battlefields](battlefields.md) instead.
 
-A card zone resolves behavior from its `ZoneConfig`:
+## What Makes A Card Zone Work
 
-- `space_model`
-- `layout_policy`
-- `display_style`
-- `interaction`
-- `sort_policy`
-- `transfer_policy`
-- `drag_visual_factory`
-- `targeting_style`
-- `targeting_policy`
+A `CardZone` still gets its behavior from `ZoneConfig`.
 
-For most card UIs, the default pattern is:
+The most important pieces are:
 
-- linear space model
-- one of the hand/hbox/vbox/pile layouts
-- a card display style
-- a transfer policy that matches the gameplay rules
+| Config field | Why card zones care about it |
+| --- | --- |
+| `space_model` | usually linear target resolution |
+| `layout_policy` | how the lane looks: hand, row, column, or pile |
+| `display_style` | how placements are applied visually |
+| `interaction` | click / drag / keyboard behavior |
+| `sort_policy` | whether idle items auto-sort |
+| `transfer_policy` | what moves or reorders are legal |
+| `drag_visual_factory` | what drag ghosts and proxies look like |
 
-## Basic Example
+The layout changes the appearance.  
+The policy changes the rules.  
+Those are intentionally separate decisions.
+
+## Smallest Working Example
 
 ```gdscript
 var deck := CardZone.new()
@@ -44,7 +50,7 @@ hand.config = load("res://addons/nascentsoul/presets/hand_zone_config.tres")
 add_child(hand)
 ```
 
-## Adding Items
+Add a card:
 
 ```gdscript
 var card := ZoneCard.new()
@@ -55,16 +61,15 @@ card.face_up = true
 hand.add_item(card)
 ```
 
-Items stay managed by the zone runtime. That means:
+## Common Operations
 
-- the zone tracks order
-- the zone owns selection state
-- the layout and display layers can update consistently
-- transfer and targeting systems can inspect the same item model
+### Add an item
 
-## Reordering
+```gdscript
+hand.add_item(card)
+```
 
-If your zone allows manual ordering, you can reorder within the same zone:
+### Reorder inside the same zone
 
 ```gdscript
 hand.perform_transfer(
@@ -76,9 +81,7 @@ hand.perform_transfer(
 )
 ```
 
-Linear card-zone targets resolve to `ZonePlacementTarget.linear(...)`, and the resolved target exposes `linear_index`.
-
-## Moving Between Card Zones
+### Move between card zones
 
 ```gdscript
 deck.perform_transfer(
@@ -91,9 +94,9 @@ deck.perform_transfer(
 )
 ```
 
-The final decision always comes from the destination zone's `transfer_policy`.
+Card-zone targets resolve to `ZonePlacementTarget.linear(...)`, and the resolved target exposes `linear_index`.
 
-## Layout Choices
+## Built-In Layout Choices
 
 NascentSoul ships with four common linear layouts:
 
@@ -104,26 +107,47 @@ NascentSoul ships with four common linear layouts:
 
 Use them to communicate the role of a lane:
 
-- hands should feel fan-shaped and readable
-- piles should feel stacked and compact
-- board rows should feel deliberate and spatially clear
-- list-like lanes should favor vertical or horizontal rhythm
+| Layout | Good fit |
+| --- | --- |
+| `ZoneHandLayout` | readable player hands |
+| `ZoneHBoxLayout` | deliberate horizontal rows |
+| `ZoneVBoxLayout` | list-like lanes and columns |
+| `ZonePileLayout` | stacked compact piles |
 
-## Policies Matter More Than Layout
-
-The visual layout does not define the gameplay rule.
+The visual layout does **not** define the legal move rules.
 
 Examples:
 
-- A pile layout can still accept full drag/drop transfers.
-- A horizontal row can still reject moves based on capacity.
-- A tableau lane can allow multi-card moves if its transfer policy approves them.
+- a pile layout can still allow cross-zone transfers
+- a horizontal row can still reject moves by capacity
+- a vertical column can still allow only one item at a time
 
-That separation is what lets the FreeCell showcase keep all game rules in the example controller while still using the stock zone runtime.
+Those rules belong in the transfer policy, not the layout.
+
+## Inspector-First Pattern
+
+For scene-authored card lanes, the recommended pattern is:
+
+1. start from `hand_zone_config.tres`, `pile_zone_config.tres`, `board_zone_config.tres`, or `discard_zone_config.tres`
+2. duplicate the resource into a local resource or subresource
+3. override only the fields that differ for this scene
+4. keep the actual `CardZone` nodes authored in the scene
+
+That is the pattern used by the public showcases.
+
+## What To Read Next
+
+- read [Transfers and Targeting](transfers-and-targeting.md) if you are deciding whether an action should move or choose
+- read [Extending Policies](extending-policies.md) if the built-in rules are close but not enough
+- read [Extending Layouts](extending-layouts.md) if the lane geometry or visual application needs to change
+- read [Showcase: Workflow Board](showcase-workflow-board.md) for the smallest scene-authored card-lane example
+- read [Showcase: FreeCell](showcase-freecell.md) for a full rules-heavy card-game implementation
 
 ## Good Files To Inspect
 
 - [`addons/nascentsoul/presets/hand_zone_config.tres`](../addons/nascentsoul/presets/hand_zone_config.tres)
 - [`addons/nascentsoul/presets/pile_zone_config.tres`](../addons/nascentsoul/presets/pile_zone_config.tres)
+- [`addons/nascentsoul/impl/layouts/zone_hand_layout.gd`](../addons/nascentsoul/impl/layouts/zone_hand_layout.gd)
+- [`addons/nascentsoul/impl/layouts/zone_vbox_layout.gd`](../addons/nascentsoul/impl/layouts/zone_vbox_layout.gd)
+- [`scenes/showcases/workflow_board/showcase.tscn`](../scenes/showcases/workflow_board/showcase.tscn)
 - [`scenes/showcases/freecell/showcase.tscn`](../scenes/showcases/freecell/showcase.tscn)
-- [`scenes/showcases/freecell/ui/freecell_zone_registry.gd`](../scenes/showcases/freecell/ui/freecell_zone_registry.gd)

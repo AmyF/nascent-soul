@@ -1,6 +1,6 @@
 # Testing
 
-NascentSoul ships with a headless regression runner in:
+NascentSoul ships with a headless regression runner:
 
 - [`scenes/tests/regression_runner.tscn`](../scenes/tests/regression_runner.tscn)
 
@@ -14,36 +14,48 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `646` checks
+- full regression runner passes with **648 checks**
 - headless editor load succeeds with the plugin enabled
-- launcher regression coverage now focuses on the three public showcase entry points plus the compatibility shell
+- the public launcher path is `Workflow Board` -> `FreeCell` -> `Xiangqi`
+
+Run the editor-load check with:
+
+```bash
+godot --headless --editor --quit --path .
+```
 
 ## What The Suite Covers
 
 - core zone contracts
 - core transfer contracts
 - core runtime resilience, cleanup, and targeting edge cases
-- card-zone interaction
 - battlefield behavior
+- interaction smoke behavior
 - layout visual contracts
-- targeting flows and targeting visuals
 - performance smoke checks
-- three-entry launcher navigation, starter showcase, and compatibility-shell coverage
-- FreeCell showcase rules, history, and UI contracts
-- Xiangqi showcase rules and board-surface chrome
+- three-entry launcher navigation
+- Workflow Board starter contracts
+- FreeCell rules, history, and interaction contracts
+- Xiangqi rules and board-surface contracts
 
-## Contract vs. Implementation Coverage
+## Contract Coverage vs. Implementation Coverage
 
 When adding tests:
 
 1. prefer **contract coverage** for public behavior on `Zone`, `ZoneConfig`, commands, signals, presets, and showcase flows
-2. add **implementation-support coverage** only when an internal helper split needs direct protection
+2. add **implementation-support coverage** only when an internal helper split needs focused protection
 
-That keeps refactors free to move internal code around while still protecting the public learning surface.
+That split keeps internal refactors free to move code around while still protecting the public learning surface.
 
-## Showcase Suites
+## Suite Layout
 
-The new showcase-specific suites live at:
+### Core contract suites
+
+- [`scenes/tests/suites/core_state_suite.gd`](../scenes/tests/suites/core_state_suite.gd) — zone/config/runtime-port surface
+- [`scenes/tests/suites/core_transfer_suite.gd`](../scenes/tests/suites/core_transfer_suite.gd) — transfer behavior, routing, and signal chains
+- [`scenes/tests/suites/core_runtime_resilience_suite.gd`](../scenes/tests/suites/core_runtime_resilience_suite.gd) — cleanup, drag visuals, targeting edge cases, and resilience paths
+
+### Showcase suites
 
 - [`scenes/tests/suites/workflow_board_showcase_suite.gd`](../scenes/tests/suites/workflow_board_showcase_suite.gd)
 - [`scenes/tests/suites/freecell_showcase_suite.gd`](../scenes/tests/suites/freecell_showcase_suite.gd)
@@ -51,55 +63,69 @@ The new showcase-specific suites live at:
 - [`scenes/tests/suites/freecell_interaction_suite.gd`](../scenes/tests/suites/freecell_interaction_suite.gd)
 - [`scenes/tests/suites/xiangqi_showcase_suite.gd`](../scenes/tests/suites/xiangqi_showcase_suite.gd)
 
-Workflow Board protects the starter lane counts, reset flow, WIP-limit rule, and embedded launcher layout so the public onboarding path stays stable.
-
-FreeCell is now split into rules, history-foundation flow, and interaction-layout suites so its regression output reads like a teaching path instead of a single monolithic showcase file.
-
-The Xiangqi suite now also protects the scene-authored board surface and its visible turn/status chrome, so visual-first refactors stay covered alongside move legality.
-
-They are intended to protect the examples as first-class reference implementations, not as disposable demos.
-
-## Launcher Suite
-
-The launcher-facing suite now lives at:
+### Launcher + smoke suites
 
 - [`scenes/tests/suites/demo_smoke_suite.gd`](../scenes/tests/suites/demo_smoke_suite.gd)
+- [`scenes/tests/suites/battlefield_smoke_suite.gd`](../scenes/tests/suites/battlefield_smoke_suite.gd)
+- [`scenes/tests/suites/interaction_smoke_suite.gd`](../scenes/tests/suites/interaction_smoke_suite.gd)
+- [`scenes/tests/suites/layout_visual_contract_suite.gd`](../scenes/tests/suites/layout_visual_contract_suite.gd)
+- [`scenes/tests/suites/performance_smoke_suite.gd`](../scenes/tests/suites/performance_smoke_suite.gd)
+- [`scenes/tests/suites/targeting_smoke_suite.gd`](../scenes/tests/suites/targeting_smoke_suite.gd)
+- [`scenes/tests/suites/targeting_visual_framework_suite.gd`](../scenes/tests/suites/targeting_visual_framework_suite.gd)
 
-It checks the three-entry public main menu plus the compatibility shell that swaps between `FreeCell` and `Xiangqi`.
+## What The Showcase Suites Protect
 
-## Core Contract Suites
+### Workflow Board
 
-The addon-core contract coverage now splits into:
+Protects the starter onboarding path:
 
-- [`scenes/tests/suites/core_state_suite.gd`](../scenes/tests/suites/core_state_suite.gd) for zone/config/runtime-port surface
-- [`scenes/tests/suites/core_transfer_suite.gd`](../scenes/tests/suites/core_transfer_suite.gd) for transfer behavior, routing/decision flow, signal chains, and drag-finalize flow
-- [`scenes/tests/suites/core_runtime_resilience_suite.gd`](../scenes/tests/suites/core_runtime_resilience_suite.gd) for rejection cleanup, drag visuals, reconciliation, and resilience cases
+- seeded lane counts and sample cards
+- starter copy
+- WIP-limit rejection behavior
+- reset behavior
+- scrollable lane-body structure
 
-That keeps the core regression output closer to the way a maintainer reads the addon surface: first the facade and runtime-hook boundary, then transfer behavior, then failure and cleanup guarantees.
+### FreeCell
 
-The current core suites intentionally protect the new teaching seams too:
+Protects the card-game reference path:
 
-- `core-zone-contracts` locks the `Zone` facade, the runtime-port/runtime-hook lookup seam, and the new configuration-warning guardrails.
-- `core-transfer-contracts` exercises the routed transfer workflow rather than relying on one monolithic transfer service file.
-- `core-runtime-resilience` now also protects invalid targeting candidates, unrelated-zone teardown, and cleanup guarantees that are easy to break during refactors.
-- `interaction-smoke` and showcase suites keep the input binding / pointer / selection split honest through real drag, click, and long-press behavior.
+- initial deal counts
+- legal and illegal lane moves
+- carry-capacity limits
+- history snapshot dedupe
+- undo restoration
+- compact-layout interaction behavior
+- victory detection
+
+### Xiangqi
+
+Protects the battlefield reference path:
+
+- initial setup and side-to-move state
+- piece-family movement rules
+- capture and turn updates
+- facing-generals prevention
+- checkmate and no-legal-move end states
+- board surface and visible status chrome
 
 ## Useful Commands
 
-Run the headless editor load:
-
-```bash
-godot --headless --editor --quit --path .
-```
-
-Open the project in the editor and run the public launcher:
+Run the public launcher in the editor:
 
 ```bash
 godot --path .
 ```
 
-Use [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) as the first screen. [`scenes/demo.tscn`](../scenes/demo.tscn) is now only a compatibility shell for directly opening `FreeCell` and `Xiangqi` together.
+Use [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) as the first screen.
+
+[`scenes/demo.tscn`](../scenes/demo.tscn) remains only a compatibility shell for directly opening `FreeCell` and `Xiangqi` together.
 
 ## Updating The Baseline
 
-If you add new public behavior or a new showcase, extend the regression runner in the same change. The library and the examples are expected to stay in lockstep.
+If you add new public behavior or a new showcase:
+
+1. extend the regression runner in the same change
+2. update the relevant docs in the same change
+3. refresh the documented baseline after rerunning validation
+
+The library, the examples, and the docs are expected to stay in lockstep.

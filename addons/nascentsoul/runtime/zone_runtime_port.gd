@@ -169,6 +169,8 @@ static func for_zone(target_zone):
 	var existing = _ports.get(target_zone.get_instance_id(), null)
 	if existing != null and existing.zone == target_zone:
 		return existing
+	# Cross-zone helpers resolve peers through the port registry. If a zone has
+	# not finished bootstrapping yet, allow one lazy ensure() before giving up.
 	if target_zone.has_method("_ensure_services"):
 		target_zone._ensure_services()
 		existing = _ports.get(target_zone.get_instance_id(), null)

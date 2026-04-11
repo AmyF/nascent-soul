@@ -3,23 +3,24 @@
 Policies answer two questions:
 
 1. **Is this interaction allowed?**
-2. **If it is allowed, what should it resolve to?**
+2. **If it is allowed, how should it resolve?**
 
-Start here when built-in presets are close, but your game still needs custom rules.
+Read this guide when the built-in presets are close, but your rules are game-specific.
 
 ## Prefer Composition Before Subclassing
 
 Before writing a new script:
 
-- try a built-in preset
-- try a built-in policy
-- try a composite or rule-table style setup
+- try a preset config
+- try a built-in transfer or targeting policy
+- try a composite policy
+- try a rule-table policy
 
-Subclass only when the rule is genuinely game-specific.
+Subclass only when the rule is truly specific to your game or scene.
 
 ## Transfer Policies
 
-`ZoneTransferPolicy` exposes two hooks:
+`ZoneTransferPolicy` exposes two main hooks:
 
 ```gdscript
 func evaluate_drag_start(context: ZoneContext, anchor_item: ZoneItemControl, selected_items: Array[ZoneItemControl])
@@ -28,25 +29,29 @@ func evaluate_transfer(context: ZoneContext, request: ZoneTransferRequest) -> Zo
 
 ### `evaluate_drag_start(...)`
 
-Use this when you need to decide:
+Use this hook when you need to decide:
 
-- whether the drag may begin
-- which items are actually part of the drag
+- whether the drag may start
+- which items actually belong to the drag
 
-Return `ZoneDragStartDecision` to allow, reject, or narrow the dragged set.
+Return a `ZoneDragStartDecision` to:
+
+- allow
+- reject
+- narrow the dragged set
 
 ### `evaluate_transfer(...)`
 
-Use this when you need to decide:
+Use this hook when you need to decide:
 
 - whether the drop is legal
-- which target should actually be used
-- whether the transfer should spawn a piece instead of directly moving the item
+- whether the target should be rewritten
+- whether the transfer should spawn a different item
 
-The request gives you:
+The request gives you the important context:
 
-- `request.target_zone`
 - `request.source_zone`
+- `request.target_zone`
 - `request.items`
 - `request.placement_target`
 - `request.global_position`
@@ -74,7 +79,7 @@ func evaluate_transfer(context: ZoneContext, request: ZoneTransferRequest) -> Zo
 
 ## Targeting Policies
 
-`ZoneTargetingPolicy` exposes one hook:
+`ZoneTargetingPolicy` exposes one main hook:
 
 ```gdscript
 func evaluate_target(context: ZoneContext, request: ZoneTargetRequest) -> ZoneTargetDecision
@@ -83,8 +88,8 @@ func evaluate_target(context: ZoneContext, request: ZoneTargetRequest) -> ZoneTa
 Use it when you need to decide:
 
 - whether the current candidate is valid
-- whether the candidate should be rewritten to a more specific resolved target
-- what hover rejection message should be shown
+- whether the candidate should be rewritten
+- what rejection reason should be surfaced to the player
 
 The request gives you:
 
@@ -94,12 +99,12 @@ The request gives you:
 - `request.candidate`
 - `request.global_position`
 
-Targeting evaluation happens in two stages:
+Targeting evaluation usually happens in two stages:
 
-1. the source-side `ZoneTargetingIntent.policy`
-2. the target zone's `ZoneTargetingPolicy`
+1. the source-side intent policy says what the action wants
+2. the destination zone's targeting policy says what the zone accepts
 
-That split lets an ability describe **what it wants**, while the destination zone still controls **what it accepts**.
+That split lets an ability describe intent without taking ownership of the destination zone's rules.
 
 ### Minimal Targeting Policy Example
 
@@ -117,28 +122,39 @@ func evaluate_target(_context: ZoneContext, request: ZoneTargetRequest) -> ZoneT
 
 ## Good Policy Design Rules
 
-- Keep policies **deterministic** and **side-effect light**.
-- Read state from `context`, `request`, item metadata, or your own exported configuration.
-- Return a decision instead of mutating unrelated scene state.
-- Keep UI copy short and actionable when returning `reason`.
-- Put turn logic, scoring, deck generation, and win conditions in the game controller, not in the policy.
+- keep policies deterministic
+- read state from `context`, `request`, exports, and item metadata
+- return a decision instead of mutating unrelated scene state
+- keep rejection messages short and actionable
+- leave turn flow, scoring, history, and win logic in the game controller
 
-## When To Return Metadata
+Policies should answer **can this happen?** and **how does it resolve?**  
+They should not quietly become your game's central state machine.
 
-Both `ZoneTransferDecision` and `ZoneTargetDecision` expose `metadata`.
+## When To Use Decision Metadata
 
-Use it when you want downstream code or visuals to know extra rule information, for example:
+`ZoneTransferDecision` and `ZoneTargetDecision` both expose `metadata`.
+
+Use metadata when downstream code or visuals need extra rule information, for example:
 
 - why a target is special
-- which movement mode was chosen
-- whether an ability upgraded the resolved target
+- which move mode was chosen
+- whether a target was upgraded or normalized
 
-Do not use metadata as a hidden transport for broad scene mutation.
+Do **not** use metadata as a hidden transport for broad scene mutation.
+
+## Which References Should You Read?
+
+- read **Workflow Board** for the smallest example-side transfer policy
+- read **FreeCell** for a richer card-lane transfer policy
+- read **Xiangqi** for targeting-heavy rule flow
 
 ## Good Files To Inspect
 
 - [`addons/nascentsoul/resources/zone_transfer_policy.gd`](../addons/nascentsoul/resources/zone_transfer_policy.gd)
 - [`addons/nascentsoul/resources/zone_targeting_policy.gd`](../addons/nascentsoul/resources/zone_targeting_policy.gd)
+- [`addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd`](../addons/nascentsoul/impl/permissions/zone_capacity_transfer_policy.gd)
+- [`addons/nascentsoul/impl/permissions/zone_composite_transfer_policy.gd`](../addons/nascentsoul/impl/permissions/zone_composite_transfer_policy.gd)
+- [`scenes/showcases/workflow_board/workflow_wip_limit_policy.gd`](../scenes/showcases/workflow_board/workflow_wip_limit_policy.gd)
 - [`scenes/showcases/freecell/rules/freecell_zone_policy.gd`](../scenes/showcases/freecell/rules/freecell_zone_policy.gd)
 - [`scenes/showcases/xiangqi/rules/xiangqi_target_policy.gd`](../scenes/showcases/xiangqi/rules/xiangqi_target_policy.gd)
-- [`scenes/showcases/xiangqi/showcase.gd`](../scenes/showcases/xiangqi/showcase.gd)

@@ -1,19 +1,19 @@
 # Transfers And Targeting
 
-NascentSoul separates movement from choice.
+NascentSoul separates **movement** from **choice**.
 
-That is one of the most important ideas in the addon.
+That split is one of the most important ideas in the addon.
 
 ## Transfer
 
-Use transfer when the item should:
+Use transfer when the source item should:
 
+- move within a zone
 - move to another zone
-- move within the same zone
-- land on a specific cell
-- be transformed into another runtime item such as a spawned piece
+- land on a specific battlefield cell
+- spawn or deploy into another runtime item
 
-The main entry point is `ZoneTransferCommand`.
+The public entry point is `ZoneTransferCommand`.
 
 ```gdscript
 hand.perform_transfer(
@@ -21,21 +21,30 @@ hand.perform_transfer(
 		hand,
 		board,
 		[card],
-		ZonePlacementTarget.linear(board.get_item_count())
+		ZonePlacementTarget.square(2, 1)
 	)
 )
 ```
 
-Resolved transfer targets stay explicit: ordered zones expose `linear_index`, while battlefields keep `grid_coordinates`.
+### What resolves a transfer?
 
-Policies decide whether the transfer is allowed and how it resolves.
+A transfer normally passes through two public concepts:
 
-Common transfer policy patterns:
+1. the **placement target** you requested
+2. the destination zone's **transfer policy**
+
+That policy decides:
+
+- whether the move is legal
+- whether the target should be rewritten
+- whether the move should spawn or transform instead of directly inserting the same item
+
+Common policy patterns:
 
 - allow-all
 - capacity-limited
-- source-restricted
 - occupancy-limited
+- source-restricted
 - composite
 - rule-table
 
@@ -45,9 +54,9 @@ Use targeting when the source item should stay where it is, but the player still
 
 - another item
 - a board cell
-- an item or a cell, depending on the action
+- an item-or-cell candidate for an ability
 
-The main entry point is `ZoneTargetingIntent`.
+The public entry points are `ZoneTargetingIntent` and `ZoneTargetingCommand`.
 
 ```gdscript
 var intent := ZoneTargetingIntent.new()
@@ -61,40 +70,63 @@ zone.begin_targeting(
 )
 ```
 
-The result arrives through the zone's targeting signals. Your gameplay code decides what to do with it.
+The result arrives through targeting signals. Your gameplay code then decides what that choice means.
 
-## Visual Styles
+## A Good Rule Of Thumb
 
-NascentSoul ships with built-in targeting style presets:
+Choose **transfer** when:
 
-- `Classic Arrow`
-- `Arcane Bolt`
-- `Strike Vector`
-- `Tactical Beam`
+- the action changes ownership or placement
+- the player is directly moving an item
+- the board should update immediately if the move is legal
 
-Preset resources live in `addons/nascentsoul/presets/targeting/`.
+Choose **targeting** when:
 
-You can set a default style on the zone config or override the style for one targeting session via `ZoneTargetingIntent.style_override`.
+- the player is choosing before the effect resolves
+- the source item should stay put during the preview loop
+- you want richer candidate feedback before committing the action
 
-## When To Use Which
+In short:
 
-Choose transfer when:
+- **transfer** = move now
+- **targeting** = choose now, resolve meaning afterward
 
-- the card should be played into a lane
-- the piece should move to another cell
-- the item should change zones or spawn something
+## Placement Targets Stay Explicit
 
-Choose targeting when:
+NascentSoul keeps resolved targets explicit instead of hiding them in lane-specific code.
 
-- a spell points at a target
-- a piece chooses a destination as part of a separate rule evaluation step
-- an ability needs a richer preview loop before resolution
+- ordered zones expose `linear_index`
+- battlefields expose `grid_coordinates`
+- space models may also assign `grid_cell_id`
 
-The Xiangqi showcase is a good example of explicit targeting driving legal move previews, while the final board update is still handled by gameplay logic.
+That is why the same API family can support both card lanes and battlefields without pretending they are the same geometry.
+
+## Targeting Visual Styles
+
+NascentSoul ships with built-in targeting style presets in `addons/nascentsoul/presets/targeting/`.
+
+These styles control how the targeting session looks, not whether the candidate is valid.
+
+You can:
+
+- assign a default targeting style on `ZoneConfig`
+- override the style for one targeting session with `ZoneTargetingIntent.style_override`
+
+## Which Showcase Teaches What?
+
+- **Workflow Board** teaches transfer with a tiny example-side policy
+- **FreeCell** teaches transfer-heavy game rules on card lanes
+- **Xiangqi** teaches explicit target choice and board-resolution feedback
+
+If you are unsure whether an action should be transfer or targeting, Xiangqi is the clearest reference for the targeting side of the split.
 
 ## Good Files To Inspect
 
 - [`addons/nascentsoul/model/zone_transfer_command.gd`](../addons/nascentsoul/model/zone_transfer_command.gd)
 - [`addons/nascentsoul/model/zone_targeting_command.gd`](../addons/nascentsoul/model/zone_targeting_command.gd)
+- [`addons/nascentsoul/model/zone_targeting_intent.gd`](../addons/nascentsoul/model/zone_targeting_intent.gd)
+- [`addons/nascentsoul/resources/zone_transfer_policy.gd`](../addons/nascentsoul/resources/zone_transfer_policy.gd)
+- [`addons/nascentsoul/resources/zone_targeting_policy.gd`](../addons/nascentsoul/resources/zone_targeting_policy.gd)
+- [`scenes/showcases/workflow_board/workflow_wip_limit_policy.gd`](../scenes/showcases/workflow_board/workflow_wip_limit_policy.gd)
 - [`scenes/showcases/freecell/showcase.gd`](../scenes/showcases/freecell/showcase.gd)
 - [`scenes/showcases/xiangqi/showcase.gd`](../scenes/showcases/xiangqi/showcase.gd)

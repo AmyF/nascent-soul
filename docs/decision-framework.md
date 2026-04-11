@@ -1,139 +1,165 @@
 # Decision Framework
 
-Use this guide when you are deciding **which NascentSoul surface to extend**.
+Use this guide when you already know the basic public types and now need to decide:
 
-## Choose In This Order
+- which kind of zone to use
+- whether to stay Inspector-first or move to code
+- which extension seam owns the behavior you want
+- whether code belongs in the addon layer or in your game / example layer
 
-1. **Zone family**: `CardZone` or `BattlefieldZone`
-2. **Config workflow**: Inspector-first or script-first
-3. **Workflow type**: transfer or targeting
-4. **Extension seam**: policy, layout, space, display, drag visuals, interaction, or sorting
-5. **Responsibility split**: addon runtime or game/example controller
+## Step 1: What Kind Of Surface Are You Building?
 
-## 1. Pick The Zone Family
+### Use `CardZone` when order is the main idea
 
-Choose `CardZone` when your items mainly care about **order**:
+Typical examples:
 
 - hands
 - decks
 - discard piles
-- shops
+- market rows
 - tableau lanes
+- kanban-style columns
 
-Choose `BattlefieldZone` when your items mainly care about **explicit cells**:
+### Use `BattlefieldZone` when explicit cells are the main idea
 
-- square grids
-- hex grids
-- tactics boards
+Typical examples:
+
+- square boards
+- hex boards
+- tactics maps
 - chess-like movement spaces
 
-If your UI has both, use both. NascentSoul is designed for mixed card-and-board flows.
+If your game has both, use both. NascentSoul is designed for mixed card-and-board flows.
 
-## 2. Pick The Config Workflow
+## Step 2: Should The Scene Explain Itself?
 
-### Inspector-first
-
-Use this when:
+### Choose Inspector-first when:
 
 - the zone is mostly scene-authored
-- artists or designers should be able to inspect it directly
-- you want `.tscn` and local subresources to explain the setup
+- designers should be able to inspect it directly
+- you want `.tscn` + local resources to explain the setup
+- the zone belongs to a reusable showcase or a readable game scene
 
 Recommended pattern:
 
-1. assign a preset `.tres`
+1. start from a preset `.tres`
 2. duplicate it into a local resource or local subresource
 3. override only the fields that differ for this scene
 
-### Script-first
+### Choose script-first when:
 
-Use this when:
-
-- the zone is created dynamically
+- zones are created dynamically
 - variants are generated at runtime
 - you want reusable config composition helpers in code
 
-Recommended pattern:
+Typical starting points:
 
-```gdscript
-var config := ZoneConfig.make_card_defaults().with_overrides({
-	"layout_policy": ZoneHBoxLayout.new(),
-	"transfer_policy": my_transfer_policy
-})
-zone.config = config
-```
+- `ZoneConfig.make_card_defaults()`
+- `ZoneConfig.make_zone_defaults()`
+- `ZoneConfig.make_battlefield_defaults()`
 
-## 3. Choose Transfer Or Targeting
+## Step 3: Are You Changing Movement Or Choice?
 
-Use **transfer** when the source item should move or spawn:
+### Choose transfer when the item should move or spawn
 
-- reorder within a lane
-- move between zones
-- place onto a board cell
-- deploy a card and spawn a piece
+Use transfer for:
 
-Use **targeting** when the source item should stay put while the player chooses:
+- reordering within a lane
+- moving between zones
+- placing an item onto a board cell
+- deploying a card that becomes another item
 
-- another item
-- a board cell
-- an item-or-cell candidate for an ability
+Public surface:
+
+- `ZoneTransferCommand`
+- `ZoneTransferPolicy`
+- `ZoneTransferDecision`
+
+### Choose targeting when the source should stay put while the player chooses
+
+Use targeting for:
+
+- selecting another item
+- selecting a board cell
+- choosing from item-or-cell candidates for an ability
+
+Public surface:
+
+- `ZoneTargetingCommand`
+- `ZoneTargetingIntent`
+- `ZoneTargetingPolicy`
+- `ZoneTargetDecision`
 
 Rule of thumb:
 
 - **transfer** changes ownership or placement
-- **targeting** chooses first, then your gameplay code decides what happens next
+- **targeting** chooses first, then your gameplay code decides what happens
 
-## 4. Pick The Right Extension Seam
+## Step 4: Which Extension Seam Owns The Change?
 
-| If you want to change... | Extend... | Why |
+| You want to change... | Extend... | Why |
 | --- | --- | --- |
-| Whether a drag or drop is allowed | `ZoneTransferPolicy` | It owns drag-start and transfer decisions |
-| Whether a candidate is targetable | `ZoneTargetingPolicy` | It owns targeting decisions |
-| Where items are arranged in a lane | `ZoneLayoutPolicy` | It turns items into `ZonePlacement`s |
-| How placements are applied visually | `ZoneDisplayStyle` | It owns motion and visual application |
-| How drag ghosts or cursor proxies look | `ZoneDragVisualFactory` | It owns preview visuals |
-| How targets and anchors are resolved in space | `ZoneSpaceModel` | It owns board geometry and hover targets |
-| How selection / keyboard gestures behave | `ZoneInteraction` | It configures input behavior without rewriting runtime code |
-| How idle items auto-sort | `ZoneSortPolicy` | It owns deterministic ordering when sorting is enabled |
+| whether a drag or drop is allowed | `ZoneTransferPolicy` | transfer legality and resolution belong here |
+| whether a candidate is valid for targeting | `ZoneTargetingPolicy` | targeting acceptance belongs here |
+| where items should be placed | `ZoneLayoutPolicy` | layout owns placement math |
+| what target exists in a space | `ZoneSpaceModel` | geometry and target normalization belong here |
+| how placements are applied visually | `ZoneDisplayStyle` | motion and visual application belong here |
+| how drag ghosts or cursor proxies look | `ZoneDragVisualFactory` | preview visuals belong here |
+| how idle items auto-sort | `ZoneSortPolicy` | deterministic reordering belongs here |
+| how click / keyboard / drag toggles behave | `ZoneInteraction` | input configuration belongs here |
 
-## 5. Keep The Right Code In The Right Layer
+If you only want different animation, do **not** rewrite the layout.  
+If you only want different geometry, do **not** rewrite the display.  
+If you only want different legality, do **not** rewrite the controller.
 
-Put this in the **addon/runtime surface**:
+## Step 5: Which Layer Should Own The Code?
 
-- reusable layout logic
+Put code in the **addon layer** when it is reusable across many games:
+
+- reusable layouts
 - reusable transfer rules
 - reusable targeting rules
 - reusable drag visuals
 - reusable board geometry
+- reusable item bases
 
-Put this in the **game controller or example scene**:
+Put code in the **game or showcase layer** when it gives the rules meaning:
 
 - turn order
-- scoring
 - deck setup
-- card text interpretation
-- win/lose state
+- scoring
+- win / lose state
 - showcase-specific UI copy
+- history / undo models
+- seeded scenario setup
 
 The addon should answer **how zones behave**.  
 Your game code should answer **what the game means**.
 
-## Suggested Learning Path
+## Step 6: Which Reference Should You Read?
 
-Read and run things in this order:
+Start with the smallest example that matches your question:
 
-1. [Getting Started](getting-started.md)
-2. [Card Zones](card-zones.md) or [Battlefields](battlefields.md)
-3. [Transfers and Targeting](transfers-and-targeting.md)
-4. [Extending Policies](extending-policies.md)
-5. [Extending Layouts](extending-layouts.md)
-6. [Game Implementation Checklist](game-implementation-checklist.md)
-7. [Architecture](../ARCHITECTURE.md)
+1. **`Workflow Board`** — smallest useful scene-authored example with one tiny custom transfer rule
+2. **`FreeCell`** — full card-game example with rules, history, and scene-authored lanes
+3. **`Xiangqi`** — full battlefield example with explicit placement targets, targeting, and turn-based rule orchestration
 
-Then walk the public main-menu showcases in order:
+Then jump to the focused guide that matches the seam:
 
-1. `Workflow Board`
-2. `FreeCell`
-3. `Xiangqi`
+- [Card Zones](card-zones.md)
+- [Battlefields](battlefields.md)
+- [Transfers and Targeting](transfers-and-targeting.md)
+- [Extending Policies](extending-policies.md)
+- [Extending Layouts](extending-layouts.md)
 
-Use `Workflow Board` for the shortest scene/config/policy example, then move to the two full game showcases. For smaller transfer/layout/targeting questions, use the focused docs above instead of looking for the old deleted demo scenes.
+## One Practical Checklist
+
+Before adding new code, ask:
+
+1. is this an ordered lane or an explicit-cell board?
+2. can I explain the setup directly in the scene?
+3. is this a transfer problem or a targeting problem?
+4. am I changing policy, layout, space, display, drag visuals, sorting, or input?
+5. is this reusable library behavior, or just this game's meaning?
+
+If those answers are clear, the implementation path is usually clear too.

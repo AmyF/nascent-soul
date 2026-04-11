@@ -135,6 +135,8 @@ func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl],
 	var original_targets: Dictionary = {}
 	for item in moving_items:
 		original_targets[item] = store.get_item_target(context, item)
+	# Source-side state is stripped first so both plain transfers and spawn-mode
+	# transfers can share one rollback path if destination insertion fails.
 	for item in moving_items:
 		selection_changed = remove_item_from_state(item, false, false) or selection_changed
 		clear_item_visual_state(item, false)
@@ -142,6 +144,9 @@ func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl],
 		if from_index >= 0:
 			removed_indices[item] = from_index
 	if resolved_decision.transfer_mode == ZoneTransferDecision.TransferMode.SPAWN_PIECE:
+		# Spawn-mode transfers do not keep the original runtime items. The
+		# destination either inserts replacement items, or the source items are
+		# restored through the same failed-transfer rollback used by normal moves.
 		var spawned_items = _build_spawned_items(target_context, moving_items, resolved_decision, final_target)
 		if spawned_items.is_empty():
 			target_transfer.emit_drop_rejected_items(moving_items, source_zone, "No spawn item could be created.")
@@ -231,6 +236,8 @@ func insert_transferred_items(moving_items: Array[ZoneItemControl], placement_ta
 
 func restore_failed_transfer(moving_items: Array[ZoneItemControl], original_targets: Dictionary) -> void:
 	var source_root = zone.get_items_root()
+	# Rebuild from the actual scene tree because a failed cross-zone insert may
+	# already have reparented some items before the destination rejected them.
 	for item in moving_items:
 		if not is_instance_valid(item):
 			continue

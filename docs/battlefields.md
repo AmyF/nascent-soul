@@ -2,39 +2,59 @@
 
 `BattlefieldZone` is the spatial branch of NascentSoul.
 
-Use it when items must land on explicit cells instead of a single linear order.
+Use it when the main question is:
 
-## Space Models
+> **Which cell does this item occupy?**
+
+Typical uses:
+
+- square boards
+- hex boards
+- tactics maps
+- chess-like movement spaces
+- deployment grids
+
+If your UI mainly cares about order instead of explicit cells, read [Card Zones](card-zones.md) instead.
+
+## What Makes A Battlefield Different
+
+Battlefields still use `Zone`, `ZoneConfig`, and `ZoneItemControl`.
+
+The difference is that placement is no longer just a linear insert index.
+
+Important pieces:
+
+| Config field | Why battlefields care about it |
+| --- | --- |
+| `space_model` | defines board geometry and target normalization |
+| `layout_policy` | turns targets into placements across the board |
+| `display_style` | applies placements visually |
+| `transfer_policy` | decides whether a cell can accept the move |
+| `targeting_policy` | decides whether a candidate cell or item is targetable |
+
+The built-in battlefield pattern is:
+
+- grid space model
+- battlefield layout
+- occupancy-aware transfer rules
+
+## Built-In Space Models
 
 NascentSoul ships with:
 
 - `ZoneSquareGridSpaceModel`
 - `ZoneHexGridSpaceModel`
 
-These models define board geometry. The battlefield runtime then uses that geometry for:
+These models answer questions such as:
 
-- placement targets
-- occupancy checks
-- render positioning
-- hover previews
-- target candidates
+- what target is under the pointer?
+- how should a target be normalized?
+- where should this item render?
+- what anchor should a targeting beam use?
 
-## Placement Targets
+That is why battlefields feel more spatial than card lanes without needing a different public API family.
 
-Battlefields use `ZonePlacementTarget` instead of only linear insert indices.
-
-Examples:
-
-```gdscript
-ZonePlacementTarget.square(2, 1)
-ZonePlacementTarget.hex(3, 2)
-```
-
-Battlefield targets expose `grid_coordinates`, and space models can also attach a stable `grid_cell_id` when the board needs a named cell identity.
-
-That is the core difference between `CardZone` and `BattlefieldZone`.
-
-## Basic Example
+## Smallest Working Example
 
 ```gdscript
 var field := BattlefieldZone.new()
@@ -48,9 +68,18 @@ piece.data.title = "Guardian"
 field.add_item(piece, ZonePlacementTarget.square(1, 1))
 ```
 
-## Moving Inside A Battlefield
+Common targets:
 
-Battlefields can also move items within the same zone:
+```gdscript
+ZonePlacementTarget.square(2, 1)
+ZonePlacementTarget.hex(3, 2)
+```
+
+Resolved battlefield targets expose `grid_coordinates`, and a space model may also assign a stable `grid_cell_id`.
+
+## Moving Inside The Same Battlefield
+
+Battlefields can still move items within the same zone:
 
 ```gdscript
 field.perform_transfer(
@@ -63,46 +92,61 @@ field.perform_transfer(
 )
 ```
 
-This is the foundation used by the Xiangqi showcase.
+This is the core public operation behind board movement. The Xiangqi showcase uses the same API family even though its legal-move rules live in example-side code.
 
-## Occupancy And Rule Enforcement
+## Occupancy, Deployment, And Spawn Behavior
 
 Battlefields often combine:
 
 - `ZoneOccupancyTransferPolicy`
 - composite transfer policies
-- rule-table policies
+- rule-table transfer policies
 
-This lets you say things like:
+That lets you express things like:
 
 - one item per cell
 - cards may enter, pieces may not
-- cards may enter and spawn pieces
-- pieces can move between battlefields of the same family
+- only certain sides may occupy certain cells
+- a card may deploy and become a piece instead of remaining a card
 
-## Card To Piece Spawning
+## Card-To-Piece Spawning
 
 A destination battlefield can consume a `ZoneCard` and insert a `ZonePiece` instead.
 
-That happens when the destination transfer policy returns a `SPAWN_PIECE` decision for the transfer.
+That happens when the destination transfer policy returns a spawn-oriented transfer decision.
 
-This is useful for:
+This pattern is useful for:
 
-- summons
-- tactics games with hand-to-board deployment
-- ability cards that become units
+- deployment from hand to board
+- summon cards
+- tactics games with card-to-piece conversion
 
-## Square And Hex Presets
+The public surface is still the same: a transfer command is issued, then the policy decides how it resolves.
 
-Start with:
+## Inspector-First Pattern
 
-- [`addons/nascentsoul/presets/battlefield_square_zone_config.tres`](../addons/nascentsoul/presets/battlefield_square_zone_config.tres)
-- [`addons/nascentsoul/presets/battlefield_hex_zone_config.tres`](../addons/nascentsoul/presets/battlefield_hex_zone_config.tres)
+Start from:
 
-Then swap policies or styles as needed.
+- [`battlefield_square_zone_config.tres`](../addons/nascentsoul/presets/battlefield_square_zone_config.tres)
+- [`battlefield_hex_zone_config.tres`](../addons/nascentsoul/presets/battlefield_hex_zone_config.tres)
+
+Then duplicate locally and override only what the scene needs.
+
+This keeps the scene readable while still making the board behavior explicit in the Inspector.
+
+## What To Read Next
+
+- read [Transfers and Targeting](transfers-and-targeting.md) if you are deciding whether a move should be direct transfer or a two-stage target choice
+- read [Extending Policies](extending-policies.md) if cell legality or targeting acceptance must change
+- read [Extending Layouts](extending-layouts.md) if board geometry, placement math, or visual application must change
+- read [Showcase: Xiangqi](showcase-xiangqi.md) for the full battlefield reference implementation
 
 ## Good Files To Inspect
 
+- [`addons/nascentsoul/presets/battlefield_square_zone_config.tres`](../addons/nascentsoul/presets/battlefield_square_zone_config.tres)
+- [`addons/nascentsoul/presets/battlefield_hex_zone_config.tres`](../addons/nascentsoul/presets/battlefield_hex_zone_config.tres)
+- [`addons/nascentsoul/impl/spaces/zone_square_grid_space_model.gd`](../addons/nascentsoul/impl/spaces/zone_square_grid_space_model.gd)
+- [`addons/nascentsoul/impl/spaces/zone_hex_grid_space_model.gd`](../addons/nascentsoul/impl/spaces/zone_hex_grid_space_model.gd)
+- [`addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd`](../addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd)
 - [`scenes/showcases/xiangqi/showcase.tscn`](../scenes/showcases/xiangqi/showcase.tscn)
 - [`scenes/showcases/xiangqi/board/xiangqi_board_surface.tscn`](../scenes/showcases/xiangqi/board/xiangqi_board_surface.tscn)
-- [`scenes/showcases/xiangqi/rules/xiangqi_move_rules.gd`](../scenes/showcases/xiangqi/rules/xiangqi_move_rules.gd)

@@ -1,8 +1,10 @@
 # Showcase: Xiangqi
 
-The Xiangqi showcase is a full local two-player implementation built on `BattlefieldZone` and targeting.
+Xiangqi is the repository's full **battlefield-game reference implementation**.
 
-Primary files:
+It is a local two-player game built on `BattlefieldZone`, explicit placement targets, targeting, and example-side move rules.
+
+## Primary Files
 
 - [`scenes/showcases/xiangqi/showcase.tscn`](../scenes/showcases/xiangqi/showcase.tscn)
 - [`scenes/showcases/xiangqi/showcase.gd`](../scenes/showcases/xiangqi/showcase.gd)
@@ -19,7 +21,7 @@ Primary files:
 
 - a square-grid battlefield used as a real game board
 - explicit targeting for move preview and validation
-- piece-specific rule evaluation in example-side gameplay code
+- piece-specific move rules in example-side gameplay code
 - capture handling, turn flow, check detection, and end-state evaluation
 
 ## Board Model
@@ -31,29 +33,30 @@ The showcase uses:
 - a `ZoneSquareGridSpaceModel` with 9 columns and 10 rows
 - explicit `ZonePlacementTarget.square(x, y)` positions for every piece
 
-The custom board overlay only draws the visual board. The battlefield zone remains the interaction surface, and the surrounding turn / status / capture chrome now lives in the main showcase scene instead of being implied by controller state alone.
+The custom board overlay only draws the board art.  
+The battlefield zone remains the interaction surface.
 
-## Controller Decomposition
+## Reference Decomposition Pattern
 
-The Xiangqi showcase now follows the same helper-oriented pattern as FreeCell:
+Xiangqi now follows the same helper-oriented pattern as FreeCell:
 
-- `showcase.gd` stays focused on scene wiring, targeting callbacks, status messages, and turn orchestration
-- `board/xiangqi_board_registry.gd` owns piece lookup, piece spawning, and candidate-to-board resolution
-- `state/xiangqi_state_model.gd` owns initial setup, serialized state shape, board snapshots, and state signatures
-- `rules/xiangqi_move_rules.gd` owns move legality, check detection, legal-move search, and piece attack rules
-- `state/xiangqi_history.gd` owns undo snapshots, transition history, and undo-animation state
+1. **scene wiring and turn/status orchestration** stay in `showcase.gd`
+2. **piece lookup and board-facing scene helpers** live in `board/xiangqi_board_registry.gd`
+3. **serialized board state** lives in `state/xiangqi_state_model.gd`
+4. **move legality and check logic** live in `rules/xiangqi_move_rules.gd`
+5. **undo snapshots and transition history** live in `state/xiangqi_history.gd`
 
-That split keeps the learning path stable:
+That keeps the learning path stable:
 
 1. read the scene and controller first
-2. read `board/xiangqi_board_surface.tscn` and `board/xiangqi_board_registry.gd` to understand how the board is authored
-3. read the state model to see the serialized board shape
-4. read the move rules to understand Xiangqi legality
-5. read history last to understand undo/restore flow
+2. inspect the board surface and registry
+3. inspect the state model
+4. inspect move rules
+5. inspect history last
 
 ## Rule Coverage
 
-The controller enforces:
+The showcase enforces:
 
 - general movement and palace limits
 - advisor movement
@@ -70,7 +73,7 @@ The controller enforces:
 
 ## Why It Matters For The Library
 
-Xiangqi shows that NascentSoul can support a tactical board game without a separate game-board framework.
+Xiangqi shows that NascentSoul can support a tactical board game without a second board-specific framework.
 
 The addon supplies:
 
@@ -78,7 +81,7 @@ The addon supplies:
 - target candidates
 - targeting visuals
 - managed items
-- battlefield transfer/runtime services
+- battlefield transfer/runtime plumbing
 
 The example supplies:
 
@@ -86,6 +89,9 @@ The example supplies:
 - turn logic
 - victory conditions
 - piece presentation
+- board-side status and capture UI
+
+That is the intended boundary.
 
 ## Regression Coverage
 
@@ -97,3 +103,4 @@ The Xiangqi suite validates:
 - capture updates and turn alternation
 - facing-generals prevention
 - checkmate detection
+- compact embedded board behavior
