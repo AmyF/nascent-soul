@@ -14,7 +14,7 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `1683` checks
+- full regression runner passes with `1697` checks
 - headless editor load succeeds with the plugin enabled
 - demo smoke covers the main-menu launcher, the compatibility shell, and both showcase scenes
 
@@ -27,7 +27,7 @@ Validated on Godot 4.6.1:
 - targeting flows and targeting visuals
 - performance smoke checks
 - launcher and compatibility-shell smoke coverage
-- FreeCell showcase rules
+- FreeCell showcase rules and helper contracts
 - Xiangqi showcase rules
 
 ## Contract vs. Implementation Coverage

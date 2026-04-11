@@ -1,12 +1,13 @@
 extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+const FreeCellCardFactoryScript = preload("res://scenes/examples/freecell/freecell_card_factory.gd")
 const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card.gd")
-const FreeCellCardDisplayScript = preload("res://scenes/examples/freecell/freecell_card_display.gd")
+const FreeCellHistoryScript = preload("res://scenes/examples/freecell/freecell_history.gd")
+const FreeCellMoveRulesScript = preload("res://scenes/examples/freecell/freecell_move_rules.gd")
 const FreeCellRulesScript = preload("res://scenes/examples/freecell/freecell_rules.gd")
-const FreeCellSlotLayoutScript = preload("res://scenes/examples/freecell/freecell_slot_layout.gd")
-const FreeCellTableauLayoutScript = preload("res://scenes/examples/freecell/freecell_tableau_layout.gd")
-const FreeCellZonePolicyScript = preload("res://scenes/examples/freecell/freecell_zone_policy.gd")
+const FreeCellStateModelScript = preload("res://scenes/examples/freecell/freecell_state_model.gd")
+const FreeCellZoneRegistryScript = preload("res://scenes/examples/freecell/freecell_zone_registry.gd")
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
 const GAME_MENU_NEW := 1
@@ -21,27 +22,7 @@ const UNDO_ANIMATION_PADDING := 0.08
 const NORMAL_STATUS_COLOR := Color(0.10, 0.10, 0.10, 1.0)
 const REJECT_STATUS_COLOR := Color(0.72, 0.09, 0.12, 1.0)
 const WIN_STATUS_COLOR := Color(0.20, 0.42, 0.12, 1.0)
-const SUIT_ORDER := FreeCellRulesScript.SUIT_ORDER
 const DEAL_MAX := FreeCellRulesScript.DEAL_MAX
-const SUIT_SYMBOLS := {
-	&"clubs": "♣",
-	&"diamonds": "♦",
-	&"hearts": "♥",
-	&"spades": "♠"
-}
-const SUIT_NAMES := {
-	&"clubs": "Clubs",
-	&"diamonds": "Diamonds",
-	&"hearts": "Hearts",
-	&"spades": "Spades"
-}
-const SUIT_CODE_TO_NAME := {
-	"C": &"clubs",
-	"D": &"diamonds",
-	"H": &"hearts",
-	"S": &"spades"
-}
-const RANK_LABELS := FreeCellRulesScript.RANK_LABELS
 
 @onready var root_vbox: VBoxContainer = $RootMargin/RootVBox
 @onready var title_bar: PanelContainer = $RootMargin/RootVBox/TitleBar
@@ -65,21 +46,16 @@ const RANK_LABELS := FreeCellRulesScript.RANK_LABELS
 @onready var select_game_ok_button: Button = $SelectGameOverlay/DialogPanel/DialogVBox/ButtonRow/SelectGameOkButton
 @onready var select_game_cancel_button: Button = $SelectGameOverlay/DialogPanel/DialogVBox/ButtonRow/SelectGameCancelButton
 
-var _tableau_zones: Array[Zone] = []
-var _free_cell_zones: Array[Zone] = []
-var _foundation_zones: Array[Zone] = []
-var _zone_info: Dictionary = {}
-
 var _rng := RandomNumberGenerator.new()
 var _last_deal_number: int = 1
 var _game_won: bool = false
-var _history_states: Array[Dictionary] = []
-var _history_signatures: Array[String] = []
-var _history_checkpoint_pending: bool = false
-var _undo_animation_active: bool = false
+var _history = FreeCellHistoryScript.new(HISTORY_LIMIT)
+var _move_rules = FreeCellMoveRulesScript.new()
+var _zones = FreeCellZoneRegistryScript.new()
 
 func _ready() -> void:
-	_build_zones()
+	_zones.build(free_cells_slots_row, foundations_slots_row, tableau_row, self, Callable(self, "_bind_zone_events"))
+	_move_rules.attach(_zones.get_zone_info(), _zones.free_cell_zones_ref(), _zones.foundation_zones_ref(), _zones.tableau_zones_ref())
 	_wire_controls()
 	resized.connect(_queue_layout_refresh)
 	visibility_changed.connect(_queue_layout_refresh)
@@ -87,14 +63,13 @@ func _ready() -> void:
 	start_new_game()
 
 func _exit_tree() -> void:
-	for policy in _collect_zone_policies():
-		policy.controller = null
+	_zones.clear_policy_controllers()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is not InputEventKey or not event.pressed or event.echo:
 		return
 	var key_event := event as InputEventKey
-	if _undo_animation_active:
+	if _history.is_undo_animation_active():
 		get_viewport().set_input_as_handled()
 		return
 	if select_game_overlay.visible:
@@ -133,182 +108,85 @@ func load_debug_state(state: Dictionary) -> void:
 		_set_status("Loaded a FreeCell position for debugging.")
 
 func get_tableau_zones() -> Array[Zone]:
-	return _tableau_zones.duplicate()
+	return _zones.get_tableau_zones()
 
 func get_free_cell_zones() -> Array[Zone]:
-	return _free_cell_zones.duplicate()
+	return _zones.get_free_cell_zones()
 
 func get_foundation_zones() -> Array[Zone]:
-	return _foundation_zones.duplicate()
+	return _zones.get_foundation_zones()
 
 func get_card_by_code(code: String) -> Control:
-	for zone in _all_zones():
-		for item in zone.get_items():
-			if item is FreeCellCardScript and (item as FreeCellCardScript).code == code:
-				return item
-	return null
+	return _zones.get_card_by_code(code)
 
 func has_won() -> bool:
 	return _game_won
 
 func can_undo() -> bool:
-	return _history_states.size() > 1
+	return _history.can_undo()
 
 func foundation_total() -> int:
 	var count := 0
-	for zone in _foundation_zones:
+	for zone in _zones.foundation_zones_ref():
 		count += zone.get_item_count()
 	return count
 
 func try_move_cards(items: Array[ZoneItemControl], target_zone: Zone) -> bool:
-	if _undo_animation_active:
+	if _history.is_undo_animation_active():
 		return false
 	if items.is_empty() or target_zone == null:
 		return false
-	var source_zone = _zone_for_item(items[0])
+	var source_zone = _move_rules.zone_for_item(items[0])
 	if source_zone == null:
 		return false
 	return ExampleSupport.transfer_items(source_zone, items, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
 
 func try_auto_foundation(card: Control) -> bool:
-	if _undo_animation_active:
+	if _history.is_undo_animation_active():
 		return false
 	if card is not FreeCellCardScript:
 		return false
 	var freecell_card := card as FreeCellCardScript
-	var source_zone = _zone_for_item(freecell_card)
+	var source_zone = _move_rules.zone_for_item(freecell_card)
 	if source_zone == null:
 		return false
-	var source_role = StringName(_zone_info.get(source_zone, {}).get("role", &""))
+	var source_role = _zones.role_of(source_zone)
 	if source_role == &"foundation":
 		return false
-	if not _is_exposed_card(freecell_card):
+	if not _move_rules.is_exposed_card(freecell_card):
 		return false
-	if not _is_foundation_move_legal(freecell_card):
+	if not _move_rules.can_auto_foundation(freecell_card):
 		return false
 	return _move_card_to_foundation(freecell_card)
 
 func undo_last_move() -> bool:
-	if _undo_animation_active:
+	if _history.is_undo_animation_active():
 		_set_status("The undo animation is still playing.", REJECT_STATUS_COLOR)
 		return false
 	if not can_undo():
 		_update_undo_button_state()
 		_set_status("There is no move to undo.", REJECT_STATUS_COLOR)
 		return false
-	_history_checkpoint_pending = false
-	_history_states.pop_back()
-	_history_signatures.pop_back()
-	var snapshot = _history_states[_history_states.size() - 1].duplicate(true)
+	var snapshot = _history.undo_snapshot()
+	if snapshot.is_empty():
+		_update_undo_button_state()
+		_set_status("There is no move to undo.", REJECT_STATUS_COLOR)
+		return false
 	if _restore_state_from_history(snapshot):
 		_set_status("Undoing the last move...")
 	else:
 		_set_status("Undid the last move.")
 	return true
 
-func evaluate_freecell_transfer(zone_role: StringName, zone_index: int, _context: ZoneContext, request: ZoneTransferRequest) -> ZoneTransferDecision:
-	if _undo_animation_active:
+func evaluate_freecell_transfer(zone_role: StringName, _zone_index: int, _context: ZoneContext, request: ZoneTransferRequest) -> ZoneTransferDecision:
+	if _history.is_undo_animation_active():
 		return ZoneTransferDecision.new(false, "Finish the undo animation before making another move.", ZonePlacementTarget.invalid())
-	if request == null:
-		return ZoneTransferDecision.new(false, "Missing transfer request.", ZonePlacementTarget.invalid())
-	if request.source_zone is not Zone or request.target_zone is not Zone:
-		return ZoneTransferDecision.new(false, "FreeCell only accepts zone-to-zone moves.", ZonePlacementTarget.invalid())
-	var source_zone := request.source_zone as Zone
-	var target_zone := request.target_zone as Zone
-	if source_zone == target_zone:
-		return ZoneTransferDecision.new(false, "Reordering within the same lane is not part of FreeCell.", ZonePlacementTarget.invalid())
-	var cards = _typed_cards(request.items)
-	if cards.is_empty() or cards.size() != request.items.size():
-		return ZoneTransferDecision.new(false, "Only FreeCell cards can move here.", ZonePlacementTarget.invalid())
-	var source_info = _zone_info.get(source_zone, {})
-	var source_role = StringName(source_info.get("role", &""))
-	var source_validation = _validate_source_cards(source_zone, source_role, cards)
-	if not source_validation.allowed:
-		return ZoneTransferDecision.new(false, source_validation.reason, ZonePlacementTarget.invalid())
-	match zone_role:
-		&"freecell":
-			return _evaluate_transfer_to_free_cell(target_zone, cards)
-		&"foundation":
-			return _evaluate_transfer_to_foundation(zone_index, target_zone, cards)
-		&"tableau":
-			return _evaluate_transfer_to_tableau(source_zone, target_zone, cards)
-		_:
-			return ZoneTransferDecision.new(false, "Unknown FreeCell destination.", ZonePlacementTarget.invalid())
+	return _move_rules.evaluate_transfer(zone_role, request)
 
 func evaluate_freecell_drag_start(zone_role: StringName, _zone_index: int, context: ZoneContext, anchor_item: ZoneItemControl, _selected_items: Array[ZoneItemControl]):
-	if _undo_animation_active:
+	if _history.is_undo_animation_active():
 		return ZoneDragStartDecisionScript.new(false, "Finish the undo animation before dragging again.", [anchor_item] if is_instance_valid(anchor_item) else [])
-	if context == null or anchor_item is not FreeCellCardScript or not context.has_item(anchor_item):
-		return ZoneDragStartDecisionScript.new(false, "This card can no longer move.", [])
-	var source_cards = _typed_cards(context.get_items_ordered())
-	var card_index = _find_card_index(source_cards, anchor_item)
-	if card_index == -1:
-		return ZoneDragStartDecisionScript.new(false, "This card can no longer move.", [anchor_item])
-	match zone_role:
-		&"tableau":
-			var tail = source_cards.slice(card_index, source_cards.size())
-			if tail.is_empty():
-				return ZoneDragStartDecisionScript.new(false, "This card can no longer move.", [anchor_item])
-			if card_index != source_cards.size() - 1 and not _is_descending_alternating_run(tail):
-				return ZoneDragStartDecisionScript.new(false, "Only exposed descending alternating runs can move together.", [anchor_item])
-			if tail.size() == 1 and card_index != source_cards.size() - 1:
-				return ZoneDragStartDecisionScript.new(false, "Only the exposed top card can move from this tableau.", [anchor_item])
-			return ZoneDragStartDecisionScript.new(true, "", tail)
-		&"freecell", &"foundation":
-			if card_index != source_cards.size() - 1:
-				return ZoneDragStartDecisionScript.new(false, "Only the exposed top card can move.", [anchor_item])
-			return ZoneDragStartDecisionScript.new(true, "", [anchor_item])
-		_:
-			return ZoneDragStartDecisionScript.new(false, "Unknown FreeCell source lane.", [anchor_item])
-
-func _build_zones() -> void:
-	if not _tableau_zones.is_empty():
-		return
-	var interaction := ZoneInteraction.new()
-	interaction.drag_enabled = true
-	interaction.select_on_click = true
-	interaction.multi_select_enabled = false
-	interaction.ctrl_toggles_selection = false
-	interaction.shift_range_select_enabled = false
-	interaction.keyboard_navigation_enabled = false
-	var display_style := FreeCellCardDisplayScript.new()
-	var drag_factory := ZoneConfigurableDragVisualFactory.new()
-	drag_factory.ghost_fill_color = Color(1.0, 1.0, 1.0, 0.10)
-	drag_factory.ghost_border_color = Color(0.08, 0.09, 0.11, 0.75)
-	drag_factory.proxy_modulate = Color(1.0, 1.0, 1.0, 0.96)
-	for index in range(free_cells_slots_row.get_child_count()):
-		var host = free_cells_slots_row.get_child(index).get_node("ZoneHost") as Control
-		var policy = FreeCellZonePolicyScript.new()
-		policy.controller = self
-		policy.zone_role = &"freecell"
-		policy.zone_index = index
-		var layout := FreeCellSlotLayoutScript.new()
-		var zone = ExampleSupport.make_zone(host, "FreeCell%d" % (index + 1), layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
-		_register_zone(zone, &"freecell", index)
-		_bind_zone_events(zone)
-		_free_cell_zones.append(zone)
-	for index in range(foundations_slots_row.get_child_count()):
-		var host = foundations_slots_row.get_child(index).get_node("ZoneHost") as Control
-		var policy = FreeCellZonePolicyScript.new()
-		policy.controller = self
-		policy.zone_role = &"foundation"
-		policy.zone_index = index
-		var layout := FreeCellSlotLayoutScript.new()
-		var zone = ExampleSupport.make_zone(host, "Foundation%d" % (index + 1), layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
-		_register_zone(zone, &"foundation", index)
-		_bind_zone_events(zone)
-		_foundation_zones.append(zone)
-	for index in range(tableau_row.get_child_count()):
-		var host = tableau_row.get_child(index).get_node("ZoneHost") as Control
-		var policy = FreeCellZonePolicyScript.new()
-		policy.controller = self
-		policy.zone_role = &"tableau"
-		policy.zone_index = index
-		var layout = FreeCellTableauLayoutScript.new()
-		var zone = ExampleSupport.make_zone(host, "Tableau%d" % (index + 1), layout, display_style, policy, ZoneManualSort.new(), interaction, drag_factory)
-		_register_zone(zone, &"tableau", index)
-		_bind_zone_events(zone)
-		_tableau_zones.append(zone)
+	return _move_rules.evaluate_drag_start(zone_role, context, anchor_item)
 
 func _wire_controls() -> void:
 	select_game_overlay.visible = false
@@ -343,72 +221,32 @@ func _bind_zone_events(zone: Zone) -> void:
 	zone.item_right_clicked.connect(_on_item_right_clicked.bind(zone))
 	zone.item_clicked.connect(_on_zone_item_clicked.bind(zone))
 
-func _register_zone(zone: Zone, role: StringName, index: int) -> void:
-	_zone_info[zone] = {
-		"role": role,
-		"index": index
-	}
-
-func _collect_zone_policies() -> Array:
-	var policies: Array = []
-	for zone in _all_zones():
-		var policy = ExampleSupport.get_zone_transfer_policy(zone)
-		if policy != null and policy not in policies:
-			policies.append(policy)
-	return policies
-
 func _all_zones() -> Array[Zone]:
-	var zones: Array[Zone] = []
-	zones.append_array(_free_cell_zones)
-	zones.append_array(_foundation_zones)
-	zones.append_array(_tableau_zones)
-	return zones
-
-func _clear_all_cards() -> void:
-	for zone in _all_zones():
-		zone.clear_selection()
-		for item in zone.get_items():
-			if zone.remove_item(item):
-				item.queue_free()
+	return _zones.all_zones_ref()
 
 func _make_card_from_code(code: String) -> Control:
-	var parsed = _parse_card_code(code)
-	if parsed.is_empty():
-		return null
-	var card = FreeCellCardScript.new()
-	card.configure(
-		parsed.code,
-		parsed.suit,
-		parsed.rank_value,
-		parsed.rank_label,
-		parsed.suit_symbol,
-		parsed.suit_name,
-		parsed.is_red
-	)
-	card.custom_minimum_size = FreeCellCardScript.CARD_SIZE
-	card.size = card.custom_minimum_size
-	return card
+	return FreeCellCardFactoryScript.make_card_from_code(code)
 
 func _on_zone_item_clicked(item: Control, zone: Zone) -> void:
-	if _undo_animation_active:
+	if _history.is_undo_animation_active():
 		return
 	if zone == null or item == null:
 		return
-	var role = StringName(_zone_info.get(zone, {}).get("role", &""))
+	var role = _zones.role_of(zone)
 	if role == &"tableau":
 		_select_movable_tail(zone, item)
 		return
 	_select_single_card(zone, item)
 
 func _on_item_double_clicked(item: Control, _zone: Zone) -> void:
-	if _undo_animation_active:
+	if _history.is_undo_animation_active():
 		return
 	if try_auto_foundation(item):
 		return
 	_set_status("%s cannot move to the foundations yet." % _card_label(item), REJECT_STATUS_COLOR)
 
 func _on_item_right_clicked(item: Control, _zone: Zone) -> void:
-	if _undo_animation_active:
+	if _history.is_undo_animation_active():
 		return
 	if try_auto_foundation(item):
 		return
@@ -476,167 +314,34 @@ func _hide_select_game_overlay() -> void:
 func _select_single_card(zone: Zone, card: Control) -> void:
 	if zone == null or card == null:
 		return
-	_clear_selection_all()
+	_zones.clear_selection_all()
 	zone.select_item(card)
 
 func _select_movable_tail(zone: Zone, card: Control) -> void:
 	if zone == null or card == null:
 		return
-	var cards = _typed_cards(zone.get_items())
-	var index = _find_card_index(cards, card)
+	var cards = _move_rules.typed_cards(zone.get_items())
+	var index = _move_rules.find_card_index(cards, card)
 	if index == -1:
 		return
 	var tail = cards.slice(index, cards.size())
 	if tail.is_empty():
 		return
-	if tail.size() > 1 and not _is_descending_alternating_run(tail):
-		_clear_selection_all()
+	if tail.size() > 1 and not _move_rules.is_descending_alternating_run(tail):
+		_zones.clear_selection_all()
 		_set_status("Only exposed descending alternating runs can move together.", REJECT_STATUS_COLOR)
 		return
 	if tail.size() == 1 and index != cards.size() - 1:
-		_clear_selection_all()
+		_zones.clear_selection_all()
 		_set_status("Only the exposed top card can move from this tableau.", REJECT_STATUS_COLOR)
 		return
-	_clear_selection_all()
+	_zones.clear_selection_all()
 	zone.select_item(tail[0], false)
 	for tail_index in range(1, tail.size()):
 		zone.select_item(tail[tail_index], true)
 
 func _clear_selection_all() -> void:
-	for zone in _all_zones():
-		zone.clear_selection()
-
-func _evaluate_transfer_to_free_cell(target_zone: Zone, cards: Array) -> ZoneTransferDecision:
-	if cards.size() != 1:
-		return ZoneTransferDecision.new(false, "Free cells only hold one card at a time.", ZonePlacementTarget.invalid())
-	if target_zone.get_item_count() > 0:
-		return ZoneTransferDecision.new(false, "That free cell is already occupied.", ZonePlacementTarget.invalid())
-	return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(0))
-
-func _evaluate_transfer_to_foundation(_zone_index: int, target_zone: Zone, cards: Array) -> ZoneTransferDecision:
-	if cards.size() != 1:
-		return ZoneTransferDecision.new(false, "Foundations only accept one card at a time.", ZonePlacementTarget.invalid())
-	var card = cards[0] as FreeCellCardScript
-	var foundation_cards = _typed_cards(target_zone.get_items())
-	if not FreeCellRulesScript.foundation_accepts_card(foundation_cards, card):
-		if foundation_cards.is_empty():
-			return ZoneTransferDecision.new(false, "Empty foundations open with aces.", ZonePlacementTarget.invalid())
-		var foundation_top = foundation_cards[foundation_cards.size() - 1] as FreeCellCardScript
-		if foundation_top == null or foundation_top.suit != card.suit:
-			return ZoneTransferDecision.new(false, "Started foundations continue in the same suit.", ZonePlacementTarget.invalid())
-		return ZoneTransferDecision.new(false, "Foundations build upward from Ace to King.", ZonePlacementTarget.invalid())
-	return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(target_zone.get_item_count()))
-
-func _evaluate_transfer_to_tableau(source_zone: Zone, target_zone: Zone, cards: Array) -> ZoneTransferDecision:
-	var moving_head = cards[0] as FreeCellCardScript
-	var target_cards = _typed_cards(target_zone.get_items())
-	var capacity = _tableau_stack_capacity(source_zone, target_zone)
-	if cards.size() > capacity:
-		return ZoneTransferDecision.new(false, "Not enough free cells and empty tableaus to move that whole run.", ZonePlacementTarget.invalid())
-	if target_cards.is_empty():
-		return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(target_zone.get_item_count()))
-	var target_top = target_cards[target_cards.size() - 1] as FreeCellCardScript
-	if not FreeCellRulesScript.can_build_on_tableau(moving_head, target_top):
-		if moving_head.is_red == target_top.is_red:
-			return ZoneTransferDecision.new(false, "Tableau runs must alternate colors.", ZonePlacementTarget.invalid())
-		return ZoneTransferDecision.new(false, "Tableau runs must descend by exactly one rank.", ZonePlacementTarget.invalid())
-	return ZoneTransferDecision.new(true, "", ZonePlacementTarget.linear(target_zone.get_item_count()))
-
-func _validate_source_cards(source_zone: Zone, source_role: StringName, cards: Array) -> Dictionary:
-	match source_role:
-		&"tableau":
-			var tableau_cards = _typed_cards(source_zone.get_items())
-			var start_index = _find_card_index(tableau_cards, cards[0])
-			if start_index == -1:
-				return {"allowed": false, "reason": "The selected cards are no longer in that tableau."}
-			if start_index + cards.size() != tableau_cards.size():
-				return {"allowed": false, "reason": "Only the exposed tail of a tableau can move."}
-			for index in range(cards.size()):
-				if tableau_cards[start_index + index] != cards[index]:
-					return {"allowed": false, "reason": "FreeCell moves must keep the exposed tail together."}
-			if cards.size() > 1 and not _is_descending_alternating_run(cards):
-				return {"allowed": false, "reason": "Only descending alternating runs can move together."}
-			if cards.size() == 1 and start_index != tableau_cards.size() - 1:
-				return {"allowed": false, "reason": "Only the exposed top card can move from this tableau."}
-			return {"allowed": true, "reason": ""}
-		&"freecell", &"foundation":
-			if cards.size() != 1:
-				return {"allowed": false, "reason": "Only one card can move out of that lane."}
-			var source_cards = _typed_cards(source_zone.get_items())
-			if source_cards.is_empty() or source_cards[source_cards.size() - 1] != cards[0]:
-				return {"allowed": false, "reason": "Only the exposed top card can move."}
-			return {"allowed": true, "reason": ""}
-		_:
-			return {"allowed": false, "reason": "Unknown FreeCell source lane."}
-
-func _tableau_stack_capacity(source_zone: Zone, target_zone: Zone) -> int:
-	var empty_free_cells := 0
-	for zone in _free_cell_zones:
-		if zone.get_item_count() == 0:
-			empty_free_cells += 1
-	var empty_tableaus := 0
-	for zone in _tableau_zones:
-		if zone == source_zone or zone == target_zone:
-			continue
-		if zone.get_item_count() == 0:
-			empty_tableaus += 1
-	return FreeCellRulesScript.movable_run_capacity(empty_free_cells, empty_tableaus)
-
-func _typed_cards(items: Array) -> Array:
-	var cards: Array = []
-	for item in items:
-		if item is FreeCellCardScript and is_instance_valid(item):
-			cards.append(item)
-	return cards
-
-func _is_descending_alternating_run(cards: Array) -> bool:
-	return FreeCellRulesScript.is_descending_alternating_run(cards)
-
-func _find_card_index(cards: Array, target: Control) -> int:
-	for index in range(cards.size()):
-		if cards[index] == target:
-			return index
-	return -1
-
-func _zone_for_item(item: Control) -> Zone:
-	for zone in _all_zones():
-		if zone.has_item(item):
-			return zone
-	return null
-
-func _parse_card_code(code: String) -> Dictionary:
-	if code.length() < 2:
-		return {}
-	var suit_code = code.right(1).to_upper()
-	if not SUIT_CODE_TO_NAME.has(suit_code):
-		return {}
-	var rank_text = code.left(code.length() - 1).to_upper()
-	var rank_value = _rank_value_from_text(rank_text)
-	if rank_value < 1 or not RANK_LABELS.has(rank_value):
-		return {}
-	var suit = SUIT_CODE_TO_NAME[suit_code]
-	return {
-		"code": "%s%s" % [RANK_LABELS[rank_value], suit_code],
-		"suit": suit,
-		"rank_value": rank_value,
-		"rank_label": RANK_LABELS[rank_value],
-		"suit_symbol": SUIT_SYMBOLS[suit],
-		"suit_name": SUIT_NAMES[suit],
-		"is_red": suit == &"diamonds" or suit == &"hearts"
-	}
-
-func _rank_value_from_text(rank_text: String) -> int:
-	match rank_text:
-		"A":
-			return 1
-		"J":
-			return 11
-		"Q":
-			return 12
-		"K":
-			return 13
-		_:
-			return int(rank_text)
+	_zones.clear_selection_all()
 
 func _refresh_chrome() -> void:
 	window_title_label.text = "FreeCell Game #%d" % _last_deal_number
@@ -650,56 +355,41 @@ func _random_deal_number() -> int:
 func _move_card_to_foundation(card: FreeCellCardScript) -> bool:
 	if not is_instance_valid(card):
 		return false
-	var source_zone = _zone_for_item(card)
+	var source_zone = _move_rules.zone_for_item(card)
 	if source_zone == null:
 		return false
-	var target_zone = _foundation_zone_for_card(card)
+	var target_zone = _move_rules.foundation_zone_for_card(card)
 	if target_zone == null:
 		return false
 	return ExampleSupport.move_item(source_zone, card, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
 
 func _build_deal_state(deal_number: int) -> Dictionary:
-	var tableaus: Array = [[], [], [], [], [], [], [], []]
-	var deck_codes = FreeCellRulesScript.deal_codes(deal_number)
-	for index in range(deck_codes.size()):
-		tableaus[index % tableaus.size()].append(deck_codes[index])
-	return {
-		"deal_number": deal_number,
-		"tableaus": tableaus,
-		"free_cells": ["", "", "", ""],
-		"foundation_slots": [[], [], [], []]
-	}
+	return FreeCellStateModelScript.build_deal_state(deal_number)
 
 func _apply_state(state: Dictionary, reset_history: bool) -> void:
-	_history_checkpoint_pending = false
+	var normalized_state = FreeCellStateModelScript.normalize_state(state, _last_deal_number)
+	_history.cancel_pending_checkpoint()
 	_game_won = false
 	victory_label.visible = false
 	_hide_select_game_overlay()
-	_clear_all_cards()
-	_last_deal_number = int(state.get("deal_number", _last_deal_number))
-	var tableaus: Array = state.get("tableaus", [])
-	for index in range(min(tableaus.size(), _tableau_zones.size())):
+	_zones.clear_all_cards()
+	_last_deal_number = int(normalized_state.get("deal_number", _last_deal_number))
+	var tableau_zones = _zones.tableau_zones_ref()
+	var free_cell_zones = _zones.free_cell_zones_ref()
+	var foundation_zones = _zones.foundation_zones_ref()
+	var tableaus: Array = normalized_state.get("tableaus", [])
+	for index in range(min(tableaus.size(), tableau_zones.size())):
 		for code in tableaus[index]:
-			_tableau_zones[index].add_item(_make_card_from_code(str(code)))
-	var free_cells: Array = state.get("free_cells", [])
-	for index in range(min(free_cells.size(), _free_cell_zones.size())):
+			tableau_zones[index].add_item(_make_card_from_code(str(code)))
+	var free_cells: Array = normalized_state.get("free_cells", [])
+	for index in range(min(free_cells.size(), free_cell_zones.size())):
 		var code = str(free_cells[index])
 		if code != "":
-			_free_cell_zones[index].add_item(_make_card_from_code(code))
-	if state.has("foundation_slots"):
-		var foundation_slots: Array = state.get("foundation_slots", [])
-		for index in range(min(foundation_slots.size(), _foundation_zones.size())):
-			for code in foundation_slots[index]:
-				_foundation_zones[index].add_item(_make_card_from_code(str(code)))
-	else:
-		var foundations = state.get("foundations", {})
-		for suit_name in foundations.keys():
-			var suit = StringName(str(suit_name))
-			var zone = _preferred_foundation_zone_for_suit(suit)
-			if zone == null:
-				continue
-			for code in foundations[suit_name]:
-				zone.add_item(_make_card_from_code(str(code)))
+			free_cell_zones[index].add_item(_make_card_from_code(code))
+	var foundation_slots: Array = normalized_state.get("foundation_slots", [])
+	for index in range(min(foundation_slots.size(), foundation_zones.size())):
+		for code in foundation_slots[index]:
+			foundation_zones[index].add_item(_make_card_from_code(str(code)))
 	_refresh_chrome()
 	_update_victory_state()
 	for zone in _all_zones():
@@ -708,191 +398,62 @@ func _apply_state(state: Dictionary, reset_history: bool) -> void:
 		_reset_history_to_current_state()
 
 func _serialize_state() -> Dictionary:
-	var tableaus: Array = []
-	for zone in _tableau_zones:
-		tableaus.append(_zone_codes(zone))
-	var free_cells: Array = []
-	for zone in _free_cell_zones:
-		var codes = _zone_codes(zone)
-		free_cells.append(codes[0] if not codes.is_empty() else "")
-	var foundation_slots: Array = []
-	for zone in _foundation_zones:
-		foundation_slots.append(_zone_codes(zone))
-	return {
-		"deal_number": _last_deal_number,
-		"tableaus": tableaus,
-		"free_cells": free_cells,
-		"foundation_slots": foundation_slots
-	}
-
-func _zone_codes(zone: Zone) -> Array[String]:
-	var codes: Array[String] = []
-	if zone == null:
-		return codes
-	for item in zone.get_items():
-		if item is FreeCellCardScript:
-			codes.append((item as FreeCellCardScript).code)
-	return codes
-
-func _state_signature(state: Dictionary) -> String:
-	var parts: Array[String] = ["deal=%d" % int(state.get("deal_number", 0))]
-	for tableau in state.get("tableaus", []):
-		parts.append("T:" + _join_codes(tableau))
-	for cell in state.get("free_cells", []):
-		parts.append("C:" + str(cell))
-	for foundation in state.get("foundation_slots", []):
-		parts.append("F:" + _join_codes(foundation))
-	return "|".join(parts)
+	return FreeCellStateModelScript.serialize_state(_last_deal_number, _zones.tableau_zones_ref(), _zones.free_cell_zones_ref(), _zones.foundation_zones_ref())
 
 func _reset_history_to_current_state() -> void:
-	var snapshot = _serialize_state()
-	_history_states = [snapshot.duplicate(true)]
-	_history_signatures = [_state_signature(snapshot)]
+	_history.reset_to_snapshot(_serialize_state())
 	_update_undo_button_state()
 
 func _schedule_history_checkpoint() -> void:
-	if _history_checkpoint_pending:
+	if not _history.schedule_checkpoint():
 		return
-	_history_checkpoint_pending = true
 	call_deferred("_commit_history_checkpoint")
 
 func _commit_history_checkpoint() -> void:
-	_history_checkpoint_pending = false
-	var snapshot = _serialize_state()
-	var signature = _state_signature(snapshot)
-	if not _history_signatures.is_empty() and _history_signatures[_history_signatures.size() - 1] == signature:
-		_update_undo_button_state()
-		return
-	_history_states.append(snapshot.duplicate(true))
-	_history_signatures.append(signature)
-	if _history_states.size() > HISTORY_LIMIT:
-		_history_states.pop_front()
-		_history_signatures.pop_front()
+	_history.commit_checkpoint(_serialize_state())
 	_update_undo_button_state()
 
 func _update_undo_button_state() -> void:
 	if is_instance_valid(new_game_button):
-		new_game_button.disabled = _undo_animation_active
+		new_game_button.disabled = _history.is_undo_animation_active()
 	if is_instance_valid(game_menu_button):
-		game_menu_button.disabled = _undo_animation_active
+		game_menu_button.disabled = _history.is_undo_animation_active()
 	if is_instance_valid(help_menu_button):
-		help_menu_button.disabled = _undo_animation_active
+		help_menu_button.disabled = _history.is_undo_animation_active()
 	if not is_instance_valid(undo_button):
 		return
-	undo_button.disabled = _undo_animation_active or not can_undo()
-
-func _join_codes(values: Array) -> String:
-	var codes: Array[String] = []
-	for value in values:
-		codes.append(str(value))
-	return ",".join(PackedStringArray(codes))
+	undo_button.disabled = _history.is_undo_animation_active() or not can_undo()
 
 func _restore_state_from_history(state: Dictionary) -> bool:
-	var should_animate = _freecell_animation_duration() > 0.0 and DisplayServer.get_name() != "headless"
-	if should_animate:
-		_undo_animation_active = true
-		_update_undo_button_state()
-	var restored = _restore_state_with_existing_cards(state)
-	if not restored:
-		_undo_animation_active = false
+	var outcome = _history.restore_state(
+		state,
+		_all_zones(),
+		_zones.free_cell_zones_ref(),
+		_zones.foundation_zones_ref(),
+		_zones.tableau_zones_ref(),
+		Callable(_move_rules, "zone_for_item"),
+		Callable(self, "_move_card_for_restore"),
+		Callable(ExampleSupport, "reorder_items"),
+		Callable(self, "_clear_selection_all"),
+		Callable(self, "_hide_select_game_overlay"),
+		_last_deal_number,
+		_freecell_animation_duration()
+	)
+	if not outcome.get("restored", false):
 		_apply_state(state, false)
 		return false
+	_last_deal_number = int(outcome.get("deal_number", _last_deal_number))
 	_refresh_chrome()
 	_update_victory_state()
 	for zone in _all_zones():
 		zone.refresh()
-	if not should_animate:
-		_undo_animation_active = false
+	if not outcome.get("should_animate", false):
+		_history.finish_undo_animation()
 		_update_undo_button_state()
 		return false
 	var timer = get_tree().create_timer(_freecell_animation_duration() + UNDO_ANIMATION_PADDING)
 	timer.timeout.connect(_finish_undo_animation, CONNECT_ONE_SHOT)
 	return true
-
-func _restore_state_with_existing_cards(state: Dictionary) -> bool:
-	var card_lookup = _card_lookup_by_code()
-	var zone_plan = _state_zone_plan(state)
-	if card_lookup.is_empty() or zone_plan.is_empty():
-		return false
-	_hide_select_game_overlay()
-	_clear_selection_all()
-	_game_won = false
-	victory_label.visible = false
-	_last_deal_number = int(state.get("deal_number", _last_deal_number))
-	for entry in zone_plan:
-		var zone = entry["zone"] as Zone
-		var codes: Array = entry["codes"]
-		if zone == null:
-			return false
-		for target_index in range(codes.size()):
-			var code = str(codes[target_index])
-			if not card_lookup.has(code):
-				return false
-			var card = card_lookup[code] as ZoneItemControl
-			var current_zone = _zone_for_item(card)
-			if current_zone == null:
-				return false
-			if current_zone == zone:
-				continue
-			if not _move_card_for_restore(card, current_zone, zone, target_index):
-				return false
-	for entry in zone_plan:
-		var zone = entry["zone"] as Zone
-		var desired_items: Array[ZoneItemControl] = []
-		for code in entry["codes"]:
-			var resolved = card_lookup.get(str(code), null)
-			if resolved is not ZoneItemControl:
-				return false
-			desired_items.append(resolved as ZoneItemControl)
-		if desired_items.size() != zone.get_item_count():
-			return false
-		if desired_items.is_empty():
-			zone.refresh()
-			continue
-		if not ExampleSupport.reorder_items(zone, desired_items, ZonePlacementTarget.linear(0)):
-			return false
-	return true
-
-func _state_zone_plan(state: Dictionary) -> Array[Dictionary]:
-	var plan: Array[Dictionary] = []
-	var free_cells: Array = state.get("free_cells", [])
-	for index in range(_free_cell_zones.size()):
-		var codes: Array[String] = []
-		if index < free_cells.size():
-			var code = str(free_cells[index])
-			if code != "":
-				codes.append(code)
-		plan.append({"zone": _free_cell_zones[index], "codes": codes})
-	var foundation_slots = _normalized_foundation_slot_codes(state)
-	for index in range(_foundation_zones.size()):
-		var codes: Array = foundation_slots[index] if index < foundation_slots.size() else []
-		plan.append({"zone": _foundation_zones[index], "codes": codes})
-	var tableaus: Array = state.get("tableaus", [])
-	for index in range(_tableau_zones.size()):
-		var codes: Array = tableaus[index] if index < tableaus.size() else []
-		plan.append({"zone": _tableau_zones[index], "codes": codes})
-	return plan
-
-func _normalized_foundation_slot_codes(state: Dictionary) -> Array:
-	if state.has("foundation_slots"):
-		return state.get("foundation_slots", [])
-	var slots: Array = [[], [], [], []]
-	var foundations = state.get("foundations", {})
-	for suit_name in foundations.keys():
-		var suit = StringName(str(suit_name))
-		var suit_index = SUIT_ORDER.find(suit)
-		if suit_index < 0 or suit_index >= slots.size():
-			continue
-		slots[suit_index] = foundations[suit_name]
-	return slots
-
-func _card_lookup_by_code() -> Dictionary:
-	var lookup: Dictionary = {}
-	for zone in _all_zones():
-		for item in zone.get_items():
-			if item is FreeCellCardScript:
-				lookup[(item as FreeCellCardScript).code] = item
-	return lookup
 
 func _move_card_for_restore(card: ZoneItemControl, source_zone: Zone, target_zone: Zone, target_index: int) -> bool:
 	if card == null or source_zone == null or target_zone == null:
@@ -911,59 +472,10 @@ func _freecell_animation_duration() -> float:
 	return 0.0
 
 func _finish_undo_animation() -> void:
-	_undo_animation_active = false
+	_history.finish_undo_animation()
 	_update_undo_button_state()
 	if not _game_won:
 		_set_status("Undid the last move.")
-
-func _is_exposed_card(card: FreeCellCardScript) -> bool:
-	if not is_instance_valid(card):
-		return false
-	var source_zone = _zone_for_item(card)
-	if source_zone == null:
-		return false
-	var source_cards = _typed_cards(source_zone.get_items())
-	return not source_cards.is_empty() and source_cards[source_cards.size() - 1] == card
-
-func _is_foundation_move_legal(card: FreeCellCardScript) -> bool:
-	if not is_instance_valid(card):
-		return false
-	var target_zone = _foundation_zone_for_card(card)
-	if target_zone == null:
-		return false
-	return FreeCellRulesScript.foundation_accepts_card(_typed_cards(target_zone.get_items()), card)
-
-func _foundation_zone_for_card(card: FreeCellCardScript) -> Zone:
-	if not is_instance_valid(card):
-		return null
-	var started_zone = _foundation_zone_for_suit(card.suit)
-	if started_zone != null:
-		return started_zone
-	if card.rank_value != 1:
-		return null
-	return _first_empty_foundation_zone()
-
-func _foundation_zone_for_suit(suit: StringName) -> Zone:
-	for zone in _foundation_zones:
-		var cards = _typed_cards(zone.get_items())
-		if cards.is_empty():
-			continue
-		var top_card = cards[cards.size() - 1] as FreeCellCardScript
-		if top_card != null and top_card.suit == suit:
-			return zone
-	return null
-
-func _first_empty_foundation_zone() -> Zone:
-	for zone in _foundation_zones:
-		if zone.get_item_count() == 0:
-			return zone
-	return null
-
-func _preferred_foundation_zone_for_suit(suit: StringName) -> Zone:
-	var suit_index = SUIT_ORDER.find(suit)
-	if suit_index < 0 or suit_index >= _foundation_zones.size():
-		return null
-	return _foundation_zones[suit_index]
 
 func _update_victory_state() -> void:
 	_game_won = foundation_total() == 52
@@ -978,20 +490,7 @@ func _card_label(item: Control) -> String:
 	return item.name if item != null else "Card"
 
 func _zone_display_name(zone: Zone) -> String:
-	if zone == null:
-		return "Unknown"
-	var info = _zone_info.get(zone, {})
-	var role = StringName(info.get("role", &""))
-	var index = int(info.get("index", 0)) + 1
-	match role:
-		&"freecell":
-			return "Free Cell %d" % index
-		&"foundation":
-			return "Foundation %d" % index
-		&"tableau":
-			return "Tableau %d" % index
-		_:
-			return zone.name
+	return _zones.display_name(zone)
 
 func _set_status(message: String, font_color: Color = NORMAL_STATUS_COLOR) -> void:
 	status_label.text = message

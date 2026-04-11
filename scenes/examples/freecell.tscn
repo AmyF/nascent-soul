@@ -2,6 +2,16 @@
 
 [ext_resource type="Script" path="res://scenes/examples/freecell.gd" id="1_scene"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/card_zone.gd" id="3_card_zone"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="4_zone_config"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="5_zone_interaction"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="6_linear_space"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_manual_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_drag_factory"]
+[ext_resource type="Script" path="res://scenes/examples/freecell/freecell_card_display.gd" id="9_freecell_display"]
+[ext_resource type="Script" path="res://scenes/examples/freecell/freecell_slot_layout.gd" id="10_freecell_slot_layout"]
+[ext_resource type="Script" path="res://scenes/examples/freecell/freecell_tableau_layout.gd" id="11_freecell_tableau_layout"]
+[ext_resource type="Script" path="res://scenes/examples/freecell/freecell_zone_policy.gd" id="12_freecell_zone_policy"]
 
 [sub_resource type="StyleBoxFlat" id="FreeCellWindowFrame"]
 bg_color = Color(0.0, 0.50, 0.0, 1)
@@ -83,6 +93,78 @@ content_margin_left = 14.0
 content_margin_top = 14.0
 content_margin_right = 14.0
 content_margin_bottom = 14.0
+
+[sub_resource type="Resource" id="FreeCellLinearSpace"]
+script = ExtResource("6_linear_space")
+
+[sub_resource type="Resource" id="FreeCellInteraction"]
+script = ExtResource("5_zone_interaction")
+drag_enabled = true
+select_on_click = true
+multi_select_enabled = false
+ctrl_toggles_selection = false
+shift_range_select_enabled = false
+keyboard_navigation_enabled = false
+
+[sub_resource type="Resource" id="FreeCellCardDisplay"]
+script = ExtResource("9_freecell_display")
+
+[sub_resource type="Resource" id="FreeCellDragVisualFactory"]
+script = ExtResource("8_drag_factory")
+ghost_fill_color = Color(1, 1, 1, 0.1)
+ghost_border_color = Color(0.08, 0.09, 0.11, 0.75)
+proxy_modulate = Color(1, 1, 1, 0.96)
+
+[sub_resource type="Resource" id="FreeCellManualSort"]
+script = ExtResource("7_manual_sort")
+
+[sub_resource type="Resource" id="FreeCellSlotLayout"]
+script = ExtResource("10_freecell_slot_layout")
+
+[sub_resource type="Resource" id="FreeCellTableauLayout"]
+script = ExtResource("11_freecell_tableau_layout")
+
+[sub_resource type="Resource" id="FreeCellOpenCellPolicy"]
+script = ExtResource("12_freecell_zone_policy")
+zone_role = &"freecell"
+
+[sub_resource type="Resource" id="FreeCellFoundationPolicy"]
+script = ExtResource("12_freecell_zone_policy")
+zone_role = &"foundation"
+
+[sub_resource type="Resource" id="FreeCellTableauPolicy"]
+script = ExtResource("12_freecell_zone_policy")
+zone_role = &"tableau"
+
+[sub_resource type="Resource" id="FreeCellOpenCellConfig"]
+script = ExtResource("4_zone_config")
+space_model = SubResource("FreeCellLinearSpace")
+layout_policy = SubResource("FreeCellSlotLayout")
+display_style = SubResource("FreeCellCardDisplay")
+interaction = SubResource("FreeCellInteraction")
+sort_policy = SubResource("FreeCellManualSort")
+transfer_policy = SubResource("FreeCellOpenCellPolicy")
+drag_visual_factory = SubResource("FreeCellDragVisualFactory")
+
+[sub_resource type="Resource" id="FreeCellFoundationConfig"]
+script = ExtResource("4_zone_config")
+space_model = SubResource("FreeCellLinearSpace")
+layout_policy = SubResource("FreeCellSlotLayout")
+display_style = SubResource("FreeCellCardDisplay")
+interaction = SubResource("FreeCellInteraction")
+sort_policy = SubResource("FreeCellManualSort")
+transfer_policy = SubResource("FreeCellFoundationPolicy")
+drag_visual_factory = SubResource("FreeCellDragVisualFactory")
+
+[sub_resource type="Resource" id="FreeCellTableauConfig"]
+script = ExtResource("4_zone_config")
+space_model = SubResource("FreeCellLinearSpace")
+layout_policy = SubResource("FreeCellTableauLayout")
+display_style = SubResource("FreeCellCardDisplay")
+interaction = SubResource("FreeCellInteraction")
+sort_policy = SubResource("FreeCellManualSort")
+transfer_policy = SubResource("FreeCellTableauPolicy")
+drag_visual_factory = SubResource("FreeCellDragVisualFactory")
 
 [node name="FreeCellShowcase" type="Control"]
 layout_mode = 3
@@ -180,6 +262,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellOpenCellConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow/Cell1/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Cell2" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
@@ -193,6 +286,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellOpenCellConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow/Cell2/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Cell3" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
@@ -206,6 +310,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellOpenCellConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow/Cell3/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Cell4" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
@@ -219,6 +334,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellOpenCellConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow/Cell4/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="TopSpacer" type="Control" parent="RootMargin/RootVBox/TopRow"]
 layout_mode = 2
@@ -240,6 +366,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellFoundationConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow/Foundation1/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Foundation2" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
@@ -253,6 +390,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellFoundationConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow/Foundation2/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Foundation3" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
@@ -266,6 +414,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellFoundationConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow/Foundation3/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Foundation4" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
@@ -279,6 +438,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellFoundationConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow/Foundation4/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="TableauScroll" type="ScrollContainer" parent="RootMargin/RootVBox"]
 custom_minimum_size = Vector2(0, 380)
@@ -303,6 +473,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellTableauConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau1/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Tableau2" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 custom_minimum_size = Vector2(82, 380)
@@ -317,6 +498,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellTableauConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau2/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Tableau3" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 custom_minimum_size = Vector2(82, 380)
@@ -331,6 +523,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellTableauConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau3/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Tableau4" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 custom_minimum_size = Vector2(82, 380)
@@ -345,6 +548,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellTableauConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau4/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Tableau5" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 custom_minimum_size = Vector2(82, 380)
@@ -359,6 +573,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellTableauConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau5/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Tableau6" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 custom_minimum_size = Vector2(82, 380)
@@ -373,6 +598,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellTableauConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau6/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Tableau7" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 custom_minimum_size = Vector2(82, 380)
@@ -387,6 +623,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellTableauConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau7/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Tableau8" type="Panel" parent="RootMargin/RootVBox/TableauScroll/TableauRow"]
 custom_minimum_size = Vector2(82, 380)
@@ -401,6 +648,17 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_card_zone")
+config = SubResource("FreeCellTableauConfig")
+
+[node name="ItemsRoot" type="Control" parent="RootMargin/RootVBox/TableauScroll/TableauRow/Tableau8/ZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="VictoryLabel" type="Label" parent="RootMargin/RootVBox"]
 visible = false

@@ -1,6 +1,8 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
 const FREECELL_SCENE = preload("res://scenes/examples/freecell.tscn")
+const FREECELL_HISTORY_SCRIPT = preload("res://scenes/examples/freecell/freecell_history.gd")
+const ZONE_TRANSFER_REQUEST_SCRIPT = preload("res://addons/nascentsoul/model/zone_transfer_request.gd")
 
 func _init() -> void:
 	_suite_name = "freecell-showcase"
@@ -11,6 +13,10 @@ func _run_suite() -> void:
 	await _test_classic_deal_number_one_layout()
 	await _reset_root()
 	await _test_legal_moves_between_tableau_free_cells_and_foundations()
+	await _reset_root()
+	await _test_transfer_policy_surface_contract()
+	await _reset_root()
+	await _test_history_helper_contract()
 	await _reset_root()
 	await _test_toolbar_buttons_and_undo_history()
 	await _reset_root()
@@ -119,6 +125,73 @@ func _test_legal_moves_between_tableau_free_cells_and_foundations() -> void:
 	_check(scene.call("try_move_cards", _card_array(scene, ["5H"]), free_cells[1]), "freecell free cells should accept any suit, not just a pre-bound slot suit")
 	await _settle_frames(2)
 	_check((free_cells[1] as Zone).get_item_count() == 1, "freecell should allow a different-suit card into any other empty free cell")
+
+func _test_transfer_policy_surface_contract() -> void:
+	var scene = await _spawn_scene()
+	scene.call("load_debug_state", {
+		"tableaus": [
+			["8C", "7H"],
+			["9D"],
+			["KC"],
+			["QS"],
+			["JC"],
+			["10H"],
+			["9S"],
+			["8D"]
+		],
+		"free_cells": ["AH", "2C", "3D", "4S"],
+		"foundations": {}
+	})
+	await _settle_frames(3)
+	var tableaus: Array = scene.call("get_tableau_zones")
+	var source_zone = tableaus[0] as Zone
+	var target_zone = tableaus[1] as Zone
+	var move_request = ZONE_TRANSFER_REQUEST_SCRIPT.new(
+		target_zone,
+		source_zone,
+		_card_array(scene, ["8C", "7H"]),
+		ZonePlacementTarget.linear(target_zone.get_item_count())
+	)
+	var decision = scene.call("evaluate_freecell_transfer", &"tableau", 1, null, move_request)
+	_check(decision is ZoneTransferDecision and not decision.allowed, "freecell should keep transfer evaluation available through the scene controller surface")
+	_check(decision is ZoneTransferDecision and String(decision.reason).contains("Not enough free cells"), "freecell transfer surface should preserve the carry-capacity rejection reason")
+	var reorder_request = ZONE_TRANSFER_REQUEST_SCRIPT.new(
+		source_zone,
+		source_zone,
+		_card_array(scene, ["7H"]),
+		ZonePlacementTarget.linear(0)
+	)
+	var reorder_decision = scene.call("evaluate_freecell_transfer", &"tableau", 0, null, reorder_request)
+	_check(reorder_decision is ZoneTransferDecision and not reorder_decision.allowed, "freecell transfer surface should reject same-lane reorders")
+	_check(reorder_decision is ZoneTransferDecision and String(reorder_decision.reason).contains("Reordering within the same lane"), "freecell transfer surface should keep the no-reorder contract readable")
+
+func _test_history_helper_contract() -> void:
+	var history = FREECELL_HISTORY_SCRIPT.new(3)
+	var base_state = {
+		"deal_number": 1,
+		"tableaus": [["AH"], [], [], [], [], [], [], []],
+		"free_cells": ["", "", "", ""],
+		"foundation_slots": [[], [], [], []]
+	}
+	var moved_state = {
+		"deal_number": 1,
+		"tableaus": [[], ["AH"], [], [], [], [], [], []],
+		"free_cells": ["", "", "", ""],
+		"foundation_slots": [[], [], [], []]
+	}
+	history.reset_to_snapshot(base_state)
+	_check(not history.can_undo(), "freecell history helper should start with a single snapshot after reset")
+	_check(history.schedule_checkpoint(), "freecell history helper should allow scheduling a checkpoint once")
+	_check(not history.schedule_checkpoint(), "freecell history helper should reject duplicate pending checkpoints")
+	_check(not history.commit_checkpoint(base_state), "freecell history helper should deduplicate identical snapshots")
+	_check(not history.can_undo(), "freecell history helper should keep undo disabled after a duplicate snapshot")
+	_check(history.schedule_checkpoint(), "freecell history helper should allow a new checkpoint after commit")
+	_check(history.commit_checkpoint(moved_state), "freecell history helper should accept a distinct snapshot")
+	_check(history.can_undo(), "freecell history helper should enable undo after a distinct snapshot")
+	var restored_state = history.undo_snapshot()
+	var restored_tableaus: Array = restored_state.get("tableaus", [])
+	_check(restored_tableaus.size() > 0 and restored_tableaus[0] == ["AH"], "freecell history helper undo should return the previous serialized state")
+	_check(not history.can_undo(), "freecell history helper should return to a single baseline snapshot after undo")
 
 func _test_slot_layout_matches_classic_freecell() -> void:
 	var scene = await _spawn_scene()

@@ -1,8 +1,9 @@
+@tool
 extends ZoneTransferPolicy
 
-var controller = null
-var zone_role: StringName = &""
-var zone_index: int = -1
+var controller: Node = null
+@export var zone_role: StringName = &""
+@export var zone_index: int = -1
 
 func evaluate_drag_start(context: ZoneContext, anchor_item: ZoneItemControl, selected_items: Array[ZoneItemControl]):
 	if controller == null or not controller.has_method("evaluate_freecell_drag_start"):
