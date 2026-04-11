@@ -6,13 +6,15 @@ Primary files:
 
 - [`scenes/showcases/freecell/showcase.tscn`](../scenes/showcases/freecell/showcase.tscn)
 - [`scenes/showcases/freecell/showcase.gd`](../scenes/showcases/freecell/showcase.gd)
-- [`scenes/showcases/freecell/freecell_zone_registry.gd`](../scenes/showcases/freecell/freecell_zone_registry.gd)
-- [`scenes/showcases/freecell/freecell_state_model.gd`](../scenes/showcases/freecell/freecell_state_model.gd)
-- [`scenes/showcases/freecell/freecell_move_rules.gd`](../scenes/showcases/freecell/freecell_move_rules.gd)
-- [`scenes/showcases/freecell/freecell_history.gd`](../scenes/showcases/freecell/freecell_history.gd)
-- [`scenes/showcases/freecell/freecell_card.gd`](../scenes/showcases/freecell/freecell_card.gd)
-- [`scenes/showcases/freecell/freecell_tableau_layout.gd`](../scenes/showcases/freecell/freecell_tableau_layout.gd)
-- [`scenes/showcases/freecell/freecell_zone_policy.gd`](../scenes/showcases/freecell/freecell_zone_policy.gd)
+- [`scenes/showcases/freecell/ui/freecell_zone_registry.gd`](../scenes/showcases/freecell/ui/freecell_zone_registry.gd)
+- [`scenes/showcases/freecell/state/freecell_state_model.gd`](../scenes/showcases/freecell/state/freecell_state_model.gd)
+- [`scenes/showcases/freecell/rules/freecell_move_rules.gd`](../scenes/showcases/freecell/rules/freecell_move_rules.gd)
+- [`scenes/showcases/freecell/state/freecell_history.gd`](../scenes/showcases/freecell/state/freecell_history.gd)
+- [`scenes/showcases/freecell/cards/freecell_card.gd`](../scenes/showcases/freecell/cards/freecell_card.gd)
+- [`scenes/showcases/freecell/ui/freecell_tableau_layout.gd`](../scenes/showcases/freecell/ui/freecell_tableau_layout.gd)
+- [`scenes/showcases/freecell/rules/freecell_zone_policy.gd`](../scenes/showcases/freecell/rules/freecell_zone_policy.gd)
+- [`scenes/showcases/shared/ui/showcase_zone_lane_view.gd`](../scenes/showcases/shared/ui/showcase_zone_lane_view.gd)
+- [`scenes/showcases/shared/ui/showcase_number_prompt.tscn`](../scenes/showcases/shared/ui/showcase_number_prompt.tscn)
 
 ## What It Demonstrates
 
@@ -28,25 +30,27 @@ Primary files:
 - 4 free cells
 - 4 suit foundations
 
-The scene now authors the actual `Zone` nodes and shared `ZoneConfig` resources directly in `freecell.tscn`.
+The scene now authors the actual `Zone` nodes and shared `ZoneConfig` resources directly in `showcase.tscn`.
 
 The controller no longer constructs lane zones in code. Instead it coordinates a few focused helpers:
 
-- `freecell_zone_registry.gd` owns scene zone discovery, role/index metadata, and policy binding
-- `freecell_state_model.gd` owns serialized state shape, normalization, and restore plans
-- `freecell_move_rules.gd` owns transfer validation, drag-start expansion, carry-capacity checks, and foundation legality
-- `freecell_history.gd` owns snapshot dedupe, undo checkpoints, and restore orchestration state
+- `ui/freecell_zone_registry.gd` owns scene zone discovery, role/index metadata, and policy binding
+- `state/freecell_state_model.gd` owns serialized state shape, normalization, and restore plans
+- `rules/freecell_move_rules.gd` owns transfer validation, drag-start expansion, carry-capacity checks, and foundation legality
+- `state/freecell_history.gd` owns snapshot dedupe, undo checkpoints, and restore orchestration state
+- `shared/ui/showcase_zone_lane_view.gd` carries the Inspector-authored lane metadata that keeps the scene readable without string-based discovery
+- `shared/ui/showcase_number_prompt.tscn` provides the reusable numeric prompt widget used for the Select Game dialog
 
 ## Showcase Pattern
 
 FreeCell is the reference card-game decomposition in this repository:
 
-1. **scene wiring** stays in `freecell.tscn`
-2. **zone discovery + role metadata** live in `freecell_zone_registry.gd`
-3. **serialized game state** lives in `freecell_state_model.gd`
-4. **move legality** lives in `freecell_move_rules.gd`
-5. **undo / restore history** lives in `freecell_history.gd`
-6. **UI/status orchestration** stays in `freecell.gd`
+1. **scene wiring** stays in `showcase.tscn`
+2. **zone discovery + role metadata** live in `ui/freecell_zone_registry.gd`
+3. **serialized game state** lives in `state/freecell_state_model.gd`
+4. **move legality** lives in `rules/freecell_move_rules.gd`
+5. **undo / restore history** lives in `state/freecell_history.gd`
+6. **UI/status orchestration** stays in `showcase.gd`
 
 That split keeps the public addon API visible while moving game-specific rules and history into small example-side helpers.
 

@@ -14,7 +14,7 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `581` checks
+- full regression runner passes with `586` checks
 - headless editor load succeeds with the plugin enabled
 - launcher regression coverage now focuses on the two public showcase entry points
 
@@ -30,7 +30,7 @@ Validated on Godot 4.6.1:
 - performance smoke checks
 - two-entry launcher and showcase-shell navigation coverage
 - FreeCell showcase rules, history, and UI contracts
-- Xiangqi showcase rules
+- Xiangqi showcase rules and board-surface chrome
 
 ## Contract vs. Implementation Coverage
 
@@ -51,6 +51,8 @@ The new showcase-specific suites live at:
 - [`scenes/tests/suites/xiangqi_showcase_suite.gd`](../scenes/tests/suites/xiangqi_showcase_suite.gd)
 
 FreeCell is now split into rules, history-foundation flow, and interaction-layout suites so its regression output reads like a teaching path instead of a single monolithic showcase file.
+
+The Xiangqi suite now also protects the scene-authored board surface and its visible turn/status chrome, so visual-first refactors stay covered alongside move legality.
 
 They are intended to protect the examples as first-class reference implementations, not as disposable demos.
 

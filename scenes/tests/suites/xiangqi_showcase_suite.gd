@@ -42,6 +42,10 @@ func _load_state(scene: Control, current_side: String, pieces: Array) -> void:
 func _test_initial_setup_and_turn_state() -> void:
 	var scene = await _spawn_scene()
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
+	var turn_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/TurnValueLabel") as Label
+	var status_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/StatusLabel") as Label
+	var red_captures_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel/RedCapturesVBox/RedCapturesLabel") as Label
+	var black_captures_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel/BlackCapturesVBox/BlackCapturesLabel") as Label
 	_check(board_zone != null and board_zone.get_item_count() == 32, "xiangqi should load the full 32-piece starting setup")
 	_check(scene.call("get_current_side") == &"red", "xiangqi should begin with red to move")
 	var red_general = scene.call("get_piece_at_coords", Vector2i(4, 9))
@@ -50,6 +54,10 @@ func _test_initial_setup_and_turn_state() -> void:
 	_check(black_general != null and black_general.piece_type == &"general", "xiangqi should place the black general at the standard home square")
 	_check(not scene.call("is_side_in_check", &"red"), "xiangqi initial setup should not start with red in check")
 	_check(not scene.call("is_side_in_check", &"black"), "xiangqi initial setup should not start with black in check")
+	_check(turn_label != null and turn_label.text.contains("Red"), "xiangqi should expose a visible turn label for the current side")
+	_check(status_label != null and status_label.text.contains("Red"), "xiangqi should expose a visible status message when the game starts")
+	_check(red_captures_label != null and red_captures_label.text == "None", "xiangqi should start with an empty red capture panel")
+	_check(black_captures_label != null and black_captures_label.text == "None", "xiangqi should start with an empty black capture panel")
 
 func _test_toolbar_buttons_and_undo_history() -> void:
 	var scene = await _spawn_scene()

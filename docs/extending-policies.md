@@ -139,6 +139,6 @@ Do not use metadata as a hidden transport for broad scene mutation.
 
 - [`addons/nascentsoul/resources/zone_transfer_policy.gd`](../addons/nascentsoul/resources/zone_transfer_policy.gd)
 - [`addons/nascentsoul/resources/zone_targeting_policy.gd`](../addons/nascentsoul/resources/zone_targeting_policy.gd)
-- [`scenes/showcases/freecell/freecell_zone_policy.gd`](../scenes/showcases/freecell/freecell_zone_policy.gd)
-- [`scenes/showcases/xiangqi/xiangqi_target_policy.gd`](../scenes/showcases/xiangqi/xiangqi_target_policy.gd)
+- [`scenes/showcases/freecell/rules/freecell_zone_policy.gd`](../scenes/showcases/freecell/rules/freecell_zone_policy.gd)
+- [`scenes/showcases/xiangqi/rules/xiangqi_target_policy.gd`](../scenes/showcases/xiangqi/rules/xiangqi_target_policy.gd)
 - [`scenes/showcases/xiangqi/showcase.gd`](../scenes/showcases/xiangqi/showcase.gd)

@@ -126,4 +126,4 @@ That separation is what lets the FreeCell showcase keep all game rules in the ex
 - [`addons/nascentsoul/presets/hand_zone_config.tres`](../addons/nascentsoul/presets/hand_zone_config.tres)
 - [`addons/nascentsoul/presets/pile_zone_config.tres`](../addons/nascentsoul/presets/pile_zone_config.tres)
 - [`scenes/showcases/freecell/showcase.tscn`](../scenes/showcases/freecell/showcase.tscn)
-- [`scenes/showcases/freecell/freecell_zone_registry.gd`](../scenes/showcases/freecell/freecell_zone_registry.gd)
+- [`scenes/showcases/freecell/ui/freecell_zone_registry.gd`](../scenes/showcases/freecell/ui/freecell_zone_registry.gd)
