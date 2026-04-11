@@ -35,18 +35,92 @@ content_margin_right = 8.0
 content_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxFlat" id="FreeCellToolbarPanel"]
-bg_color = Color(0.93, 0.92, 0.86, 1)
+bg_color = Color(0.95, 0.94, 0.89, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.52, 0.42, 1)
 content_margin_left = 8.0
 content_margin_top = 3.0
 content_margin_right = 8.0
 content_margin_bottom = 3.0
 
 [sub_resource type="StyleBoxFlat" id="FreeCellStatusPanel"]
-bg_color = Color(0.93, 0.92, 0.86, 1)
+bg_color = Color(0.95, 0.94, 0.89, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.52, 0.42, 1)
 content_margin_left = 8.0
 content_margin_top = 3.0
 content_margin_right = 8.0
 content_margin_bottom = 3.0
+
+[sub_resource type="StyleBoxFlat" id="FreeCellMenuButtonNormal"]
+bg_color = Color(0.89, 0.93, 0.99, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.34, 0.58, 1)
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="FreeCellMenuButtonHover"]
+bg_color = Color(0.18, 0.38, 0.8, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12, 0.24, 0.5, 1)
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="FreeCellMenuButtonPressed"]
+bg_color = Color(0.12, 0.28, 0.63, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.09, 0.19, 0.42, 1)
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="FreeCellMenuButtonDisabled"]
+bg_color = Color(0.88, 0.9, 0.93, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.58, 0.62, 0.7, 1)
+content_margin_left = 10.0
+content_margin_top = 4.0
+content_margin_right = 10.0
+content_margin_bottom = 4.0
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="FreeCellSlotPanel"]
 bg_color = Color(0.0, 0.45, 0.0, 0.32)
@@ -205,7 +279,17 @@ theme_override_constants/separation = 12
 
 [node name="GameMenuButton" type="MenuButton" parent="RootMargin/RootVBox/Toolbar/ToolbarRow"]
 layout_mode = 2
-flat = true
+flat = false
+theme_override_colors/font_color = Color(0.08, 0.12, 0.21, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.42, 0.45, 0.52, 1)
+theme_override_styles/normal = SubResource("FreeCellMenuButtonNormal")
+theme_override_styles/hover = SubResource("FreeCellMenuButtonHover")
+theme_override_styles/pressed = SubResource("FreeCellMenuButtonPressed")
+theme_override_styles/focus = SubResource("FreeCellMenuButtonHover")
+theme_override_styles/disabled = SubResource("FreeCellMenuButtonDisabled")
 text = "Game"
 
 [node name="NewGameButton" type="Button" parent="RootMargin/RootVBox/Toolbar/ToolbarRow"]
@@ -219,7 +303,17 @@ text = "Undo"
 
 [node name="HelpMenuButton" type="MenuButton" parent="RootMargin/RootVBox/Toolbar/ToolbarRow"]
 layout_mode = 2
-flat = true
+flat = false
+theme_override_colors/font_color = Color(0.08, 0.12, 0.21, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.42, 0.45, 0.52, 1)
+theme_override_styles/normal = SubResource("FreeCellMenuButtonNormal")
+theme_override_styles/hover = SubResource("FreeCellMenuButtonHover")
+theme_override_styles/pressed = SubResource("FreeCellMenuButtonPressed")
+theme_override_styles/focus = SubResource("FreeCellMenuButtonHover")
+theme_override_styles/disabled = SubResource("FreeCellMenuButtonDisabled")
 text = "Help"
 
 [node name="ToolbarSpacer" type="Control" parent="RootMargin/RootVBox/Toolbar/ToolbarRow"]

@@ -11,6 +11,10 @@ border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.31, 0.45, 0.7, 1)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
@@ -58,77 +62,91 @@ text = "Undo"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ContentRow" type="CenterContainer" parent="RootMargin/RootVBox"]
+[node name="ContentRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 18
 
 [node name="BoardColumn" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_type_variation = &"DemoColumnVBox"
 
 [node name="BoardPanel" parent="RootMargin/RootVBox/ContentRow/BoardColumn" instance=ExtResource("3_board_surface")]
 
-[node name="InfoRow" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn"]
+[node name="InfoRow" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow"]
+custom_minimum_size = Vector2(244, 0)
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/separation = 12
 
-[node name="RedCapturesPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow"]
+[node name="TurnPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/InfoRow"]
+custom_minimum_size = Vector2(244, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("XiangqiSidePanel")
+
+[node name="TurnVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="TurnHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel/TurnVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoGoldHeading"
+text = "Turn"
+
+[node name="TurnValueLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel/TurnVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoDetailLabel"
+text = "Red to move"
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel/TurnVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 3
+theme_type_variation = &"DemoStatusLabel"
+text = "Red moves first. Click a red piece to begin targeting."
+
+[node name="RedCapturesPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/InfoRow"]
+custom_minimum_size = Vector2(244, 92)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("XiangqiSidePanel")
 
-[node name="RedCapturesVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel"]
+[node name="RedCapturesVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/InfoRow/RedCapturesPanel"]
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="RedCapturesHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel/RedCapturesVBox"]
+[node name="RedCapturesHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/InfoRow/RedCapturesPanel/RedCapturesVBox"]
 layout_mode = 2
-theme_type_variation = &"DemoBlueHeading"
+theme_type_variation = &"DemoGoldHeading"
 text = "Red Captures"
 
-[node name="RedCapturesLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel/RedCapturesVBox"]
+[node name="RedCapturesLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/InfoRow/RedCapturesPanel/RedCapturesVBox"]
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
 text = "None"
 
-[node name="TurnPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow"]
+[node name="BlackCapturesPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/InfoRow"]
+custom_minimum_size = Vector2(244, 92)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("XiangqiSidePanel")
 
-[node name="TurnVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel"]
+[node name="BlackCapturesVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/InfoRow/BlackCapturesPanel"]
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="TurnHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox"]
+[node name="BlackCapturesHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/InfoRow/BlackCapturesPanel/BlackCapturesVBox"]
 layout_mode = 2
-theme_type_variation = &"DemoBlueHeading"
-text = "Turn"
-
-[node name="TurnValueLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoDetailLabel"
-text = "Red to move"
-
-[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox"]
-layout_mode = 2
-autowrap_mode = 3
-theme_type_variation = &"DemoStatusLabel"
-text = "Red moves first. Click a red piece to begin targeting."
-
-[node name="BlackCapturesPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("XiangqiSidePanel")
-
-[node name="BlackCapturesVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel"]
-layout_mode = 2
-
-[node name="BlackCapturesHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel/BlackCapturesVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoBlueHeading"
+theme_type_variation = &"DemoGoldHeading"
 text = "Black Captures"
 
-[node name="BlackCapturesLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel/BlackCapturesVBox"]
+[node name="BlackCapturesLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/InfoRow/BlackCapturesPanel/BlackCapturesVBox"]
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"

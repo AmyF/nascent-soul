@@ -42,10 +42,10 @@ func _load_state(scene: Control, current_side: String, pieces: Array) -> void:
 func _test_initial_setup_and_turn_state() -> void:
 	var scene = await _spawn_scene()
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
-	var turn_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/TurnValueLabel") as Label
-	var status_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/StatusLabel") as Label
-	var red_captures_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel/RedCapturesVBox/RedCapturesLabel") as Label
-	var black_captures_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel/BlackCapturesVBox/BlackCapturesLabel") as Label
+	var turn_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel/TurnVBox/TurnValueLabel") as Label
+	var status_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel/TurnVBox/StatusLabel") as Label
+	var red_captures_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InfoRow/RedCapturesPanel/RedCapturesVBox/RedCapturesLabel") as Label
+	var black_captures_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InfoRow/BlackCapturesPanel/BlackCapturesVBox/BlackCapturesLabel") as Label
 	_check(board_zone != null and board_zone.get_item_count() == 32, "xiangqi should load the full 32-piece starting setup")
 	_check(scene.call("get_current_side") == &"red", "xiangqi should begin with red to move")
 	var red_general = scene.call("get_piece_at_coords", Vector2i(4, 9))
@@ -260,10 +260,12 @@ func _test_compact_layout_keeps_board_targetable() -> void:
 	await _settle_frames(3)
 	var content_row = scene.get_node_or_null("RootMargin/RootVBox/ContentRow") as Control
 	var board_column = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn") as Control
+	var info_row = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InfoRow") as Control
 	var board_panel = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel") as Panel
 	var board_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
 	_check(board_panel != null and board_zone != null and _rect_inside(board_panel.get_global_rect(), board_zone.get_global_rect(), 4.0), "xiangqi compact layout should keep the board zone inside the visible board panel")
-	_check(content_row != null and board_column != null and content_row.get_child_count() == 1 and content_row.get_child(0) == board_column, "xiangqi compact layout should keep the simplified board-only content centered")
+	_check(content_row != null and board_column != null and info_row != null and content_row.get_child_count() == 2, "xiangqi compact layout should keep both the board column and the info sidebar mounted")
+	_check(board_panel != null and info_row != null and info_row.get_global_rect().position.x >= board_panel.get_global_rect().end.x - 4.0, "xiangqi compact layout should keep the info sidebar beside the board without overlap")
 	await _load_state(scene, "red", [
 		_piece("black", "general", Vector2i(3, 0)),
 		_piece("red", "general", Vector2i(5, 9)),

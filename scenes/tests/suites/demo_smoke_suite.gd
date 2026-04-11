@@ -122,8 +122,8 @@ func _test_embedded_demo_scene_layouts() -> void:
 	var xiangqi_board_panel = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel") as Control
 	var xiangqi_board_host = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost") as Control
 	var xiangqi_board_overlay = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/BoardOverlay") as Control
-	var xiangqi_info_row = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow") as Control
-	var xiangqi_status = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/StatusLabel") as Label
+	var xiangqi_info_row = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/InfoRow") as Control
+	var xiangqi_status = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel/TurnVBox/StatusLabel") as Label
 	var target_scene = xiangqi.get_node_or_null("RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone") as Zone
 	_check(xiangqi_toolbar != null and xiangqi_board_panel != null and xiangqi_board_host != null and xiangqi_info_row != null, "xiangqi showcase should keep its toolbar, board host, and info chrome mounted inside the embedded host")
 	_check(target_scene != null and xiangqi_board_overlay != null, "xiangqi showcase should keep the scene-authored battlefield zone and board overlay mounted inside the embedded host")

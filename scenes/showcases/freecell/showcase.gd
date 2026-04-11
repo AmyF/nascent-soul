@@ -24,6 +24,10 @@ const UNDO_ANIMATION_PADDING := 0.08
 const NORMAL_STATUS_COLOR := Color(0.10, 0.10, 0.10, 1.0)
 const REJECT_STATUS_COLOR := Color(0.72, 0.09, 0.12, 1.0)
 const WIN_STATUS_COLOR := Color(0.20, 0.42, 0.12, 1.0)
+const MENU_POPUP_TEXT_COLOR := Color(0.08, 0.12, 0.21, 1.0)
+const MENU_POPUP_ACCEL_COLOR := Color(0.31, 0.36, 0.47, 1.0)
+const MENU_POPUP_DISABLED_COLOR := Color(0.45, 0.48, 0.54, 1.0)
+const MENU_POPUP_HOVER_TEXT_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 const DEAL_MAX := FreeCellRulesScript.DEAL_MAX
 
 @onready var root_vbox: VBoxContainer = $RootMargin/RootVBox
@@ -195,6 +199,7 @@ func _wire_controls() -> void:
 	select_game_overlay.confirmed.connect(_on_select_game_confirmed)
 
 	var game_popup = game_menu_button.get_popup()
+	_style_toolbar_popup(game_popup)
 	game_popup.clear()
 	game_popup.add_item("New Game\tF2", GAME_MENU_NEW)
 	game_popup.add_item("Undo\tCtrl+Z", GAME_MENU_UNDO)
@@ -203,6 +208,7 @@ func _wire_controls() -> void:
 	game_popup.id_pressed.connect(_on_game_menu_id_pressed)
 
 	var help_popup = help_menu_button.get_popup()
+	_style_toolbar_popup(help_popup)
 	help_popup.clear()
 	help_popup.add_item("How to Play", HELP_MENU_RULES)
 	help_popup.add_item("About This Showcase", HELP_MENU_ABOUT)
@@ -216,6 +222,40 @@ func _bind_zone_events(zone: Zone) -> void:
 	zone.item_double_clicked.connect(_on_item_double_clicked.bind(zone))
 	zone.item_right_clicked.connect(_on_item_right_clicked.bind(zone))
 	zone.item_clicked.connect(_on_zone_item_clicked.bind(zone))
+
+func _style_toolbar_popup(popup: PopupMenu) -> void:
+	if popup == null:
+		return
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.98, 0.96, 0.91, 1.0)
+	panel_style.border_width_left = 1
+	panel_style.border_width_top = 1
+	panel_style.border_width_right = 1
+	panel_style.border_width_bottom = 1
+	panel_style.border_color = Color(0.21, 0.32, 0.56, 1.0)
+	panel_style.corner_radius_top_left = 4
+	panel_style.corner_radius_top_right = 4
+	panel_style.corner_radius_bottom_right = 4
+	panel_style.corner_radius_bottom_left = 4
+
+	var hover_style := StyleBoxFlat.new()
+	hover_style.bg_color = Color(0.18, 0.38, 0.8, 1.0)
+	hover_style.corner_radius_top_left = 3
+	hover_style.corner_radius_top_right = 3
+	hover_style.corner_radius_bottom_right = 3
+	hover_style.corner_radius_bottom_left = 3
+
+	popup.add_theme_color_override("font_color", MENU_POPUP_TEXT_COLOR)
+	popup.add_theme_color_override("font_hover_color", MENU_POPUP_HOVER_TEXT_COLOR)
+	popup.add_theme_color_override("font_accelerator_color", MENU_POPUP_ACCEL_COLOR)
+	popup.add_theme_color_override("font_disabled_color", MENU_POPUP_DISABLED_COLOR)
+	popup.add_theme_color_override("font_separator_color", MENU_POPUP_ACCEL_COLOR)
+	popup.add_theme_stylebox_override("panel", panel_style)
+	popup.add_theme_stylebox_override("hover", hover_style)
+	popup.add_theme_constant_override("item_start_padding", 10)
+	popup.add_theme_constant_override("item_end_padding", 10)
+	popup.add_theme_constant_override("h_separation", 8)
+	popup.add_theme_constant_override("v_separation", 4)
 
 func _all_zones() -> Array[Zone]:
 	return _zones.all_zones_ref()

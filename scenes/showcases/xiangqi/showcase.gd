@@ -21,16 +21,17 @@ const UNDO_ANIMATION_PADDING := 0.08
 @onready var toolbar: Control = $RootMargin/RootVBox/Toolbar
 @onready var new_game_button: Button = $RootMargin/RootVBox/Toolbar/NewGameButton
 @onready var undo_button: Button = $RootMargin/RootVBox/Toolbar/UndoButton
-@onready var content_row: Control = $RootMargin/RootVBox/ContentRow
+@onready var content_row: HBoxContainer = $RootMargin/RootVBox/ContentRow
 @onready var board_column: VBoxContainer = $RootMargin/RootVBox/ContentRow/BoardColumn
 @onready var board_panel: Panel = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel
 @onready var board_host: Control = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost
+@onready var info_row: VBoxContainer = $RootMargin/RootVBox/ContentRow/InfoRow
 @onready var board_overlay := $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/BoardOverlay as XiangqiBoardOverlayScript
 @onready var board_zone_scene: BattlefieldZone = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone
-@onready var red_captures_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel/RedCapturesVBox/RedCapturesLabel
-@onready var turn_value_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/TurnValueLabel
-@onready var status_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/StatusLabel
-@onready var black_captures_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel/BlackCapturesVBox/BlackCapturesLabel
+@onready var red_captures_label: Label = $RootMargin/RootVBox/ContentRow/InfoRow/RedCapturesPanel/RedCapturesVBox/RedCapturesLabel
+@onready var turn_value_label: Label = $RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel/TurnVBox/TurnValueLabel
+@onready var status_label: Label = $RootMargin/RootVBox/ContentRow/InfoRow/TurnPanel/TurnVBox/StatusLabel
+@onready var black_captures_label: Label = $RootMargin/RootVBox/ContentRow/InfoRow/BlackCapturesPanel/BlackCapturesVBox/BlackCapturesLabel
 
 var _board_zone: BattlefieldZone = null
 var _board_overlay: Control = null
@@ -386,8 +387,10 @@ func _queue_layout_refresh() -> void:
 func _apply_responsive_layout() -> void:
 	var board_padding := Vector2(12.0, 12.0)
 	var root_spacing = float(root_vbox.get_theme_constant("separation"))
-	var available_width = max(420.0, root_vbox.size.x - 40.0)
-	var available_height = max(420.0, root_vbox.size.y - _control_height(toolbar) - root_spacing * 2.0)
+	var content_spacing = float(content_row.get_theme_constant("separation")) if is_instance_valid(content_row) else 0.0
+	var info_width = max(220.0, _control_width(info_row))
+	var available_width = max(420.0, root_vbox.size.x - info_width - content_spacing - 24.0)
+	var available_height = max(420.0, root_vbox.size.y - _control_height(toolbar) - root_spacing)
 	var cell_from_width = floor((available_width - board_padding.x * 2.0) / float(XiangqiStateModelScript.BOARD_COLUMNS))
 	var cell_from_height = floor((available_height - board_padding.y * 2.0) / float(XiangqiStateModelScript.BOARD_ROWS))
 	var resolved_cell = clamp(min(cell_from_width, cell_from_height), 40.0, 72.0)
@@ -398,6 +401,8 @@ func _apply_responsive_layout() -> void:
 	)
 	board_column.custom_minimum_size = board_size
 	board_panel.custom_minimum_size = board_size
+	if is_instance_valid(info_row):
+		info_row.custom_minimum_size = Vector2(info_width, board_size.y)
 	if _space_model != null:
 		_space_model.cell_size = cell_size
 		_space_model.padding = board_padding
@@ -412,6 +417,11 @@ func _control_height(control: Control) -> float:
 	if control == null:
 		return 0.0
 	return control.size.y if control.size.y > 0.0 else control.get_combined_minimum_size().y
+
+func _control_width(control: Control) -> float:
+	if control == null:
+		return 0.0
+	return control.size.x if control.size.x > 0.0 else control.get_combined_minimum_size().x
 
 func _serialize_state() -> Dictionary:
 	return _state_model.serialize_state(
