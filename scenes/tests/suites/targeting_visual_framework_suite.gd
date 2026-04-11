@@ -36,7 +36,7 @@ func _test_custom_layer_receives_item_frame() -> void:
 	var session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone.update_targeting_session(session, enemy.global_position + enemy.size * 0.5)
+	source_zone._runtime_update_targeting_session(session, enemy.global_position + enemy.size * 0.5)
 	var overlay = _find_targeting_overlay_host()
 	var probe = overlay.get_node_or_null("00_probe_layer/Probe") as ColorRect if overlay != null else null
 	_check(overlay != null and overlay.get_script() == OverlayHostScript, "layered targeting styles should render through the overlay host")
@@ -64,7 +64,7 @@ func _test_custom_layer_receives_placement_frame() -> void:
 	var session = battlefield.get_targeting_session()
 	if session == null:
 		return
-	battlefield.update_targeting_session(session, battlefield.resolve_target_anchor(ZonePlacementTarget.square(2, 1)))
+	battlefield._runtime_update_targeting_session(session, battlefield.resolve_target_anchor(ZonePlacementTarget.square(2, 1)))
 	var overlay = _find_targeting_overlay_host()
 	var probe = overlay.get_node_or_null("00_placement_probe/Probe") as ColorRect if overlay != null else null
 	_check(probe != null and bool(probe.get_meta("is_placement_target", false)), "custom layer nodes should receive placement-target metadata")
@@ -89,7 +89,7 @@ func _test_style_override_rebuilds_overlay_layers() -> void:
 	var session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone.update_targeting_session(session, enemy.global_position + enemy.size * 0.5)
+	source_zone._runtime_update_targeting_session(session, enemy.global_position + enemy.size * 0.5)
 	var overlay = _find_targeting_overlay_host()
 	var classic_layers = overlay.get_debug_layer_keys() if overlay != null else PackedStringArray()
 	var first_overlay_id = overlay.get_instance_id() if overlay != null else -1
@@ -102,7 +102,7 @@ func _test_style_override_rebuilds_overlay_layers() -> void:
 	session = source_zone.get_targeting_session()
 	if session == null:
 		return
-	source_zone.update_targeting_session(session, enemy.global_position + enemy.size * 0.5)
+	source_zone._runtime_update_targeting_session(session, enemy.global_position + enemy.size * 0.5)
 	overlay = _find_targeting_overlay_host()
 	var override_layers = overlay.get_debug_layer_keys() if overlay != null else PackedStringArray()
 	_check(overlay != null and overlay.get_instance_id() != first_overlay_id, "switching presets between sessions should rebuild the overlay host")
@@ -126,7 +126,7 @@ func _test_builtin_presets_create_overlay_and_cleanup() -> void:
 		var session = source_zone.get_targeting_session()
 		if session == null:
 			return
-		source_zone.update_targeting_session(session, enemy.global_position + enemy.size * 0.5)
+		source_zone._runtime_update_targeting_session(session, enemy.global_position + enemy.size * 0.5)
 		var overlay = _find_targeting_overlay_host()
 		_check(overlay != null and overlay.visible, "%s preset should create a visible overlay host" % style_id)
 		_check(overlay != null and not overlay.get_debug_layer_keys().is_empty(), "%s preset should register at least one active layer" % style_id)

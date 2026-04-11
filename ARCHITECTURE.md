@@ -15,7 +15,7 @@ These are the parts game code, showcase code, and open-source users are expected
 | --- | --- | --- |
 | Runtime nodes | `addons/nascentsoul/core/` | `Zone`, `CardZone`, `BattlefieldZone`, `ZoneItemControl` |
 | Data + commands | `addons/nascentsoul/model/` | `ZoneTransferCommand`, `ZoneTargetingCommand`, `ZonePlacementTarget`, decisions, visual-state models |
-| Extension-point resources | `addons/nascentsoul/resources/` | `ZoneConfig`, `ZoneLayoutPolicy`, `ZoneTransferPolicy`, `ZoneTargetingPolicy`, `ZoneDisplayStyle`, `ZoneDragVisualFactory`, `ZoneSpaceModel`, `ZoneSortPolicy`, `ZoneInteraction` |
+| Extension-point resources | `addons/nascentsoul/resources/` | `ZoneConfig`, `ZoneLayoutPolicy`, `ZoneTransferPolicy`, `ZoneTargetingPolicy`, `ZoneDisplayStyle`, `ZoneDragVisualFactory`, `ZoneItemSpawnFactory`, `ZoneSpaceModel`, `ZoneSortPolicy`, `ZoneInteraction` |
 | Built-in item types | `addons/nascentsoul/cards/`, `addons/nascentsoul/pieces/` | `ZoneCard`, `ZonePiece`, `CardData`, `PieceData` |
 | Built-in concrete implementations | `addons/nascentsoul/impl/` | Stock layouts, policies, spaces, displays, targeting styles, factories |
 | Starter configs | `addons/nascentsoul/presets/` | Inspector-friendly presets for common zone families |
@@ -29,7 +29,7 @@ These types exist to make the public surface work, but they are **not** intended
 | --- | --- | --- |
 | Runtime bootstrap | `addons/nascentsoul/runtime/zone_runtime_bootstrap.gd` | Owns the shared store/context/service wiring for a `Zone` |
 | Internal root host | `addons/nascentsoul/runtime/zone_internal_roots.gd` | Keeps `ItemsRoot` / `PreviewRoot` present, ordered, and editor-safe |
-| Transfer workflow | `addons/nascentsoul/runtime/zone_transfer_service.gd`, `zone_transfer_evaluator.gd`, `zone_transfer_execution.gd`, `zone_drag_session_cleanup.gd` | Evaluation, execution, and cleanup are split instead of living in one file |
+| Transfer workflow | `addons/nascentsoul/runtime/zone_transfer_service.gd`, `zone_transfer_execution.gd`, `zone_drag_session_cleanup.gd` | `ZoneTransferService` owns transfer decision flow and drag orchestration, while execution and cleanup stay separate |
 | Input workflow | `addons/nascentsoul/runtime/zone_input_service.gd`, `zone_input_selection_controller.gd` | Gesture capture stays separate from selection / hover / keyboard flow |
 | Render workflow | `addons/nascentsoul/runtime/zone_render_service.gd`, `zone_drag_preview_feedback.gd` | Layout application stays separate from ghost + hover-preview state |
 | Targeting workflow | `addons/nascentsoul/runtime/zone_targeting_service.gd`, `zone_target_resolution.gd`, `zone_target_feedback.gd` | Candidate discovery stays separate from feedback state and signal emission |
@@ -58,6 +58,7 @@ Current reality:
 - most files here are already **public extension contracts**
 - policy authors depend on request/decision types from this directory
 - style and item authors depend on placement, candidate, and visual-state types from this directory
+- `ZonePlacementTarget` keeps shared targeting APIs readable by exposing `linear_index` for ordered zones and `grid_coordinates` / `grid_cell_id` for board cells
 
 Refactor direction:
 
@@ -114,6 +115,7 @@ Use these when customizing behavior:
 - subclass `ZoneLayoutPolicy`
 - subclass `ZoneDisplayStyle`
 - subclass `ZoneDragVisualFactory`
+- subclass `ZoneItemSpawnFactory`
 - subclass `ZoneSpaceModel`
 - compose them through `ZoneConfig`
 

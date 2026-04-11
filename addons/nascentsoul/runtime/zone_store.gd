@@ -3,10 +3,12 @@ class_name ZoneStore extends RefCounted
 var items: Array[ZoneItemControl] = []
 var item_targets: Dictionary = {}
 var transfer_handoffs: Dictionary = {}
+var display_state: Dictionary = {}
 var selection_state: ZoneSelectionState = ZoneSelectionState.new()
 
 func cleanup() -> void:
 	clear_runtime_items()
+	display_state.clear()
 	selection_state = null
 
 func get_items() -> Array[ZoneItemControl]:
@@ -139,6 +141,20 @@ func clear_runtime_items() -> void:
 	clear_transfer_handoffs()
 	if selection_state != null:
 		selection_state.clear()
+
+func get_display_state(style: Resource) -> Dictionary:
+	if style == null:
+		return {}
+	var key = style.get_instance_id()
+	if not display_state.has(key):
+		display_state[key] = {
+			"active_tweens": {},
+			"target_cache": {}
+		}
+	return display_state[key]
+
+func clear_display_state() -> void:
+	display_state.clear()
 
 func sync_container_order(items_root: Control, ghost_instance: Control = null) -> void:
 	if items_root == null:

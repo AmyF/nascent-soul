@@ -24,7 +24,7 @@ func _process(_delta: float) -> void:
 		clear_session(false)
 		return
 	active_session.pointer_global_position = get_viewport().get_mouse_position()
-	source_zone.update_targeting_session(active_session, active_session.pointer_global_position)
+	source_zone._runtime_update_targeting_session(active_session, active_session.pointer_global_position)
 	_update_overlay(source_zone)
 
 func _input(event: InputEvent) -> void:
@@ -35,14 +35,14 @@ func _input(event: InputEvent) -> void:
 		if mouse_event.button_index == MOUSE_BUTTON_LEFT and not mouse_event.pressed:
 			var source_zone = active_session.source_zone as Zone
 			if source_zone != null:
-				source_zone.finalize_targeting_session(active_session)
+				source_zone._runtime_finalize_targeting_session(active_session)
 			else:
 				clear_session(false)
 			return
 		if mouse_event.button_index == MOUSE_BUTTON_RIGHT and mouse_event.pressed:
 			var cancel_zone = active_session.source_zone as Zone
 			if cancel_zone != null:
-				cancel_zone.cancel_targeting_session(active_session, true)
+				cancel_zone._runtime_cancel_targeting_session(active_session, true)
 			else:
 				clear_session(false)
 			return
@@ -51,7 +51,7 @@ func _input(event: InputEvent) -> void:
 		if action_event.pressed and action_event.action == &"ui_cancel":
 			var cancel_zone = active_session.source_zone as Zone
 			if cancel_zone != null:
-				cancel_zone.cancel_targeting_session(active_session, true)
+				cancel_zone._runtime_cancel_targeting_session(active_session, true)
 			else:
 				clear_session(false)
 
@@ -96,7 +96,7 @@ func start_targeting(
 	set_process(true)
 	set_process_input(true)
 	if source_zone != null:
-		source_zone.update_targeting_session(active_session, pointer_global_position)
+		source_zone._runtime_update_targeting_session(active_session, pointer_global_position)
 		refresh_overlay()
 	return active_session
 
@@ -109,7 +109,7 @@ func clear_session(keep_process_input: bool = false) -> void:
 		return
 	var source_zone = active_session.source_zone as Zone
 	if source_zone != null and is_instance_valid(source_zone):
-		source_zone.clear_targeting_feedback(false, active_session.source_item)
+		source_zone._runtime_clear_targeting_feedback(false, active_session.source_item)
 	active_session.cleanup()
 	active_session = null
 	set_process(false)

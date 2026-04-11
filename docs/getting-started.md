@@ -83,6 +83,8 @@ field.add_item(piece, ZonePlacementTarget.square(1, 1))
 
 Battlefields use the same zone API, but placement is explicit instead of linear.
 
+Read the shared target type the same way: ordered zones resolve `ZonePlacementTarget.linear(...)` and expose `linear_index`, while battlefields expose `grid_coordinates` and optional `grid_cell_id`.
+
 ## Editor Workflow
 
 The plugin adds three menu actions:

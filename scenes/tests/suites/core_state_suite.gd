@@ -67,6 +67,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_base_zone_defaults()
 	await _reset_root()
+	_test_placement_target_contract()
+	await _reset_root()
 	await _test_drag_transfer_and_selection_prune()
 	await _reset_root()
 	await _test_batch_transfer_api()
@@ -199,6 +201,27 @@ func _test_base_zone_defaults() -> void:
 	_check(zone.get_transfer_policy() is ZoneAllowAllTransferPolicy, "base Zone default config should still use the allow-all transfer policy")
 	_check(zone.get_display_style() is ZoneCardDisplay, "base Zone default config should keep the standard card display style")
 
+func _test_placement_target_contract() -> void:
+	var invalid = ZonePlacementTarget.invalid()
+	_check(not invalid.is_valid(), "invalid placement target should remain invalid")
+	_check(invalid.matches_kind(ZonePlacementTarget.TargetKind.NONE), "invalid placement target should keep the NONE kind contract")
+	var linear = ZonePlacementTarget.linear(3)
+	_check(linear.is_linear(), "linear placement target should report linear semantics")
+	_check(not linear.is_grid(), "linear placement target should not advertise grid semantics")
+	_check(linear.linear_index == 3 and linear.get_linear_index() == 3, "linear placement target should expose the resolved linear index explicitly")
+	_check(linear.grid_coordinates == Vector2i(-1, -1), "linear placement target should not retain fake grid coordinates")
+	_check(linear.describe() == "linear:3", "linear placement target should describe itself with the linear vocabulary")
+	var square = ZonePlacementTarget.square(2, 1, &"sq_2_1")
+	_check(square.is_square() and square.is_grid(), "square placement target should report grid semantics")
+	_check(square.grid_coordinates == Vector2i(2, 1), "square placement target should expose its grid coordinates explicitly")
+	_check(square.get_grid_column() == 2 and square.get_grid_row() == 1, "square placement target should expose column and row helpers")
+	_check(square.grid_cell_id == &"sq_2_1" and square.has_grid_cell_id(), "square placement target should preserve the resolved grid cell id")
+	_check(square.matches_kind(ZonePlacementTarget.TargetKind.SQUARE), "square placement target should match its own kind")
+	_check(not square.matches_kind(ZonePlacementTarget.TargetKind.HEX), "square placement target should not match the hex kind")
+	var hex = ZonePlacementTarget.hex(4, 2, &"hex_4_2")
+	_check(hex.is_hex(), "hex placement target should report hex semantics")
+	_check(hex.get_grid_coordinates() == Vector2i(4, 2), "hex placement target should expose grid coordinates through the shared helper")
+
 func _test_drag_transfer_and_selection_prune() -> void:
 	var target_panel = _make_panel("TargetPanel", Vector2.ZERO, Vector2(620, 260))
 	var source_panel = _make_panel("SourcePanel", Vector2(24, 320), Vector2(620, 260))
@@ -214,7 +237,7 @@ func _test_drag_transfer_and_selection_prune() -> void:
 			resolved_target = target as ZonePlacementTarget
 		elif target is ZoneTransferDecision:
 			resolved_target = (target as ZoneTransferDecision).resolved_target
-		var slot = resolved_target.slot if resolved_target != null and resolved_target.is_linear() else -1
+		var slot = resolved_target.linear_index if resolved_target != null and resolved_target.is_linear() else -1
 		transfer_events.append("%s:%s->%s@%d" % [item.name, source_zone_ref.name, target_zone_ref.name, slot])
 	)
 	source_zone.add_item(alpha)
@@ -310,17 +333,17 @@ func _test_transfer_handoff_cleanup() -> void:
 	await _settle_frames(2)
 	_check(_move_item(source_zone, alpha, target_zone, ZonePlacementTarget.linear(0)), "handoff cleanup smoke should move the card into the target zone")
 	await _settle_frames(2)
-	_check(source_zone.get_transfer_handoff_count() == 0, "source runtime should not retain transfer handoff data after a completed move")
-	_check(target_zone.get_transfer_handoff_count() == 0, "target runtime should consume transfer handoff data during refresh")
-	target_zone.set_transfer_handoff(alpha, {"global_position": Vector2(10, 10)})
+	_check(source_zone._runtime_get_transfer_handoff_count() == 0, "source runtime should not retain transfer handoff data after a completed move")
+	_check(target_zone._runtime_get_transfer_handoff_count() == 0, "target runtime should consume transfer handoff data during refresh")
+	target_zone._runtime_set_transfer_handoff(alpha, {"global_position": Vector2(10, 10)})
 	target_zone.remove_item(alpha)
 	await _settle_frames(1)
-	_check(target_zone.get_transfer_handoff_count() == 0, "remove_item should clear any pending handoff for the removed card")
+	_check(target_zone._runtime_get_transfer_handoff_count() == 0, "remove_item should clear any pending handoff for the removed card")
 	target_zone.add_item(alpha)
 	await _settle_frames(2)
-	target_zone.set_transfer_handoff(alpha, {"global_position": Vector2(20, 20)})
+	target_zone._runtime_set_transfer_handoff(alpha, {"global_position": Vector2(20, 20)})
 	target_zone.clear_display_state()
-	_check(target_zone.get_transfer_handoff_count() == 0, "clear_display_state should clear pending handoff data")
+	_check(target_zone._runtime_get_transfer_handoff_count() == 0, "clear_display_state should clear pending handoff data")
 
 func _test_transfer_playground_hand_to_board_drag() -> void:
 	var scene = TRANSFER_PLAYGROUND_SCENE.instantiate()
@@ -340,7 +363,7 @@ func _test_transfer_playground_hand_to_board_drag() -> void:
 		return
 	session.hover_zone = board_zone
 	session.preview_target = ZonePlacementTarget.linear(board_zone.get_item_count())
-	hand_zone.finalize_drag_session(session)
+	hand_zone._runtime_finalize_drag_session(session)
 	await _settle_frames(3)
 	if DisplayServer.get_name() != "headless":
 		await get_tree().create_timer(0.25).timeout
@@ -366,7 +389,7 @@ func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	target_zone.drop_hover_state_changed.connect(func(items: Array, _target_zone_ref: Zone, decision) -> void:
 		var item_name = str(items[0].name) if not items.is_empty() and items[0] is Control else "Selection"
 		var resolved_target: ZonePlacementTarget = decision.resolved_target if decision != null and decision.resolved_target != null else ZonePlacementTarget.invalid()
-		var slot = resolved_target.slot if resolved_target.is_linear() else -1
+		var slot = resolved_target.linear_index if resolved_target.is_linear() else -1
 		hover_states.append({
 			"item": item_name,
 			"allowed": decision.allowed,
@@ -376,7 +399,7 @@ func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	)
 	target_zone.drop_preview_changed.connect(func(_items: Array, _target_zone_ref: Zone, target) -> void:
 		var preview_target: ZonePlacementTarget = target if target is ZonePlacementTarget else ZonePlacementTarget.invalid()
-		var slot = preview_target.slot if preview_target.is_linear() else -1
+		var slot = preview_target.linear_index if preview_target.is_linear() else -1
 		preview_indices.append(slot)
 	)
 	target_zone.drop_rejected.connect(func(items: Array, source_zone_ref: Zone, target_zone_ref: Zone, reason: String) -> void:
@@ -395,7 +418,7 @@ func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	session.preview_target = ZonePlacementTarget.invalid()
 	_check(not decision.allowed, "reject hover should resolve to a rejected decision")
 	_check(decision.reason == "Reject hover target is full.", "preview transfer should surface the same rejection reason used by drag hover feedback")
-	_check(decision.resolved_target != null and decision.resolved_target.is_linear() and decision.resolved_target.slot == 0, "preview transfer should keep the attempted target slot even when the drop is rejected")
+	_check(decision.resolved_target != null and decision.resolved_target.is_linear() and decision.resolved_target.linear_index == 0, "preview transfer should keep the attempted target slot even when the drop is rejected")
 	_check(hover_states == [{
 		"item": "Alpha",
 		"allowed": false,

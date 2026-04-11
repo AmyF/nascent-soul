@@ -41,7 +41,7 @@ func _test_square_battlefield_direct_place() -> void:
 	_check(_move_item(source_zone, spark, battlefield, target), "card should move from card zone into square battlefield")
 	await _settle_frames(2)
 	var placed_target = battlefield.get_item_target(spark)
-	_check(placed_target.kind == ZonePlacementTarget.TargetKind.SQUARE and placed_target.coordinates == Vector2i(1, 1), "square battlefield should retain the requested cell target")
+	_check(placed_target.is_square() and placed_target.grid_coordinates == Vector2i(1, 1), "square battlefield should retain the requested cell target")
 	_check(spark is ZoneCard, "direct placement into a battlefield should keep the transferred card as a ZoneCard")
 	_check(spark.scale.x < 1.0 and spark.scale.y < 1.0, "square battlefield should scale tall card visuals down to fit the target cell")
 	_check(_rect_inside(battlefield.get_global_rect().grow(48.0), spark.get_global_rect(), 48.0), "card placed on square battlefield should render inside battlefield bounds")
@@ -84,7 +84,7 @@ func _test_hex_battlefield_direct_place() -> void:
 	_check(_move_item(source_zone, ember, battlefield, target), "card should move from card zone into hex battlefield")
 	await _settle_frames(2)
 	var placed_target = battlefield.get_item_target(ember)
-	_check(placed_target.kind == ZonePlacementTarget.TargetKind.HEX and placed_target.coordinates == Vector2i(2, 1), "hex battlefield should retain the requested hex target")
+	_check(placed_target.is_hex() and placed_target.grid_coordinates == Vector2i(2, 1), "hex battlefield should retain the requested hex target")
 	_check(_rect_inside(battlefield.get_global_rect().grow(48.0), ember.get_global_rect(), 48.0), "card placed on hex battlefield should render inside battlefield bounds")
 
 func _test_spawn_piece_transfer_rule() -> void:
@@ -98,7 +98,7 @@ func _test_spawn_piece_transfer_rule() -> void:
 	var rule_table = ZoneRuleTableTransferPolicyScript.new()
 	var rule = ZoneTransferRuleScript.new()
 	rule.source_item_script = ZoneCardScript
-	rule.target_kind = ZonePlacementTarget.TargetKind.SQUARE
+	rule.placement_target_kind = ZonePlacementTarget.TargetKind.SQUARE
 	rule.transfer_mode = ZoneTransferDecision.TransferMode.SPAWN_PIECE
 	var piece_scene := PackedScene.new()
 	var piece_prototype := ZonePiece.new()
@@ -121,7 +121,7 @@ func _test_spawn_piece_transfer_rule() -> void:
 	_check(battlefield.get_item_count() == 1, "spawn-piece transfer should create exactly one battlefield item")
 	var summoned = battlefield.get_items()[0]
 	_check(summoned is ZonePiece, "spawn-piece transfer should insert a ZonePiece into the battlefield")
-	_check(battlefield.get_item_target(summoned).coordinates == Vector2i(2, 0), "spawned piece should land on the requested battlefield target")
+	_check(battlefield.get_item_target(summoned).grid_coordinates == Vector2i(2, 0), "spawned piece should land on the requested battlefield target")
 	_check((summoned as ZonePiece).data != null and (summoned as ZonePiece).data.title == "Sigil", "spawned piece should inherit the source card title")
 
 func _test_battlefield_piece_reposition() -> void:
@@ -138,7 +138,7 @@ func _test_battlefield_piece_reposition() -> void:
 	await _settle_frames(2)
 	_check(_move_item(battlefield, piece, battlefield, moved_target), "piece should be movable within the same battlefield zone")
 	await _settle_frames(2)
-	_check(battlefield.get_item_target(piece).coordinates == Vector2i(1, 0), "moving a piece inside battlefield should update its target coordinates")
+	_check(battlefield.get_item_target(piece).grid_coordinates == Vector2i(1, 0), "moving a piece inside battlefield should update its target coordinates")
 
 func _test_piece_can_move_between_piece_battlefields() -> void:
 	var left_panel = _make_panel("BattlefieldPieceLeft", Vector2(24, 24), Vector2(420, 420))
@@ -157,7 +157,7 @@ func _test_piece_can_move_between_piece_battlefields() -> void:
 	_check(_move_item(left_zone, piece, right_zone, ZonePlacementTarget.square(1, 0)), "piece should be movable into another piece-friendly battlefield zone")
 	await _settle_frames(2)
 	_check(right_zone.get_item_count() == 1 and right_zone.get_items()[0] == piece, "moved piece should arrive in the destination battlefield zone")
-	_check(right_zone.get_item_target(piece).coordinates == Vector2i(1, 0), "moved piece should keep the requested target in the destination battlefield")
+	_check(right_zone.get_item_target(piece).grid_coordinates == Vector2i(1, 0), "moved piece should keep the requested target in the destination battlefield")
 
 func _test_modes_restrict_piece_backflow() -> void:
 	var source_panel = _make_panel("BattlefieldModesSource", Vector2(24, 24), Vector2(620, 220))
@@ -214,7 +214,7 @@ func _make_cards_only_rule_table(reject_reason: String) -> ZoneRuleTableTransfer
 func _make_spawn_piece_rule() -> ZoneTransferRule:
 	var rule = ZoneTransferRuleScript.new()
 	rule.source_item_script = ZoneCardScript
-	rule.target_kind = ZonePlacementTarget.TargetKind.SQUARE
+	rule.placement_target_kind = ZonePlacementTarget.TargetKind.SQUARE
 	rule.transfer_mode = ZoneTransferDecision.TransferMode.SPAWN_PIECE
 	var piece_scene := PackedScene.new()
 	var prototype := ZonePiece.new()

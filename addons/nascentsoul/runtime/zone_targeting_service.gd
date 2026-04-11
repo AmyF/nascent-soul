@@ -2,18 +2,21 @@ class_name ZoneTargetingService extends RefCounted
 
 # Internal runtime helper for targeting candidate resolution and feedback.
 
+const ZoneRuntimePortScript = preload("res://addons/nascentsoul/runtime/zone_runtime_port.gd")
 const ZoneTargetResolutionScript = preload("res://addons/nascentsoul/runtime/zone_target_resolution.gd")
 const ZoneTargetFeedbackScript = preload("res://addons/nascentsoul/runtime/zone_target_feedback.gd")
 
 var context: ZoneContext
 var zone: Zone
+var runtime_port = null
 
 var _resolution = null
 var _feedback = null
 
-func _init(p_context: ZoneContext) -> void:
+func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	context = p_context
 	zone = context.zone
+	runtime_port = p_runtime_port
 	_resolution = ZoneTargetResolutionScript.new(self, context)
 	_feedback = ZoneTargetFeedbackScript.new(self)
 
@@ -24,6 +27,7 @@ func cleanup() -> void:
 		_resolution.cleanup()
 	_feedback = null
 	_resolution = null
+	runtime_port = null
 	zone = null
 	context = null
 
@@ -46,7 +50,7 @@ func try_start_drag_targeting(item: ZoneItemControl, global_position: Vector2) -
 	return start_targeting_internal(command)
 
 func cancel_targeting() -> void:
-	var coordinator = zone._get_targeting_coordinator(false)
+	var coordinator = get_targeting_coordinator(false)
 	if coordinator == null:
 		return
 	var session = coordinator.get_session()
@@ -61,7 +65,7 @@ func update_targeting_session(session: ZoneTargetingSession, global_position: Ve
 	var next_candidate = resolve_target_candidate(session.intent, global_position)
 	var next_decision = resolve_target_decision(session.source_item, session.intent, next_candidate, global_position)
 	apply_targeting_feedback(session, next_candidate, next_decision)
-	var coordinator = zone._get_targeting_coordinator(false)
+	var coordinator = get_targeting_coordinator(false)
 	if coordinator != null and coordinator.get_session() == session:
 		coordinator.refresh_overlay()
 
@@ -70,8 +74,9 @@ func finalize_targeting_session(session: ZoneTargetingSession) -> void:
 		return
 	if session.decision != null and session.decision.allowed and session.decision.resolved_candidate != null and session.decision.resolved_candidate.is_valid():
 		clear_targeting_feedback(true, session.source_item)
-		zone._emit_targeting_resolved(session.source_item, zone, session.decision.resolved_candidate, session.decision)
-		var coordinator = zone._get_targeting_coordinator(false)
+		if runtime_port != null:
+			runtime_port.emit_targeting_resolved(session.source_item, zone, session.decision.resolved_candidate, session.decision)
+		var coordinator = get_targeting_coordinator(false)
 		if coordinator != null:
 			coordinator.clear_session()
 		return
@@ -82,8 +87,9 @@ func cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) 
 		return
 	clear_targeting_feedback(emit_signal, session.source_item)
 	if emit_signal and is_instance_valid(session.source_item):
-		zone._emit_targeting_cancelled(session.source_item, zone)
-	var coordinator = zone._get_targeting_coordinator(false)
+		if runtime_port != null:
+			runtime_port.emit_targeting_cancelled(session.source_item, zone)
+	var coordinator = get_targeting_coordinator(false)
 	if coordinator != null:
 		coordinator.clear_session()
 
@@ -93,10 +99,10 @@ func start_targeting_internal(command: ZoneTargetingCommand) -> bool:
 	var resolved_intent = command.intent if command.intent != null else resolve_targeting_intent(command, command.entry_mode)
 	if resolved_intent == null:
 		return false
-	var coordinator = zone._get_targeting_coordinator(true)
+	var coordinator = get_targeting_coordinator(true)
 	if coordinator == null:
 		return false
-	var drag_coordinator = zone._get_drag_coordinator(false)
+	var drag_coordinator = get_drag_coordinator(false)
 	if drag_coordinator != null and drag_coordinator.get_session() != null:
 		return false
 	command.intent = resolved_intent
@@ -105,7 +111,8 @@ func start_targeting_internal(command: ZoneTargetingCommand) -> bool:
 	if session == null:
 		return false
 	update_targeting_session(session, command.pointer_global_position)
-	zone._emit_targeting_started(command.source_item, zone, resolved_intent)
+	if runtime_port != null:
+		runtime_port.emit_targeting_started(command.source_item, zone, resolved_intent)
 	return true
 
 func resolve_targeting_intent(command: ZoneTargetingCommand, entry_mode: StringName) -> ZoneTargetingIntent:
@@ -144,10 +151,18 @@ func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemCon
 	_feedback.clear_targeting_feedback(emit_clear_signals, source_item)
 
 func resolve_zone_context(target_zone: Zone) -> ZoneContext:
-	return target_zone._get_context() if target_zone != null else null
+	return ZoneRuntimePortScript.resolve_context(target_zone)
 
 func emit_target_preview_changed(source_item: ZoneItemControl, target_zone: Zone, candidate) -> void:
-	zone._emit_target_preview_changed(source_item, target_zone, candidate)
+	if runtime_port != null:
+		runtime_port.emit_target_preview_changed(source_item, target_zone, candidate)
 
 func emit_target_hover_state_changed(source_item: ZoneItemControl, target_zone: Zone, decision) -> void:
-	zone._emit_target_hover_state_changed(source_item, target_zone, decision)
+	if runtime_port != null:
+		runtime_port.emit_target_hover_state_changed(source_item, target_zone, decision)
+
+func get_targeting_coordinator(create_if_missing: bool = true):
+	return runtime_port.get_targeting_coordinator(create_if_missing) if runtime_port != null else null
+
+func get_drag_coordinator(create_if_missing: bool = true):
+	return runtime_port.get_drag_coordinator(create_if_missing) if runtime_port != null else null

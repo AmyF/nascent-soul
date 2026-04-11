@@ -445,7 +445,7 @@ func _resolve_candidate(candidate: ZoneTargetCandidate) -> Dictionary:
 		var piece = candidate.target_item as XiangqiPieceScript
 		return {"valid": true, "coords": _piece_coords(piece), "target_piece": piece}
 	if candidate.is_placement():
-		var coords = candidate.placement_target.coordinates
+		var coords = candidate.placement_target.grid_coordinates
 		return {"valid": true, "coords": coords, "target_piece": get_piece_at_coords(coords)}
 	return {"valid": false, "coords": INVALID_COORDS, "target_piece": null}
 
@@ -462,7 +462,7 @@ func _piece_coords(piece: Control) -> Vector2i:
 	var target = _board_zone.get_item_target(piece)
 	if target == null or not target.is_valid():
 		return INVALID_COORDS
-	return target.coordinates
+	return target.grid_coordinates
 
 func _snapshot_board() -> Array:
 	var snapshot: Array = []
@@ -854,7 +854,7 @@ func _apply_undo_transition(state: Dictionary, transition: Dictionary) -> bool:
 		if captured_coords is not Vector2i:
 			return false
 		var restored_piece = _create_piece(captured_side, captured_type)
-		_board_zone.set_transfer_handoff(restored_piece, restore_snapshot)
+		_board_zone._runtime_set_transfer_handoff(restored_piece, restore_snapshot)
 		if not _board_zone.add_item(restored_piece, ZonePlacementTarget.square(captured_coords.x, captured_coords.y)):
 			restored_piece.queue_free()
 			return false

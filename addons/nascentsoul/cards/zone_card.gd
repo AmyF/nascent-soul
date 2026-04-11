@@ -1,6 +1,8 @@
 @tool
 class_name ZoneCard extends ZoneItemControl
 
+const ZoneCardToPieceSpawnFactoryScript = preload("res://addons/nascentsoul/impl/factories/zone_card_to_piece_spawn_factory.gd")
+
 var _data: CardData = null
 var _face_up: bool = true
 var _highlighted: bool = false
@@ -43,6 +45,8 @@ var _highlight_overlay: ColorRect
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	if zone_spawn_factory == null:
+		zone_spawn_factory = ZoneCardToPieceSpawnFactoryScript.new()
 	if custom_minimum_size == Vector2.ZERO:
 		custom_minimum_size = Vector2(120, 180)
 	if size == Vector2.ZERO:
@@ -103,40 +107,6 @@ func create_zone_drag_proxy(_context: ZoneContext) -> Control:
 	fallback.custom_minimum_size = _resolved_card_size()
 	fallback.size = _resolved_card_size()
 	return fallback
-
-func create_zone_targeting_intent(_command: ZoneTargetingCommand, _entry_mode: StringName) -> ZoneTargetingIntent:
-	return super.create_zone_targeting_intent(_command, _entry_mode)
-
-func get_zone_target_anchor_global() -> Vector2:
-	return global_position + size * 0.5
-
-func create_zone_spawned_item(
-	_context: ZoneContext,
-	_decision: ZoneTransferDecision,
-	_placement_target: ZonePlacementTarget
-) -> ZoneItemControl:
-	var piece := ZonePiece.new()
-	piece.name = "%sPiece" % (data.title if data != null and data.title != "" else name)
-	piece.custom_minimum_size = Vector2(92, 92)
-	piece.size = piece.custom_minimum_size
-	var piece_data := PieceData.new()
-	if data != null:
-		piece_data.id = data.id
-		piece_data.title = data.title
-		piece_data.texture = data.front_texture
-		piece_data.attack = data.cost
-		piece_data.defense = max(1, data.tags.size())
-		piece_data.custom_data = data.custom_data.duplicate(true)
-		piece.data = piece_data
-	return piece
-
-func configure_zone_spawned_item(
-	spawned_item: ZoneItemControl,
-	context: ZoneContext,
-	placement_target: ZonePlacementTarget
-) -> void:
-	if spawned_item is ZonePiece:
-		(spawned_item as ZonePiece).configure_from_transfer_source(self, context, placement_target)
 
 func create_zone_ghost() -> Control:
 	return create_zone_drag_ghost(null)

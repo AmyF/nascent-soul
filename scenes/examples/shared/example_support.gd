@@ -266,7 +266,7 @@ static func describe_target(target) -> String:
 	if target is ZonePlacementTarget:
 		var placement_target = target as ZonePlacementTarget
 		if placement_target.is_linear():
-			return str(placement_target.slot)
+			return str(placement_target.linear_index)
 		return placement_target.describe()
 	if target is int:
 		return str(target)

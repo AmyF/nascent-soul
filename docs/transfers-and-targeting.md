@@ -26,6 +26,8 @@ hand.perform_transfer(
 )
 ```
 
+Resolved transfer targets stay explicit: ordered zones expose `linear_index`, while battlefields keep `grid_coordinates`.
+
 Policies decide whether the transfer is allowed and how it resolves.
 
 Common transfer policy patterns:

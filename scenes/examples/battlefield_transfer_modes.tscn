@@ -91,7 +91,7 @@ script = ExtResource("15_occupancy")
 [sub_resource type="Resource" id="ModesSummonRule"]
 script = ExtResource("18_transfer_rule")
 source_item_script = ExtResource("19_zone_card")
-target_kind = 2
+placement_target_kind = 2
 transfer_mode = 1
 
 [sub_resource type="Resource" id="ModesSummonRuleTable"]

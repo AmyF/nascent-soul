@@ -52,12 +52,6 @@ func configure_from_transfer_source(source_item: ZoneItemControl, _context: Zone
 			next_data.title = source_card.name
 		data = next_data
 
-func create_zone_targeting_intent(_command: ZoneTargetingCommand, _entry_mode: StringName) -> ZoneTargetingIntent:
-	return super.create_zone_targeting_intent(_command, _entry_mode)
-
-func get_zone_target_anchor_global() -> Vector2:
-	return global_position + size * 0.5
-
 func apply_transfer_source(source_item: Control, _source_zone: Zone, _target_zone: Zone, _target: ZonePlacementTarget) -> void:
 	if source_item is ZoneItemControl:
 		configure_from_transfer_source(source_item as ZoneItemControl, null, _target)

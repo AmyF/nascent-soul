@@ -20,7 +20,7 @@ func resolve_hover_target(context: ZoneContext, _items: Array[ZoneItemControl], 
 func normalize_target(_context: ZoneContext, target: ZonePlacementTarget, _items: Array[ZoneItemControl]) -> ZonePlacementTarget:
 	if target == null:
 		return ZonePlacementTarget.invalid()
-	var coordinates = target.coordinates
+	var coordinates = target.grid_coordinates
 	if coordinates.x < 0 or coordinates.y < 0 or coordinates.x >= columns or coordinates.y >= rows:
 		return ZonePlacementTarget.invalid().with_positions(target.global_position, target.local_position)
 	return ZonePlacementTarget.hex(coordinates.x, coordinates.y, _make_cell_id(coordinates.x, coordinates.y), target.global_position, target.local_position, target.metadata)
@@ -42,7 +42,7 @@ func resolve_layout_hint(target: ZonePlacementTarget):
 func resolve_item_position(_context: ZoneContext, target: ZonePlacementTarget, _container_size: Vector2, item_size: Vector2) -> Vector2:
 	if target == null or not target.is_valid():
 		return Vector2.ZERO
-	var cell_origin = _cell_origin(target.coordinates.x, target.coordinates.y)
+	var cell_origin = _cell_origin(target.grid_coordinates.x, target.grid_coordinates.y)
 	return cell_origin + (cell_size - item_size) * 0.5
 
 func resolve_target_size(_context: ZoneContext, _target: ZonePlacementTarget) -> Vector2:
@@ -53,7 +53,7 @@ func resolve_target_anchor(context: ZoneContext, target: ZonePlacementTarget) ->
 		return Vector2.ZERO
 	var zone = context.zone if context != null else null
 	var global_offset = zone.global_position if zone is Control else Vector2.ZERO
-	return global_offset + _cell_origin(target.coordinates.x, target.coordinates.y) + cell_size * 0.5
+	return global_offset + _cell_origin(target.grid_coordinates.x, target.grid_coordinates.y) + cell_size * 0.5
 
 func is_target_valid(context: ZoneContext, target: ZonePlacementTarget) -> bool:
 	var empty_items: Array[ZoneItemControl] = []

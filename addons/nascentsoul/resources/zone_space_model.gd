@@ -18,7 +18,7 @@ func resolve_render_target(_context: ZoneContext, item: ZoneItemControl, fallbac
 	return ZonePlacementTarget.linear(fallback_index, item.global_position if is_instance_valid(item) else Vector2.ZERO, item.position if is_instance_valid(item) else Vector2.ZERO)
 
 func resolve_layout_hint(target: ZonePlacementTarget):
-	return target.slot if target != null and target.is_linear() else -1
+	return target.get_linear_index() if target != null else -1
 
 func resolve_item_position(_context: ZoneContext, _target: ZonePlacementTarget, _container_size: Vector2, _item_size: Vector2) -> Vector2:
 	return Vector2.ZERO

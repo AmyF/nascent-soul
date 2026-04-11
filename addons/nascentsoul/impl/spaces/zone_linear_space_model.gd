@@ -15,7 +15,7 @@ func normalize_target(context: ZoneContext, target: ZonePlacementTarget, _items:
 	var fallback_count = context.get_item_count() if context != null else 0
 	if target == null or not target.is_valid():
 		return ZonePlacementTarget.linear(fallback_count)
-	var slot = clampi(target.slot, 0, fallback_count)
+	var slot = clampi(target.linear_index, 0, fallback_count)
 	return ZonePlacementTarget.linear(slot, target.global_position, target.local_position)
 
 func resolve_add_target(context: ZoneContext, _item: ZoneItemControl, hint = null) -> ZonePlacementTarget:
@@ -30,7 +30,7 @@ func resolve_render_target(_context: ZoneContext, _item: ZoneItemControl, fallba
 	return ZonePlacementTarget.linear(fallback_index)
 
 func resolve_layout_hint(target: ZonePlacementTarget):
-	return target.slot if target != null and target.is_linear() else -1
+	return target.get_linear_index() if target != null else -1
 
 func resolve_target_anchor(context: ZoneContext, target: ZonePlacementTarget) -> Vector2:
 	if context == null or context.zone is not Zone:
@@ -45,7 +45,7 @@ func resolve_target_anchor(context: ZoneContext, target: ZonePlacementTarget) ->
 	var placements = layout_policy.calculate(context, items, resolved_zone.size, null, null)
 	if placements.is_empty():
 		return resolved_zone.global_position + resolved_zone.size * 0.5
-	var slot = target.slot if target != null and target.is_linear() else items.size()
+	var slot = target.get_linear_index(items.size()) if target != null else items.size()
 	if slot <= 0:
 		var first_item = placements[0].item
 		var first_size = layout_policy.resolve_item_size(first_item)

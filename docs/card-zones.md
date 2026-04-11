@@ -76,6 +76,8 @@ hand.perform_transfer(
 )
 ```
 
+Linear card-zone targets resolve to `ZonePlacementTarget.linear(...)`, and the resolved target exposes `linear_index`.
+
 ## Moving Between Card Zones
 
 ```gdscript

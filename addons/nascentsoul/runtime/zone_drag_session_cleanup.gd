@@ -33,7 +33,7 @@ func cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit
 	if not refresh_involved:
 		return
 	for involved_zone in involved_zones:
-		involved_zone.refresh()
+		transfer_service.request_zone_refresh(involved_zone)
 		if emit_layout_changed:
 			transfer_service.emit_zone_layout_changed(involved_zone)
 

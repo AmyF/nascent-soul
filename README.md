@@ -17,7 +17,7 @@ NascentSoul is designed so card lanes and tactical boards share the same mental 
 - A `Zone` is the runtime surface.
 - A `ZoneConfig` defines how that surface behaves.
 - A `ZoneItemControl` is the thing the player sees and interacts with.
-- A `ZonePlacementTarget` says where an item should land.
+- A `ZonePlacementTarget` says where an item should land: `linear_index` for ordered zones, `grid_coordinates` for square/hex boards.
 - Transfer moves or spawns items between zones.
 - Targeting chooses an item or board cell without moving the source item.
 
@@ -193,7 +193,7 @@ Recommended example order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
 
 Validated on Godot 4.6.1:
 
-- Headless regression runner passes with `1668` checks.
+- Headless regression runner passes with `1683` checks.
 - Headless editor load succeeds with the plugin enabled.
 - Demo smoke coverage confirms the main-menu launcher, the compatibility shell, and both showcase scenes.
 

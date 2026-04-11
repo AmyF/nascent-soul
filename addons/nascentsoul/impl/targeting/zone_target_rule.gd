@@ -28,7 +28,7 @@ func matches(request: ZoneTargetRequest) -> bool:
 	if target_candidate_kind != ZoneTargetCandidate.CandidateKind.NONE and request.candidate.kind != target_candidate_kind:
 		return false
 	if placement_target_kind != ZonePlacementTarget.TargetKind.NONE:
-		if request.candidate.placement_target == null or request.candidate.placement_target.kind != placement_target_kind:
+		if request.candidate.placement_target == null or not request.candidate.placement_target.matches_kind(placement_target_kind):
 			return false
 	if not _matches_source_meta(request.source_item):
 		return false

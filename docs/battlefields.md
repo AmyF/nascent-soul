@@ -30,6 +30,8 @@ ZonePlacementTarget.square(2, 1)
 ZonePlacementTarget.hex(3, 2)
 ```
 
+Battlefield targets expose `grid_coordinates`, and space models can also attach a stable `grid_cell_id` when the board needs a named cell identity.
+
 That is the core difference between `CardZone` and `BattlefieldZone`.
 
 ## Basic Example

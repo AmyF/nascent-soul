@@ -6,8 +6,11 @@ const ZoneInputSelectionControllerScript = preload("res://addons/nascentsoul/run
 
 var context: ZoneContext
 var zone: Zone
+var runtime_port = null
 var selection_state: ZoneSelectionState
 var _selection_controller = null
+var transfer_service: ZoneTransferService = null
+var targeting_service: ZoneTargetingService = null
 
 var item_bindings: Dictionary = {}
 var pressed_item: ZoneItemControl = null
@@ -17,11 +20,16 @@ var has_dragged: bool = false
 var long_press_item: ZoneItemControl = null
 var long_press_timer: Timer = null
 
-func _init(p_context: ZoneContext) -> void:
+func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	context = p_context
 	zone = context.zone
+	runtime_port = p_runtime_port
 	selection_state = context.selection_state
 	_selection_controller = ZoneInputSelectionControllerScript.new(self, context, selection_state)
+
+func bind_runtime_services(p_transfer_service: ZoneTransferService, p_targeting_service: ZoneTargetingService) -> void:
+	transfer_service = p_transfer_service
+	targeting_service = p_targeting_service
 
 func bind() -> void:
 	var gui_input_callable = Callable(self, "on_zone_gui_input")
@@ -74,6 +82,9 @@ func cleanup() -> void:
 	long_press_item = null
 	_selection_controller = null
 	selection_state = null
+	transfer_service = null
+	targeting_service = null
+	runtime_port = null
 	zone = null
 	context = null
 
@@ -129,7 +140,7 @@ func on_zone_gui_input(event: InputEvent) -> void:
 	var interaction = context.get_interaction()
 	if interaction == null:
 		return
-	var targeting_coordinator = zone._get_targeting_coordinator(false)
+	var targeting_coordinator = get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if handle_keyboard_navigation(event, interaction):
@@ -141,7 +152,7 @@ func on_zone_gui_input(event: InputEvent) -> void:
 		return
 	if not interaction.clear_selection_on_background_click:
 		return
-	var coordinator = zone._get_drag_coordinator(false)
+	var coordinator = get_drag_coordinator(false)
 	if coordinator != null and coordinator.get_session() != null:
 		return
 	if context.get_item_at_global_position(mouse_event.global_position) != null:
@@ -156,7 +167,7 @@ func on_item_mouse_exited(item: ZoneItemControl) -> void:
 
 func handle_mouse_button(event: InputEventMouseButton, item: ZoneItemControl) -> void:
 	var interaction = context.get_interaction()
-	var targeting_coordinator = zone._get_targeting_coordinator(false)
+	var targeting_coordinator = get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null and event.button_index == MOUSE_BUTTON_RIGHT:
 		return
 	if event.button_index == MOUSE_BUTTON_LEFT:
@@ -178,11 +189,11 @@ func handle_mouse_button(event: InputEventMouseButton, item: ZoneItemControl) ->
 			if should_activate:
 				apply_click_selection(item, event)
 				if event.double_click:
-					zone._emit_item_double_clicked(item)
+					emit_item_double_clicked(item)
 				else:
-					zone._emit_item_clicked(item)
+					emit_item_clicked(item)
 	elif event.button_index == MOUSE_BUTTON_RIGHT and not event.pressed:
-		zone._emit_item_right_clicked(item)
+		emit_item_right_clicked(item)
 
 func handle_mouse_motion(event: InputEventMouseMotion, item: ZoneItemControl) -> void:
 	if not is_pressed or has_dragged or not is_instance_valid(pressed_item) or pressed_item != item:
@@ -195,10 +206,11 @@ func handle_mouse_motion(event: InputEventMouseMotion, item: ZoneItemControl) ->
 	has_dragged = true
 	is_pressed = false
 	stop_long_press_timer()
-	if context.targeting_service.try_start_drag_targeting(item, event.global_position):
+	if targeting_service != null and targeting_service.try_start_drag_targeting(item, event.global_position):
 		return
 	var drag_items = resolve_drag_items(item)
-	context.transfer_service.start_drag_at(drag_items, event.global_position, item)
+	if transfer_service != null:
+		transfer_service.start_drag_at(drag_items, event.global_position, item)
 
 func apply_click_selection(item: ZoneItemControl, event: InputEventMouseButton) -> void:
 	_selection_controller.apply_click_selection(item, event)
@@ -221,7 +233,7 @@ func on_long_press_timeout() -> void:
 	is_pressed = false
 	pressed_item = null
 	long_press_item = null
-	zone._emit_item_long_pressed(item)
+	emit_item_long_pressed(item)
 
 func clear_hover_for_items(items_to_clear: Array[ZoneItemControl], emit_signal: bool) -> void:
 	_selection_controller.clear_hover_for_items(items_to_clear, emit_signal)
@@ -243,14 +255,40 @@ func reset_press_state_for_item(item = null) -> void:
 func clear_background_interaction() -> void:
 	_selection_controller.clear_background_interaction()
 
+func request_refresh() -> void:
+	if runtime_port != null:
+		runtime_port.request_refresh()
+
+func get_drag_coordinator(create_if_missing: bool = true):
+	return runtime_port.get_drag_coordinator(create_if_missing) if runtime_port != null else null
+
+func get_targeting_coordinator(create_if_missing: bool = true):
+	return runtime_port.get_targeting_coordinator(create_if_missing) if runtime_port != null else null
+
 func emit_item_clicked(item: ZoneItemControl) -> void:
-	zone._emit_item_clicked(item)
+	if runtime_port != null:
+		runtime_port.emit_item_clicked(item)
+
+func emit_item_double_clicked(item: ZoneItemControl) -> void:
+	if runtime_port != null:
+		runtime_port.emit_item_double_clicked(item)
+
+func emit_item_right_clicked(item: ZoneItemControl) -> void:
+	if runtime_port != null:
+		runtime_port.emit_item_right_clicked(item)
+
+func emit_item_long_pressed(item: ZoneItemControl) -> void:
+	if runtime_port != null:
+		runtime_port.emit_item_long_pressed(item)
 
 func emit_item_hover_entered(item: ZoneItemControl) -> void:
-	zone._emit_item_hover_entered(item)
+	if runtime_port != null:
+		runtime_port.emit_item_hover_entered(item)
 
 func emit_item_hover_exited(item: ZoneItemControl) -> void:
-	zone._emit_item_hover_exited(item)
+	if runtime_port != null:
+		runtime_port.emit_item_hover_exited(item)
 
 func emit_selection_changed() -> void:
-	zone._emit_selection_changed()
+	if runtime_port != null:
+		runtime_port.emit_selection_changed()

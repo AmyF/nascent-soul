@@ -208,7 +208,7 @@ func _test_animated_transfer_handoff_path() -> void:
 	var target_state = target_zone.get_display_state(target_display)
 	_check(target_state["active_tweens"].has(alpha), "animated transfer should create a live tween in GUI mode")
 	_check(alpha.global_position.distance_to(source_origin) <= 0.5, "animated transfer should start from the source card position before tweening")
-	_check(not target_zone.has_transfer_handoff(alpha), "animated transfer should consume handoff data on first apply")
+	_check(not target_zone._runtime_has_transfer_handoff(alpha), "animated transfer should consume handoff data on first apply")
 	await get_tree().create_timer(target_display.duration + 0.08).timeout
 	await _settle_frames(1)
 	_check(not target_state["active_tweens"].has(alpha), "animated transfer should clear its tween after finishing")

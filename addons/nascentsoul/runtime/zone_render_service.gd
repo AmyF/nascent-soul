@@ -6,13 +6,16 @@ const ZoneDragPreviewFeedbackScript = preload("res://addons/nascentsoul/runtime/
 
 var context: ZoneContext
 var zone: Zone
+var runtime_port = null
+var store: ZoneStore = null
 
-var display_state: Dictionary = {}
 var _preview_feedback = null
 
-func _init(p_context: ZoneContext) -> void:
+func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	context = p_context
 	zone = context.zone
+	runtime_port = p_runtime_port
+	store = context.get_store()
 	_preview_feedback = ZoneDragPreviewFeedbackScript.new(self, context)
 
 func refresh() -> void:
@@ -20,7 +23,7 @@ func refresh() -> void:
 	var display_style = context.get_display_style()
 	if zone.get_items_root() == null or layout_policy == null or display_style == null:
 		return
-	var coordinator = zone._get_drag_coordinator(false)
+	var coordinator = get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
 	var layout_items := get_layout_items(session)
 	var sort_policy = context.get_sort_policy()
@@ -36,12 +39,14 @@ func clear_preview() -> void:
 	_preview_feedback.clear_preview()
 
 func clear_display_state() -> void:
-	for state in display_state.values():
+	if store == null:
+		return
+	for state in store.display_state.values():
 		var active_tweens: Dictionary = state.get("active_tweens", {})
 		for item in active_tweens.keys():
 			if active_tweens[item] != null:
 				active_tweens[item].kill()
-	display_state.clear()
+	store.clear_display_state()
 	if context != null:
 		context.clear_transfer_handoffs()
 
@@ -50,20 +55,18 @@ func cleanup() -> void:
 		_preview_feedback.cleanup()
 	clear_display_state()
 	_preview_feedback = null
+	store = null
+	runtime_port = null
 	context = null
 	zone = null
 
 func get_display_state(style: Resource) -> Dictionary:
-	var key = style.get_instance_id()
-	if not display_state.has(key):
-		display_state[key] = {
-			"active_tweens": {},
-			"target_cache": {}
-		}
-	return display_state[key]
+	return store.get_display_state(style) if store != null else {}
 
 func prune_display_state() -> void:
-	for state in display_state.values():
+	if store == null:
+		return
+	for state in store.display_state.values():
 		var active_tweens: Dictionary = state.get("active_tweens", {})
 		var target_cache: Dictionary = state.get("target_cache", {})
 		var stale_items: Array = []
@@ -122,7 +125,12 @@ func clear_hover_feedback(items: Array[ZoneItemControl]) -> bool:
 	return _preview_feedback.clear_hover_feedback(items)
 
 func emit_drop_preview_changed(items: Array, target_zone: Zone, target) -> void:
-	zone._emit_drop_preview_changed(items, target_zone, target)
+	if runtime_port != null:
+		runtime_port.emit_drop_preview_changed(items, target_zone, target)
 
 func emit_drop_hover_state_changed(items: Array, target_zone: Zone, decision) -> void:
-	zone._emit_drop_hover_state_changed(items, target_zone, decision)
+	if runtime_port != null:
+		runtime_port.emit_drop_hover_state_changed(items, target_zone, decision)
+
+func get_drag_coordinator(create_if_missing: bool = true):
+	return runtime_port.get_drag_coordinator(create_if_missing) if runtime_port != null else null

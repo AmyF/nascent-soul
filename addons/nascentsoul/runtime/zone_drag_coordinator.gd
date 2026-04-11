@@ -17,7 +17,7 @@ func _process(_delta: float) -> void:
 		return
 	var source_zone = active_session.source_zone as Zone
 	if source_zone != null:
-		source_zone.finalize_drag_session(active_session)
+		source_zone._runtime_finalize_drag_session(active_session)
 	else:
 		clear_session()
 

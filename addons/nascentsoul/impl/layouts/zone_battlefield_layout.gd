@@ -29,6 +29,6 @@ func calculate(context: ZoneContext, items: Array[ZoneItemControl], container_si
 				scaled_size = item_size * uniform_scale
 			position = context.resolve_target_position(target, container_size, scaled_size)
 			if target != null and target.is_valid():
-				z_index = target.coordinates.y * 100 + target.coordinates.x
+				z_index = target.grid_coordinates.y * 100 + target.grid_coordinates.x
 		placements.append(ZonePlacement.new(item, position, 0.0, scale, z_index, item == ghost_item))
 	return placements

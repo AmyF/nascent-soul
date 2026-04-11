@@ -121,6 +121,6 @@ func build_candidate_metadata(item: ZoneItemControl, placement_target: ZonePlace
 	if placement_target != null and placement_target.is_valid():
 		metadata.merge(placement_target.metadata, true)
 		metadata["placement_kind"] = placement_target.kind
-		metadata["cell_id"] = placement_target.cell_id
+		metadata["cell_id"] = placement_target.grid_cell_id
 	metadata["candidate_kind"] = "item" if is_instance_valid(item) else "placement"
 	return metadata

@@ -277,31 +277,34 @@ func clear_display_state() -> void:
 	_ensure_services()
 	_render_service.clear_display_state()
 
-func get_transfer_handoff_count() -> int:
+func _runtime_get_transfer_handoff_count() -> int:
 	_ensure_services()
 	return _store.get_transfer_handoff_count()
 
-func has_transfer_handoff(item: ZoneItemControl) -> bool:
+func _runtime_has_transfer_handoff(item: ZoneItemControl) -> bool:
 	_ensure_services()
 	return _store.has_transfer_handoff(item)
 
-func set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
+func _runtime_set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
 	_ensure_services()
 	_store.set_transfer_handoff(item, snapshot)
 
-func clear_transfer_handoffs() -> void:
+func _runtime_clear_transfer_handoffs() -> void:
 	_ensure_services()
 	_store.clear_transfer_handoffs()
 
-func capture_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
+# Internal runtime hooks. Coordinators, showcase scaffolding, and implementation
+# tests may use these, but gameplay code should stay on the public Zone surface.
+
+func _runtime_capture_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
 	_ensure_services()
 	return _transfer_service.build_transfer_snapshots(moving_items, drop_position, anchor_item)
 
-func resolve_transfer_origin(moving_items: Array[ZoneItemControl]):
+func _runtime_resolve_transfer_origin(moving_items: Array[ZoneItemControl]):
 	_ensure_services()
 	return _transfer_service.resolve_programmatic_transfer_global_position(moving_items)
 
-func preview_transfer(items: Array[ZoneItemControl], source_zone: Node, placement_target: ZonePlacementTarget, global_position: Vector2, preview_source: ZoneItemControl = null) -> ZoneTransferDecision:
+func _runtime_preview_transfer(items: Array[ZoneItemControl], source_zone: Node, placement_target: ZonePlacementTarget, global_position: Vector2, preview_source: ZoneItemControl = null) -> ZoneTransferDecision:
 	_ensure_services()
 	var request = _transfer_service.make_transfer_request(self, source_zone, items, placement_target, global_position)
 	var decision = _transfer_service.resolve_drop_decision(request)
@@ -350,23 +353,23 @@ func resolve_target_anchor(target: ZonePlacementTarget) -> Vector2:
 	_ensure_services()
 	return _context.resolve_target_anchor(target)
 
-func update_targeting_session(session: ZoneTargetingSession, global_position: Vector2) -> void:
+func _runtime_update_targeting_session(session: ZoneTargetingSession, global_position: Vector2) -> void:
 	_ensure_services()
 	_targeting_service.update_targeting_session(session, global_position)
 
-func finalize_targeting_session(session: ZoneTargetingSession) -> void:
+func _runtime_finalize_targeting_session(session: ZoneTargetingSession) -> void:
 	_ensure_services()
 	_targeting_service.finalize_targeting_session(session)
 
-func cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) -> void:
+func _runtime_cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) -> void:
 	_ensure_services()
 	_targeting_service.cancel_targeting_session(session, emit_signal)
 
-func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
+func _runtime_clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
 	_ensure_services()
 	_targeting_service.clear_targeting_feedback(emit_clear_signals, source_item)
 
-func finalize_drag_session(session: ZoneDragSession = null) -> void:
+func _runtime_finalize_drag_session(session: ZoneDragSession = null) -> void:
 	_ensure_services()
 	_transfer_service.finalize_drag_session(session)
 

@@ -119,9 +119,9 @@ func apply(context: ZoneContext, placements: Array[ZonePlacement]) -> void
 
 ## Good Files To Inspect
 
-- [`addons/nascentsoul/resources/zone_layout.gd`](../addons/nascentsoul/resources/zone_layout.gd)
+- [`addons/nascentsoul/resources/zone_layout_policy.gd`](../addons/nascentsoul/resources/zone_layout_policy.gd)
 - [`addons/nascentsoul/resources/zone_space_model.gd`](../addons/nascentsoul/resources/zone_space_model.gd)
-- [`addons/nascentsoul/resources/zone_display.gd`](../addons/nascentsoul/resources/zone_display.gd)
+- [`addons/nascentsoul/resources/zone_display_style.gd`](../addons/nascentsoul/resources/zone_display_style.gd)
 - [`addons/nascentsoul/impl/layouts/zone_hbox_layout.gd`](../addons/nascentsoul/impl/layouts/zone_hbox_layout.gd)
 - [`addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd`](../addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd)
 - [`addons/nascentsoul/impl/spaces/zone_square_grid_space_model.gd`](../addons/nascentsoul/impl/spaces/zone_square_grid_space_model.gd)

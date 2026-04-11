@@ -1,42 +1,34 @@
 class_name ZoneContext extends RefCounted
 
-# Internal runtime context shared by zone services. External code should not
-# depend on this type directly.
+# Internal zone/config/runtime-state view shared by services. External code
+# should not depend on this type directly.
 
 var zone = null
 var config = null
 var store = null
-var input_service = null
-var render_service = null
-var transfer_service = null
-var targeting_service = null
 
 var selection_state:
 	get:
 		return store.selection_state if store != null else null
 
 func _init(p_zone, p_store = null, p_config = null) -> void:
+	attach(p_zone, p_store, p_config)
+
+func attach(p_zone, p_store, p_config) -> void:
 	zone = p_zone
 	store = p_store
 	config = p_config
-
-func bind_services(p_input_service, p_render_service, p_transfer_service, p_targeting_service) -> void:
-	input_service = p_input_service
-	render_service = p_render_service
-	transfer_service = p_transfer_service
-	targeting_service = p_targeting_service
 
 func cleanup() -> void:
 	zone = null
 	config = null
 	store = null
-	input_service = null
-	render_service = null
-	transfer_service = null
-	targeting_service = null
 
 func update_config(next_config) -> void:
 	config = next_config
+
+func get_store() -> ZoneStore:
+	return store
 
 func get_items_root() -> Control:
 	return zone.get_items_root()
@@ -96,8 +88,6 @@ func get_targeting_policy() -> ZoneTargetingPolicy:
 	return config.targeting_policy if config != null else null
 
 func resolve_item_size(item: ZoneItemControl) -> Vector2:
-	if render_service != null:
-		return render_service.resolve_item_size(item)
 	var layout_policy = get_layout_policy()
 	if layout_policy != null:
 		return layout_policy.resolve_item_size(item)
@@ -128,7 +118,7 @@ func resolve_target_anchor(target: ZonePlacementTarget) -> Vector2:
 	return space_model.resolve_target_anchor(self, target)
 
 func get_display_state(style: Resource) -> Dictionary:
-	return render_service.get_display_state(style) if render_service != null else {}
+	return store.get_display_state(style) if store != null else {}
 
 func consume_transfer_handoff(item: ZoneItemControl) -> Dictionary:
 	return store.consume_transfer_handoff(item) if store != null else {}

@@ -1,8 +1,12 @@
 @tool
 class_name ZoneItemControl extends Control
 
+const ZoneItemSpawnFactoryScript = preload("res://addons/nascentsoul/resources/zone_item_spawn_factory.gd")
+
+@export_group("Zone Item")
 @export var zone_item_metadata: Dictionary = {}
 @export var zone_targeting_intent_override: ZoneTargetingIntent = null
+@export var zone_spawn_factory: Resource = null
 
 var _zone_visual_state := ZoneItemVisualState.new()
 
@@ -34,18 +38,21 @@ func create_zone_drag_proxy(_context: ZoneContext) -> Control:
 	return fallback
 
 func create_zone_spawned_item(
-	_context: ZoneContext,
-	_decision: ZoneTransferDecision,
-	_placement_target: ZonePlacementTarget
+	context: ZoneContext,
+	decision: ZoneTransferDecision,
+	placement_target: ZonePlacementTarget
 ) -> ZoneItemControl:
+	if zone_spawn_factory != null and zone_spawn_factory.has_method("create_spawned_item"):
+		return zone_spawn_factory.create_spawned_item(self, context, decision, placement_target)
 	return null
 
 func configure_zone_spawned_item(
-	_spawned_item: ZoneItemControl,
-	_context: ZoneContext,
-	_placement_target: ZonePlacementTarget
+	spawned_item: ZoneItemControl,
+	context: ZoneContext,
+	placement_target: ZonePlacementTarget
 ) -> void:
-	pass
+	if zone_spawn_factory != null and zone_spawn_factory.has_method("configure_spawned_item"):
+		zone_spawn_factory.configure_spawned_item(self, spawned_item, context, placement_target)
 
 func create_zone_targeting_intent(_command: ZoneTargetingCommand, _entry_mode: StringName) -> ZoneTargetingIntent:
 	if zone_targeting_intent_override == null:

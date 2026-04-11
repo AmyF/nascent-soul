@@ -1,29 +1,30 @@
 class_name ZoneTransferService extends RefCounted
 
-# Internal runtime helper for transfer evaluation and execution.
+# Internal runtime helper for transfer decision flow, drag orchestration, and
+# execution collaboration.
 
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
-const ZoneTransferEvaluatorScript = preload("res://addons/nascentsoul/runtime/zone_transfer_evaluator.gd")
+const ZoneRuntimePortScript = preload("res://addons/nascentsoul/runtime/zone_runtime_port.gd")
 const ZoneTransferExecutionScript = preload("res://addons/nascentsoul/runtime/zone_transfer_execution.gd")
 const ZoneDragSessionCleanupScript = preload("res://addons/nascentsoul/runtime/zone_drag_session_cleanup.gd")
 
 var context: ZoneContext
 var zone: Zone
 var store: ZoneStore
+var runtime_port = null
 
 var input_service: ZoneInputService = null
 var render_service: ZoneRenderService = null
 
-var _evaluator = null
 var _execution = null
 var _drag_session_cleanup = null
 
-func _init(p_context: ZoneContext) -> void:
+func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	context = p_context
 	zone = context.zone
-	store = context.store
-	_evaluator = ZoneTransferEvaluatorScript.new(context)
-	_execution = ZoneTransferExecutionScript.new(self, context, store, _evaluator)
+	store = context.get_store()
+	runtime_port = p_runtime_port
+	_execution = ZoneTransferExecutionScript.new(self, context, store)
 	_drag_session_cleanup = ZoneDragSessionCleanupScript.new(self)
 
 func bind_services(p_input_service: ZoneInputService, p_render_service: ZoneRenderService) -> void:
@@ -36,14 +37,12 @@ func cleanup() -> void:
 		_drag_session_cleanup.cleanup()
 	if _execution != null:
 		_execution.cleanup()
-	if _evaluator != null:
-		_evaluator.cleanup()
 	input_service = null
 	render_service = null
 	_drag_session_cleanup = null
 	_execution = null
-	_evaluator = null
 	store = null
+	runtime_port = null
 	zone = null
 	context = null
 
@@ -51,18 +50,18 @@ func process(_delta: float) -> void:
 	if zone.get_items_root() == null:
 		return
 	render_service.prune_display_state()
-	var coordinator = zone._get_drag_coordinator(false)
+	var coordinator = get_drag_coordinator(false)
 	var session = coordinator.get_session() if coordinator != null else null
 	if session == null:
 		var should_refresh = false
 		if context.get_space_model() is ZoneLinearSpaceModel and store.container_order_needs_sync(zone.get_items_root(), render_service.get_preview_ghost()):
 			store.sync_container_order(zone.get_items_root(), render_service.get_preview_ghost())
 			should_refresh = true
-			zone._emit_layout_changed()
+			emit_layout_changed()
 		if render_service.clear_hover_feedback([]):
 			should_refresh = true
 		if should_refresh:
-			zone.refresh()
+			request_refresh()
 		return
 	if session.prune_invalid_items() and session.items.is_empty():
 		_cleanup_drag_session(session, true, true)
@@ -76,7 +75,13 @@ func rebuild_items_from_root() -> bool:
 	return store.rebuild_items_from_root(context, zone.get_items_root())
 
 func resolve_transfer_target(items: Array[ZoneItemControl], placement_target: ZonePlacementTarget) -> ZonePlacementTarget:
-	return _evaluator.resolve_transfer_target(items, placement_target)
+	var space_model = context.get_space_model()
+	if space_model == null:
+		return ZonePlacementTarget.invalid()
+	if placement_target != null and placement_target.is_valid():
+		return space_model.normalize_target(context, placement_target, items)
+	var reference_item = items[0] if not items.is_empty() else null
+	return space_model.resolve_add_target(context, reference_item, null)
 
 func add_item(item: ZoneItemControl, placement_target: ZonePlacementTarget = null) -> bool:
 	return insert_item(item, store.items.size(), placement_target)
@@ -100,9 +105,9 @@ func insert_item(item: ZoneItemControl, index: int, placement_target: ZonePlacem
 	store.insert_item_reference(item, target_index, resolved_target)
 	item.visible = true
 	store.sync_container_order(items_root, render_service.get_preview_ghost())
-	zone._emit_item_added(item, target_index)
+	emit_item_added(item, target_index)
 	refresh()
-	zone._emit_layout_changed()
+	emit_layout_changed()
 	return true
 
 func remove_item(item: ZoneItemControl) -> bool:
@@ -173,17 +178,20 @@ func _start_drag_internal(items: Array[ZoneItemControl], pointer_global_position
 		return
 	var drag_start = _evaluate_drag_start(anchor_item, candidate_items)
 	if not drag_start.allowed:
-		zone._emit_drag_start_rejected(drag_start.items, zone, drag_start.reason)
+		if runtime_port != null:
+			runtime_port.emit_drag_start_rejected(drag_start.items, zone, drag_start.reason)
 		return
 	var valid_items = _sanitize_drag_items(drag_start.items, anchor_item)
 	if valid_items.is_empty():
-		zone._emit_drag_start_rejected([anchor_item], zone, "No draggable items remain.")
+		if runtime_port != null:
+			runtime_port.emit_drag_start_rejected([anchor_item], zone, "No draggable items remain.")
 		return
 	anchor_item = _resolve_drag_anchor(anchor_item, valid_items)
 	if not is_instance_valid(anchor_item):
-		zone._emit_drag_start_rejected(valid_items, zone, "The drag anchor is no longer available.")
+		if runtime_port != null:
+			runtime_port.emit_drag_start_rejected(valid_items, zone, "The drag anchor is no longer available.")
 		return
-	var coordinator = zone._get_drag_coordinator()
+	var coordinator = get_drag_coordinator()
 	if coordinator == null:
 		return
 	input_service.clear_hover_for_items(valid_items, true)
@@ -197,7 +205,8 @@ func _start_drag_internal(items: Array[ZoneItemControl], pointer_global_position
 	coordinator.start_drag(zone, valid_items, anchor_item, drag_offset, cursor_proxy)
 	for item in valid_items:
 		item.visible = false
-	zone._emit_drag_started(valid_items, zone)
+	if runtime_port != null:
+		runtime_port.emit_drag_started(valid_items, zone)
 	refresh()
 
 func _sanitize_drag_items(items: Array[ZoneItemControl], anchor_item: ZoneItemControl = null) -> Array[ZoneItemControl]:
@@ -240,7 +249,7 @@ func _evaluate_drag_start(anchor_item: ZoneItemControl, candidate_items: Array[Z
 func finalize_drag_session(session: ZoneDragSession = null) -> void:
 	var active_session = session
 	if active_session == null:
-		var coordinator = zone._get_drag_coordinator(false)
+		var coordinator = get_drag_coordinator(false)
 		active_session = coordinator.get_session() if coordinator != null else null
 	if active_session == null or active_session.source_zone != zone:
 		return
@@ -282,7 +291,7 @@ func perform_drop(session: ZoneDragSession) -> bool:
 func cancel_drag(session: ZoneDragSession = null) -> void:
 	var active_session = session
 	if active_session == null:
-		var coordinator = zone._get_drag_coordinator(false)
+		var coordinator = get_drag_coordinator(false)
 		active_session = coordinator.get_session() if coordinator != null else null
 	if active_session == null:
 		return
@@ -321,7 +330,7 @@ func _resolve_insert_target(item: ZoneItemControl, placement_target: ZonePlaceme
 func _resolve_linear_insert_index(index_hint: int, target: ZonePlacementTarget) -> int:
 	if context.get_space_model() is ZoneLinearSpaceModel:
 		if target != null and target.is_linear():
-			return clampi(target.slot, 0, store.items.size())
+			return clampi(target.linear_index, 0, store.items.size())
 		return clampi(index_hint, 0, store.items.size())
 	return clampi(index_hint, 0, store.items.size())
 
@@ -347,55 +356,75 @@ func _emit_item_transferred(source_zone: Zone, target_zone: Zone, moving_items: 
 
 func _emit_drop_rejected(session: ZoneDragSession, reason: String) -> void:
 	var source_zone = session.source_zone as Zone
-	zone._emit_drop_rejected(session.items, source_zone, zone, reason)
+	if runtime_port != null:
+		runtime_port.emit_drop_rejected(session.items, source_zone, zone, reason)
 	if source_zone != null and source_zone != zone:
-		source_zone._emit_drop_rejected(session.items, source_zone, zone, reason)
+		var source_port = ZoneRuntimePortScript.for_zone(source_zone)
+		if source_port != null:
+			source_port.emit_drop_rejected(session.items, source_zone, zone, reason)
 
 func emit_drop_rejected_items(items: Array[ZoneItemControl], source_zone: Zone, reason: String) -> void:
-	zone._emit_drop_rejected(items, source_zone, zone, reason)
+	if runtime_port != null:
+		runtime_port.emit_drop_rejected(items, source_zone, zone, reason)
 	if source_zone != null and source_zone != zone:
-		source_zone._emit_drop_rejected(items, source_zone, zone, reason)
+		var source_port = ZoneRuntimePortScript.for_zone(source_zone)
+		if source_port != null:
+			source_port.emit_drop_rejected(items, source_zone, zone, reason)
 
 func resolve_zone_context(target_zone: Zone) -> ZoneContext:
-	return target_zone._get_context() if target_zone != null else null
+	return ZoneRuntimePortScript.resolve_context(target_zone)
 
 func resolve_zone_input_service(target_zone: Zone) -> ZoneInputService:
-	return target_zone._get_input_service() if target_zone != null else null
+	return ZoneRuntimePortScript.resolve_input_service(target_zone)
 
 func resolve_zone_render_service(target_zone: Zone) -> ZoneRenderService:
-	return target_zone._get_render_service() if target_zone != null else null
+	return ZoneRuntimePortScript.resolve_render_service(target_zone)
 
 func resolve_zone_transfer_service(target_zone: Zone) -> ZoneTransferService:
-	return target_zone._get_transfer_service() if target_zone != null else null
+	return ZoneRuntimePortScript.resolve_transfer_service(target_zone)
 
 func resolve_zone_drag_coordinator(target_zone: Zone) -> ZoneDragCoordinator:
-	return target_zone._get_drag_coordinator(false) if target_zone != null else null
+	return ZoneRuntimePortScript.resolve_drag_coordinator(target_zone, false)
 
 func emit_item_hover_exited(item: ZoneItemControl) -> void:
-	zone._emit_item_hover_exited(item)
+	if runtime_port != null:
+		runtime_port.emit_item_hover_exited(item)
 
 func emit_selection_changed() -> void:
-	zone._emit_selection_changed()
+	if runtime_port != null:
+		runtime_port.emit_selection_changed()
 
 func emit_item_removed(item: ZoneItemControl, from_index: int) -> void:
-	zone._emit_item_removed(item, from_index)
+	if runtime_port != null:
+		runtime_port.emit_item_removed(item, from_index)
 
 func emit_item_reordered(item: ZoneItemControl, from_index: int, to_index: int) -> void:
-	zone._emit_item_reordered(item, from_index, to_index)
+	if runtime_port != null:
+		runtime_port.emit_item_reordered(item, from_index, to_index)
 
 func emit_item_added(item: ZoneItemControl, index: int) -> void:
-	zone._emit_item_added(item, index)
+	if runtime_port != null:
+		runtime_port.emit_item_added(item, index)
 
 func emit_layout_changed() -> void:
-	zone._emit_layout_changed()
+	if runtime_port != null:
+		runtime_port.emit_layout_changed()
 
 func emit_zone_layout_changed(target_zone: Zone) -> void:
-	if target_zone != null:
-		target_zone._emit_layout_changed()
+	ZoneRuntimePortScript.emit_layout_changed_for(target_zone)
 
 func emit_zone_item_transferred(emitter_zone: Zone, item: ZoneItemControl, source_zone: Zone, target_zone: Zone, target) -> void:
-	if emitter_zone != null:
-		emitter_zone._emit_item_transferred(item, source_zone, target_zone, target)
+	ZoneRuntimePortScript.emit_item_transferred_for(emitter_zone, item, source_zone, target_zone, target)
+
+func request_refresh() -> void:
+	if runtime_port != null:
+		runtime_port.request_refresh()
+
+func request_zone_refresh(target_zone: Zone) -> void:
+	ZoneRuntimePortScript.request_refresh_for(target_zone)
+
+func get_drag_coordinator(create_if_missing: bool = true):
+	return runtime_port.get_drag_coordinator(create_if_missing) if runtime_port != null else null
 
 func _cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit_layout_changed: bool) -> void:
 	_drag_session_cleanup.cleanup_drag_session(session, refresh_involved, emit_layout_changed)
@@ -414,16 +443,16 @@ func _update_hover_preview(session: ZoneDragSession) -> void:
 			session.requested_target = ZonePlacementTarget.invalid()
 			session.preview_target = ZonePlacementTarget.invalid()
 		if render_service.clear_hover_feedback(session.items):
-			zone.refresh()
+			request_refresh()
 		return
-	var decision = _evaluator.update_hover_preview_session(zone, session, render_service.get_layout_items(session), global_mouse, zone.get_local_mouse_position())
+	var decision = update_hover_preview_session(zone, session, render_service.get_layout_items(session), global_mouse, zone.get_local_mouse_position())
 	if decision == null:
 		if render_service.clear_hover_feedback(session.items):
-			zone.refresh()
+			request_refresh()
 		return
 	var preview_anchor = session.anchor_item if is_instance_valid(session.anchor_item) else session.items[0] if not session.items.is_empty() and session.items[0] is ZoneItemControl else null
 	if render_service.apply_hover_feedback(session.items, decision, session.preview_target, preview_anchor):
-		zone.refresh()
+		request_refresh()
 
 func _get_drop_global_position(session: ZoneDragSession) -> Vector2:
 	if session == null:
@@ -436,10 +465,40 @@ func _get_drop_global_position(session: ZoneDragSession) -> Vector2:
 	return Vector2.ZERO
 
 func make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
-	return _evaluator.make_transfer_request(target_zone, source_zone, items, placement_target, global_position)
+	return ZoneTransferRequest.new(target_zone, source_zone, items, placement_target, global_position)
 
 func _evaluate_drop_request(request: ZoneTransferRequest) -> ZoneTransferDecision:
-	return _evaluator.evaluate_drop_request(request)
+	var target = request.placement_target.duplicate_target() if request.placement_target != null else ZonePlacementTarget.invalid()
+	var space_model = context.get_space_model()
+	if space_model == null:
+		return ZoneTransferDecision.new(false, "This zone rejected the drop target.", ZonePlacementTarget.invalid())
+	if not space_model.is_target_valid(context, target):
+		return ZoneTransferDecision.new(false, "This zone rejected the drop target.", ZonePlacementTarget.invalid())
+	var decision = ZoneTransferDecision.new(true, "", target)
+	var transfer_policy = context.get_transfer_policy()
+	if transfer_policy != null:
+		decision = transfer_policy.evaluate_transfer(context, request)
+	if decision == null:
+		return ZoneTransferDecision.new(true, "", target)
+	return decision
 
 func resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
-	return _evaluator.resolve_drop_decision(request)
+	var decision = _evaluate_drop_request(request)
+	if decision == null:
+		decision = ZoneTransferDecision.new(true, "", request.placement_target)
+	if (decision.resolved_target == null or not decision.resolved_target.is_valid()) and request.placement_target != null and request.placement_target.is_valid():
+		return ZoneTransferDecision.new(decision.allowed, decision.reason, request.placement_target, decision.transfer_mode, decision.spawn_scene, decision.metadata)
+	return decision
+
+func update_hover_preview_session(target_zone: Zone, session: ZoneDragSession, visible_items: Array[ZoneItemControl], global_position: Vector2, local_position: Vector2) -> ZoneTransferDecision:
+	var space_model = context.get_space_model()
+	if space_model == null:
+		return null
+	var requested_target = space_model.resolve_hover_target(context, visible_items, global_position, local_position)
+	requested_target = space_model.normalize_target(context, requested_target, session.items)
+	var request = make_transfer_request(target_zone, session.source_zone, session.items, requested_target, global_position)
+	var decision = resolve_drop_decision(request)
+	session.hover_zone = target_zone
+	session.requested_target = requested_target
+	session.preview_target = decision.resolved_target if decision.allowed else ZonePlacementTarget.invalid()
+	return decision

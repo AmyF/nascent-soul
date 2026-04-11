@@ -30,7 +30,7 @@ func clear_selection() -> void:
 	if selection_changed:
 		input_service.emit_selection_changed()
 	if hover_changed or selection_changed:
-		zone.refresh()
+		input_service.request_refresh()
 
 func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 	if not context.has_item(item):
@@ -38,29 +38,29 @@ func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 	var changed = selection_state.toggle_item(item) if additive else selection_state.select_single(item)
 	if changed:
 		input_service.emit_selection_changed()
-		zone.refresh()
+		input_service.request_refresh()
 
 func handle_item_mouse_entered(item: ZoneItemControl) -> void:
-	var coordinator = zone._get_drag_coordinator(false)
+	var coordinator = input_service.get_drag_coordinator(false)
 	if coordinator != null and coordinator.get_session() != null:
 		return
-	var targeting_coordinator = zone._get_targeting_coordinator(false)
+	var targeting_coordinator = input_service.get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if selection_state.set_hovered(item):
 		input_service.emit_item_hover_entered(item)
-		zone.refresh()
+		input_service.request_refresh()
 
 func handle_item_mouse_exited(item: ZoneItemControl) -> void:
-	var coordinator = zone._get_drag_coordinator(false)
+	var coordinator = input_service.get_drag_coordinator(false)
 	if coordinator != null and coordinator.get_session() != null:
 		return
-	var targeting_coordinator = zone._get_targeting_coordinator(false)
+	var targeting_coordinator = input_service.get_targeting_coordinator(false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if selection_state.hovered_item == item and selection_state.set_hovered(null):
 		input_service.emit_item_hover_exited(item)
-		zone.refresh()
+		input_service.request_refresh()
 
 func handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction) -> bool:
 	if not interaction.keyboard_navigation_enabled or not zone.has_focus():
@@ -96,7 +96,7 @@ func apply_click_selection(item: ZoneItemControl, event: InputEventMouseButton) 
 			changed = selection_state.select_single(item)
 	if changed:
 		input_service.emit_selection_changed()
-		zone.refresh()
+		input_service.request_refresh()
 
 func resolve_drag_items(item: ZoneItemControl) -> Array[ZoneItemControl]:
 	if selection_state.is_selected(item) and selection_state.get_selected_items().size() > 1:
@@ -132,7 +132,7 @@ func clear_background_interaction() -> void:
 	if selection_changed:
 		input_service.emit_selection_changed()
 	if hover_changed or selection_changed:
-		zone.refresh()
+		input_service.request_refresh()
 
 func _matches_action(event: InputEvent, action_name: StringName) -> bool:
 	if action_name == StringName():
@@ -162,7 +162,7 @@ func _move_keyboard_selection(direction: int, wrap_navigation: bool) -> void:
 		return
 	if selection_state.select_single(next_item):
 		input_service.emit_selection_changed()
-		zone.refresh()
+		input_service.request_refresh()
 
 func _get_keyboard_active_item() -> ZoneItemControl:
 	if is_instance_valid(selection_state.anchor_item):

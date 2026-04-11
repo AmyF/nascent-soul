@@ -734,7 +734,7 @@ func _test_targeting_example_load() -> void:
 		_check(spell_session != null and spell_session.candidate.is_item() and spell_session.candidate.target_item == enemy_scout, "targeting lab spell card should resolve the hovered enemy piece as an item candidate")
 		_check(spell_session != null and spell_session.decision.allowed, "targeting lab spell card should allow enemy piece targets")
 		if spell_session != null:
-			spell_zone.update_targeting_session(spell_session, bulwark.global_position + bulwark.size * 0.5)
+			spell_zone._runtime_update_targeting_session(spell_session, bulwark.global_position + bulwark.size * 0.5)
 			_check(spell_session.candidate.is_item() and spell_session.candidate.target_item == bulwark, "targeting lab spell card should still resolve allied pieces as hovered item candidates")
 			_check(not spell_session.decision.allowed and spell_session.decision.reason == "This spell only targets enemies.", "targeting lab spell card should reject allied pieces with the serialized rule-table reason")
 			spell_zone.cancel_targeting()
