@@ -14,9 +14,9 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `607` checks
+- full regression runner passes with `646` checks
 - headless editor load succeeds with the plugin enabled
-- launcher regression coverage now focuses on the two public showcase entry points
+- launcher regression coverage now focuses on the three public showcase entry points plus the compatibility shell
 
 ## What The Suite Covers
 
@@ -28,7 +28,7 @@ Validated on Godot 4.6.1:
 - layout visual contracts
 - targeting flows and targeting visuals
 - performance smoke checks
-- two-entry launcher and showcase-shell navigation coverage
+- three-entry launcher navigation, starter showcase, and compatibility-shell coverage
 - FreeCell showcase rules, history, and UI contracts
 - Xiangqi showcase rules and board-surface chrome
 
@@ -45,10 +45,13 @@ That keeps refactors free to move internal code around while still protecting th
 
 The new showcase-specific suites live at:
 
+- [`scenes/tests/suites/workflow_board_showcase_suite.gd`](../scenes/tests/suites/workflow_board_showcase_suite.gd)
 - [`scenes/tests/suites/freecell_showcase_suite.gd`](../scenes/tests/suites/freecell_showcase_suite.gd)
 - [`scenes/tests/suites/freecell_history_suite.gd`](../scenes/tests/suites/freecell_history_suite.gd)
 - [`scenes/tests/suites/freecell_interaction_suite.gd`](../scenes/tests/suites/freecell_interaction_suite.gd)
 - [`scenes/tests/suites/xiangqi_showcase_suite.gd`](../scenes/tests/suites/xiangqi_showcase_suite.gd)
+
+Workflow Board protects the starter lane counts, reset flow, WIP-limit rule, and embedded launcher layout so the public onboarding path stays stable.
 
 FreeCell is now split into rules, history-foundation flow, and interaction-layout suites so its regression output reads like a teaching path instead of a single monolithic showcase file.
 
@@ -62,7 +65,7 @@ The launcher-facing suite now lives at:
 
 - [`scenes/tests/suites/demo_smoke_suite.gd`](../scenes/tests/suites/demo_smoke_suite.gd)
 
-It checks the two-entry main menu plus the compatibility shell that swaps between `FreeCell` and `Xiangqi`.
+It checks the three-entry public main menu plus the compatibility shell that swaps between `FreeCell` and `Xiangqi`.
 
 ## Core Contract Suites
 

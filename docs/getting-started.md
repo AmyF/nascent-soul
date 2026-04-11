@@ -124,6 +124,7 @@ Each action creates a zone node, assigns a preset config, and drops it into the 
 - Read [Card Zones](card-zones.md) for linear containers.
 - Read [Battlefields](battlefields.md) for square and hex spaces.
 - Read [Transfers and Targeting](transfers-and-targeting.md) for cross-zone actions and targeting flows.
+- Read [Showcase: Workflow Board](showcase-workflow-board.md) for the smallest useful scene-authored starter.
 - Read [Extending Policies](extending-policies.md) and [Extending Layouts](extending-layouts.md) once the stock presets are no longer enough.
 - Read [Game Implementation Checklist](game-implementation-checklist.md) when you are turning a prototype into a real game scene.
-- Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and walk the two public showcases in order: `FreeCell`, then `Xiangqi`. Open [`scenes/demo.tscn`](../scenes/demo.tscn) only if you specifically want the compatibility shell that keeps those same two showcases together when launched directly.
+- Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and walk the public showcases in order: `Workflow Board`, then `FreeCell`, then `Xiangqi`. Open [`scenes/demo.tscn`](../scenes/demo.tscn) only if you specifically want the compatibility shell that keeps the two full game showcases together when launched directly.

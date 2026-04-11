@@ -130,9 +130,10 @@ Read and run things in this order:
 6. [Game Implementation Checklist](game-implementation-checklist.md)
 7. [Architecture](../ARCHITECTURE.md)
 
-Then walk the two public main-menu showcases in order:
+Then walk the public main-menu showcases in order:
 
-1. `FreeCell`
-2. `Xiangqi`
+1. `Workflow Board`
+2. `FreeCell`
+3. `Xiangqi`
 
-For smaller transfer/layout/targeting questions, use the focused docs above instead of looking for the old deleted demo scenes.
+Use `Workflow Board` for the shortest scene/config/policy example, then move to the two full game showcases. For smaller transfer/layout/targeting questions, use the focused docs above instead of looking for the old deleted demo scenes.

@@ -81,7 +81,7 @@ Your scene or controller script should still own:
 Zones should stay reusable.  
 Your controller should stay game-specific.
 
-When the controller starts growing, use the same helper pattern as the built-in showcases:
+When the controller starts growing, use the same helper pattern as the fuller built-in showcases:
 
 1. keep **scene wiring** in the `.tscn` and thin controller
 2. move **zone lookup / board lookup** into a registry helper
@@ -89,7 +89,7 @@ When the controller starts growing, use the same helper pattern as the built-in 
 4. move **move legality / rule evaluation** into a rules helper
 5. move **undo / restore stacks** into a history helper
 
-FreeCell and Xiangqi now both follow that structure.
+Workflow Board shows the thin starter version of that split. FreeCell and Xiangqi both follow the fuller registry/state/rules/history pattern.
 
 ## 7. Teach Through References
 
@@ -98,11 +98,13 @@ Walk the reference material in this order when you need help:
 1. [Transfers and Targeting](transfers-and-targeting.md)
 2. [Extending Policies](extending-policies.md)
 3. [Extending Layouts](extending-layouts.md)
-4. `FreeCell`
-5. `Xiangqi`
+4. `Workflow Board`
+5. `FreeCell`
+6. `Xiangqi`
 
 | Reference | What it teaches |
 | --- | --- |
+| `Workflow Board` | scene-authored starter lanes, local `ZoneConfig` resources, thin controller boundaries, and a tiny example-side WIP policy |
 | `FreeCell` | scene-authored card lanes, move rules, carry-capacity checks, history/restore structure |
 | `Xiangqi` | scene-authored battlefield setup, board targeting, state orchestration, and side-panel UX |
 

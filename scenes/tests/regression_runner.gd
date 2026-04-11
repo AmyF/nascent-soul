@@ -8,6 +8,7 @@ const SUITE_SCENES := [
 	preload("res://scenes/tests/suites/core_transfer_suite.tscn"),
 	preload("res://scenes/tests/suites/core_runtime_resilience_suite.tscn"),
 	preload("res://scenes/tests/suites/demo_smoke_suite.tscn"),
+	preload("res://scenes/tests/suites/workflow_board_showcase_suite.tscn"),
 	preload("res://scenes/tests/suites/freecell_showcase_suite.tscn"),
 	preload("res://scenes/tests/suites/freecell_history_suite.tscn"),
 	preload("res://scenes/tests/suites/freecell_interaction_suite.tscn"),

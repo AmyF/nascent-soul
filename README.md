@@ -115,15 +115,17 @@ battlefield.begin_targeting(
 
 ## Showcases
 
-The launcher scene is [`scenes/main_menu.tscn`](scenes/main_menu.tscn). It is the public first screen and now exposes only the two playable showcases:
+The launcher scene is [`scenes/main_menu.tscn`](scenes/main_menu.tscn). It is the public first screen and now exposes a starter-first showcase path:
 
+- `Workflow Board`: a kanban-style starter board that shows the smallest useful `CardZone` + `ZoneConfig` + example-side `ZoneTransferPolicy` setup.
 - `FreeCell`: a complete single-player FreeCell implementation built from `CardZone`, transfer policies, and an example-side tableau layout.
 - `Xiangqi`: a complete local two-player Xiangqi implementation built on `BattlefieldZone`, square placement targets, and zone targeting.
 
-[`scenes/demo.tscn`](scenes/demo.tscn) remains as a compatibility shell when you open it directly. It mirrors the same two showcase scenes for direct-open workflows.
+[`scenes/demo.tscn`](scenes/demo.tscn) remains as a compatibility shell when you open it directly. It mirrors only the two full game showcase scenes for direct-open workflows.
 
 The showcase scenes live at:
 
+- [`scenes/showcases/workflow_board/showcase.tscn`](scenes/showcases/workflow_board/showcase.tscn)
 - [`scenes/showcases/freecell/showcase.tscn`](scenes/showcases/freecell/showcase.tscn)
 - [`scenes/showcases/xiangqi/showcase.tscn`](scenes/showcases/xiangqi/showcase.tscn)
 
@@ -138,6 +140,7 @@ The showcase scenes live at:
 - [Extending Policies](docs/extending-policies.md)
 - [Extending Layouts](docs/extending-layouts.md)
 - [Game Implementation Checklist](docs/game-implementation-checklist.md)
+- [Showcase: Workflow Board](docs/showcase-workflow-board.md)
 - [Showcase: FreeCell](docs/showcase-freecell.md)
 - [Showcase: Xiangqi](docs/showcase-xiangqi.md)
 - [Testing](docs/testing.md)
@@ -168,16 +171,17 @@ If you want to study the addon internals after that, use this maintainer path:
 
 Recommended public showcase order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
 
-1. `FreeCell`
-2. `Xiangqi`
+1. `Workflow Board`
+2. `FreeCell`
+3. `Xiangqi`
 
 ## Validation
 
 Validated on Godot 4.6.1:
 
-- Headless regression runner passes with `581` checks.
+- Headless regression runner passes with `646` checks.
 - Headless editor load succeeds with the plugin enabled.
-- Launcher smoke coverage confirms the two-entry main menu, the compatibility shell, and both showcase scenes.
+- Regression coverage confirms the three-entry public main menu, the dedicated Workflow Board starter suite, the compatibility shell, and both full game showcase scenes.
 
 Run the full suite with:
 
