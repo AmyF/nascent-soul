@@ -2,6 +2,15 @@
 
 [ext_resource type="Script" path="res://scenes/showcases/workflow_board/showcase.gd" id="1_script"]
 [ext_resource type="Theme" path="res://scenes/showcases/shared/demo_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/card_zone.gd" id="3_card_zone"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="4_zone_config"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="5_interaction"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="6_linear_space"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_manual_sort"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_drag_factory"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="9_card_display"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_vbox_layout.gd" id="10_vbox_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="11_allow_all_transfer"]
 
 [sub_resource type="StyleBoxFlat" id="WorkflowInfoPanel"]
 bg_color = Color(0.10, 0.15, 0.23, 1)
@@ -18,6 +27,78 @@ content_margin_left = 14.0
 content_margin_top = 14.0
 content_margin_right = 14.0
 content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="WorkflowLaneZonePanel"]
+bg_color = Color(0.07, 0.11, 0.17, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.23, 0.33, 0.44, 1)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+
+[sub_resource type="StyleBoxFlat" id="WorkflowCountPill"]
+bg_color = Color(0.19, 0.31, 0.48, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+
+[sub_resource type="Resource" id="WorkflowLinearSpace"]
+script = ExtResource("6_linear_space")
+
+[sub_resource type="Resource" id="WorkflowInteraction"]
+script = ExtResource("5_interaction")
+multi_select_enabled = false
+keyboard_navigation_enabled = false
+
+[sub_resource type="Resource" id="WorkflowCardDisplay"]
+script = ExtResource("9_card_display")
+hovered_lift = 0.0
+selected_lift = 0.0
+hovered_scale = 1.02
+selected_scale = 1.01
+
+[sub_resource type="Resource" id="WorkflowManualSort"]
+script = ExtResource("7_manual_sort")
+
+[sub_resource type="Resource" id="WorkflowDragFactory"]
+script = ExtResource("8_drag_factory")
+
+[sub_resource type="Resource" id="WorkflowLaneLayout"]
+script = ExtResource("10_vbox_layout")
+item_spacing = 12.0
+padding_top = 12.0
+
+[sub_resource type="Resource" id="WorkflowAllowAllPolicy"]
+script = ExtResource("11_allow_all_transfer")
+
+[sub_resource type="Resource" id="WorkflowLaneConfig"]
+script = ExtResource("4_zone_config")
+space_model = SubResource("WorkflowLinearSpace")
+layout_policy = SubResource("WorkflowLaneLayout")
+display_style = SubResource("WorkflowCardDisplay")
+interaction = SubResource("WorkflowInteraction")
+sort_policy = SubResource("WorkflowManualSort")
+transfer_policy = SubResource("WorkflowAllowAllPolicy")
+drag_visual_factory = SubResource("WorkflowDragFactory")
+
+[sub_resource type="Resource" id="WorkflowInProgressConfig"]
+script = ExtResource("4_zone_config")
+space_model = SubResource("WorkflowLinearSpace")
+layout_policy = SubResource("WorkflowLaneLayout")
+display_style = SubResource("WorkflowCardDisplay")
+interaction = SubResource("WorkflowInteraction")
+sort_policy = SubResource("WorkflowManualSort")
+transfer_policy = SubResource("WorkflowAllowAllPolicy")
+drag_visual_factory = SubResource("WorkflowDragFactory")
 
 [node name="WorkflowBoardShowcase" type="Control"]
 layout_mode = 3
@@ -57,7 +138,7 @@ text = "Workflow Board"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "A kanban-style starter showcase that will demonstrate the smallest useful Zone + ZoneConfig + transfer setup."
+text = "Three scene-authored lanes, local ZoneConfig resources, and a small transfer rule are enough to build a useful kanban-style UI."
 
 [node name="ContentRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -73,25 +154,41 @@ theme_override_styles/panel = SubResource("WorkflowInfoPanel")
 
 [node name="BacklogVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/BacklogPanel"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
-[node name="BacklogTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
+[node name="BacklogHeaderRow" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
 layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BacklogTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"DemoBlueHeading"
 text = "Backlog"
+
+[node name="BacklogCountPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogHeaderRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("WorkflowCountPill")
+
+[node name="BacklogCountLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogHeaderRow/BacklogCountPanel"]
+layout_mode = 2
+theme_type_variation = &"DemoDetailLabel"
+text = "0 tasks"
 
 [node name="BacklogSummary" type="Label" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "Scene-authored task lane."
+text = "Scene-authored lane with the plain starter config."
 
-[node name="BacklogPlaceholder" type="Label" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
+[node name="BacklogZone" type="Control" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
+custom_minimum_size = Vector2(0, 380)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
-autowrap_mode = 3
-theme_type_variation = &"DemoDetailLabel"
-text = "The starter workflow board lanes will be authored directly in this scene."
+theme_override_styles/panel = SubResource("WorkflowLaneZonePanel")
+script = ExtResource("3_card_zone")
+config = SubResource("WorkflowLaneConfig")
 
 [node name="InProgressPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow"]
 layout_mode = 2
@@ -101,25 +198,41 @@ theme_override_styles/panel = SubResource("WorkflowInfoPanel")
 
 [node name="InProgressVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/InProgressPanel"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
-[node name="InProgressTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
+[node name="InProgressHeaderRow" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
 layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InProgressTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"DemoBlueHeading"
 text = "In Progress"
+
+[node name="InProgressCountPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressHeaderRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("WorkflowCountPill")
+
+[node name="InProgressCountLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressHeaderRow/InProgressCountPanel"]
+layout_mode = 2
+theme_type_variation = &"DemoDetailLabel"
+text = "0 / 3"
 
 [node name="InProgressSummary" type="Label" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "WIP limit will live here."
+text = "This column will get the tiny example-side WIP rule."
 
-[node name="InProgressPlaceholder" type="Label" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
+[node name="InProgressZone" type="Control" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
+custom_minimum_size = Vector2(0, 380)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
-autowrap_mode = 3
-theme_type_variation = &"DemoDetailLabel"
-text = "This lane will become the smallest example-side policy demo in the launcher."
+theme_override_styles/panel = SubResource("WorkflowLaneZonePanel")
+script = ExtResource("3_card_zone")
+config = SubResource("WorkflowInProgressConfig")
 
 [node name="DonePanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow"]
 layout_mode = 2
@@ -129,25 +242,41 @@ theme_override_styles/panel = SubResource("WorkflowInfoPanel")
 
 [node name="DoneVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/DonePanel"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
-[node name="DoneTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
+[node name="DoneHeaderRow" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
 layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DoneTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneHeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"DemoBlueHeading"
 text = "Done"
+
+[node name="DoneCountPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneHeaderRow"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("WorkflowCountPill")
+
+[node name="DoneCountLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneHeaderRow/DoneCountPanel"]
+layout_mode = 2
+theme_type_variation = &"DemoDetailLabel"
+text = "0 tasks"
 
 [node name="DoneSummary" type="Label" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "Starter showcase destination lane."
+text = "Destination lane using the same scene-authored base config."
 
-[node name="DonePlaceholder" type="Label" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
+[node name="DoneZone" type="Control" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
+custom_minimum_size = Vector2(0, 380)
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
-autowrap_mode = 3
-theme_type_variation = &"DemoDetailLabel"
-text = "The first public starter entry now has its own dedicated showcase directory."
+theme_override_styles/panel = SubResource("WorkflowLaneZonePanel")
+script = ExtResource("3_card_zone")
+config = SubResource("WorkflowLaneConfig")
 
 [node name="TeachingPanel" type="PanelContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
@@ -157,4 +286,4 @@ theme_override_styles/panel = SubResource("WorkflowInfoPanel")
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "Goal: show the shortest path from main_menu.tscn to a useful multi-zone UI before asking learners to read the larger FreeCell and Xiangqi showcases."
+text = "Read this scene top to bottom: three CardZone nodes, two local ZoneConfig resources, one vertical layout, and no game-specific runtime machinery."
