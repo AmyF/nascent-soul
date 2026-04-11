@@ -12,7 +12,7 @@ It is meant for projects that want:
 ## Architecture
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph Public_Surface[Public surface]
         Zone[Zone<br/>CardZone / BattlefieldZone]
         Item[ZoneItemControl<br/>ZoneCard / ZonePiece]
