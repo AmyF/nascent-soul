@@ -22,19 +22,20 @@ func _test_main_menu_entry_points() -> void:
 	var content_summary = scene.get_node_or_null("RootMargin/RootHBox/ContentColumn/ContentSummaryLabel") as Label
 	var content_host = scene.get_node_or_null("RootMargin/RootHBox/ContentColumn/ContentPanel/ContentHost") as Control
 	var button_specs = [
+		{"path": "RootMargin/RootHBox/Sidebar/SidebarVBox/WorkflowBoardButton", "title": "Workflow Board", "expected_child": "WorkflowBoardShowcase"},
 		{"path": "RootMargin/RootHBox/Sidebar/SidebarVBox/FreeCellButton", "title": "FreeCell", "expected_child": "FreeCellShowcase"},
 		{"path": "RootMargin/RootHBox/Sidebar/SidebarVBox/XiangqiButton", "title": "Xiangqi", "expected_child": "XiangqiShowcase"}
 	]
 	_check(scene.theme != null, "main menu should serialize the shared demo theme")
 	_check(title_label != null and title_label.text.contains("Launcher"), "main menu should label itself as the launcher in the sidebar title")
-	_check(summary_label != null and summary_label.text.contains("FreeCell") and summary_label.text.contains("Xiangqi"), "main menu summary should describe the direct first-screen entry list")
+	_check(summary_label != null and summary_label.text.contains("Workflow Board") and summary_label.text.contains("FreeCell") and summary_label.text.contains("Xiangqi"), "main menu summary should describe the direct first-screen entry list")
 	_check(scene.get_node_or_null("RootMargin/RootHBox/Sidebar/SidebarVBox/DemoLabButton") == null, "main menu should no longer expose a Demo Lab button")
 	_check(scene.get_node_or_null("RootMargin/RootHBox/Sidebar/SidebarVBox/TransferButton") == null and scene.get_node_or_null("RootMargin/RootHBox/Sidebar/SidebarVBox/TargetingButton") == null, "main menu should no longer expose the removed editor demos")
-	_check(scene.get("freecell_scene") != null and scene.get("xiangqi_scene") != null, "main menu should serialize direct scene references for the two public showcase entries")
+	_check(scene.get("workflow_board_scene") != null and scene.get("freecell_scene") != null and scene.get("xiangqi_scene") != null, "main menu should serialize direct scene references for the public showcase entries")
 	_check(content_host != null, "main menu should include a content host for swapping scenes in place")
 	_check(content_title != null and content_title.text == "Main Menu", "main menu should keep a launcher header before any entry is selected")
 	var initial_summary: String = content_summary.text if content_summary != null else ""
-	_check(content_summary != null and initial_summary.contains("FreeCell") and initial_summary.contains("Xiangqi"), "main menu should describe the two public showcase entries before any entry is selected")
+	_check(content_summary != null and initial_summary.contains("Workflow Board") and initial_summary.contains("FreeCell") and initial_summary.contains("Xiangqi"), "main menu should describe the public showcase entries before any entry is selected")
 	_check(content_host != null and content_host.get_child_count() == 0, "main menu should start on the launcher shell without preloading nested content")
 	var serialized_button_count := 0
 	for spec in button_specs:
@@ -50,7 +51,7 @@ func _test_main_menu_entry_points() -> void:
 		_check(content_title != null and content_title.text == str(spec["title"]), "main menu should update the content title for %s" % str(spec["title"]))
 		_check(content_summary != null and not content_summary.text.is_empty() and content_summary.text != initial_summary, "main menu should update the content summary for %s" % str(spec["title"]))
 		_check(button.disabled, "main menu should mark %s as selected after mounting it" % str(spec["title"]))
-	_check(serialized_button_count == button_specs.size(), "main menu should serialize two first-screen launcher buttons")
+	_check(serialized_button_count == button_specs.size(), "main menu should serialize every first-screen launcher button")
 
 func _test_demo_hub_summary_panels() -> void:
 	var scene = DEMO_SCENE.instantiate()

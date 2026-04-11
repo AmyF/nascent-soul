@@ -1,0 +1,160 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/showcases/workflow_board/showcase.gd" id="1_script"]
+[ext_resource type="Theme" path="res://scenes/showcases/shared/demo_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="WorkflowInfoPanel"]
+bg_color = Color(0.10, 0.15, 0.23, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.24, 0.34, 0.45, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+
+[node name="WorkflowBoardShowcase" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"DemoHubMargin"
+
+[node name="RootVBox" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="HeaderVBox" type="VBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="RootMargin/RootVBox/HeaderVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Workflow Board"
+
+[node name="SummaryLabel" type="Label" parent="RootMargin/RootVBox/HeaderVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "A kanban-style starter showcase that will demonstrate the smallest useful Zone + ZoneConfig + transfer setup."
+
+[node name="ContentRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="BacklogPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("WorkflowInfoPanel")
+
+[node name="BacklogVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/BacklogPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BacklogTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Backlog"
+
+[node name="BacklogSummary" type="Label" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Scene-authored task lane."
+
+[node name="BacklogPlaceholder" type="Label" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "The starter workflow board lanes will be authored directly in this scene."
+
+[node name="InProgressPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("WorkflowInfoPanel")
+
+[node name="InProgressVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/InProgressPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="InProgressTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "In Progress"
+
+[node name="InProgressSummary" type="Label" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "WIP limit will live here."
+
+[node name="InProgressPlaceholder" type="Label" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "This lane will become the smallest example-side policy demo in the launcher."
+
+[node name="DonePanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("WorkflowInfoPanel")
+
+[node name="DoneVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/DonePanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DoneTitle" type="Label" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Done"
+
+[node name="DoneSummary" type="Label" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Starter showcase destination lane."
+
+[node name="DonePlaceholder" type="Label" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "The first public starter entry now has its own dedicated showcase directory."
+
+[node name="TeachingPanel" type="PanelContainer" parent="RootMargin/RootVBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("WorkflowInfoPanel")
+
+[node name="TeachingLabel" type="Label" parent="RootMargin/RootVBox/TeachingPanel"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Goal: show the shortest path from main_menu.tscn to a useful multi-zone UI before asking learners to read the larger FreeCell and Xiangqi showcases."

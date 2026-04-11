@@ -2,9 +2,11 @@ extends Control
 
 const ExampleItemSupport = preload("res://scenes/showcases/shared/example_item_support.gd")
 
+@export var workflow_board_scene: PackedScene
 @export var freecell_scene: PackedScene
 @export var xiangqi_scene: PackedScene
 
+@onready var workflow_board_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/WorkflowBoardButton
 @onready var freecell_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/FreeCellButton
 @onready var xiangqi_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/XiangqiButton
 @onready var content_title_label: Label = $RootMargin/RootHBox/ContentColumn/ContentTitleLabel
@@ -16,6 +18,7 @@ var _scene_by_key: Dictionary = {}
 
 func _ready() -> void:
 	_scene_by_key = {
+		&"workflow_board": workflow_board_scene,
 		&"freecell": freecell_scene,
 		&"xiangqi": xiangqi_scene
 	}
@@ -59,6 +62,7 @@ func _cleanup_before_quit() -> void:
 
 func _launcher_buttons() -> Array[Button]:
 	return [
+		workflow_board_button,
 		freecell_button,
 		xiangqi_button
 	]

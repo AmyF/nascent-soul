@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/main_menu.gd" id="1_scene"]
 [ext_resource type="Theme" path="res://scenes/showcases/shared/demo_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://scenes/showcases/workflow_board/showcase.tscn" id="3_workflow"]
 [ext_resource type="PackedScene" path="res://scenes/showcases/freecell/showcase.tscn" id="4_freecell"]
 [ext_resource type="PackedScene" path="res://scenes/showcases/xiangqi/showcase.tscn" id="5_xiangqi"]
 
@@ -46,6 +47,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_scene")
 theme = ExtResource("2_theme")
+workflow_board_scene = ExtResource("3_workflow")
 freecell_scene = ExtResource("4_freecell")
 xiangqi_scene = ExtResource("5_xiangqi")
 
@@ -80,7 +82,15 @@ text = "NascentSoul Launcher"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "公开 Demo 入口现在只保留 FreeCell 与 Xiangqi。"
+text = "公开入口现在从 Workflow Board 开始，再进入 FreeCell 与 Xiangqi。"
+
+[node name="WorkflowBoardButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Workflow Board"
+metadata/entry_scene_key = "workflow_board"
+metadata/entry_title = "Workflow Board"
+metadata/entry_summary = "Launch the kanban-style starter showcase for the simplest useful Zone + ZoneConfig workflow."
 
 [node name="FreeCellButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
@@ -106,7 +116,7 @@ size_flags_vertical = 3
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "The content panel on the right swaps between the two showcase games without leaving the app."
+text = "The content panel on the right now starts with a small starter showcase, then scales up to the two full game showcases."
 
 [node name="ContentColumn" type="VBoxContainer" parent="RootMargin/RootHBox"]
 layout_mode = 2
@@ -123,7 +133,7 @@ text = "Main Menu"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "Pick FreeCell or Xiangqi from the left."
+text = "Pick Workflow Board, FreeCell, or Xiangqi from the left."
 
 [node name="ContentPanel" type="PanelContainer" parent="RootMargin/RootHBox/ContentColumn"]
 layout_mode = 2
