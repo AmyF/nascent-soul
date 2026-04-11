@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/tests/suites/freecell_showcase_suite.gd" id="1_suite"]
 
-[node name="FreeCellShowcaseSuite" type="Control"]
+[node name="FreeCellShowcaseRulesSuite" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

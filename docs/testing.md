@@ -29,7 +29,7 @@ Validated on Godot 4.6.1:
 - targeting flows and targeting visuals
 - performance smoke checks
 - two-entry launcher and showcase-shell navigation coverage
-- FreeCell showcase rules and helper contracts
+- FreeCell showcase rules, history, and UI contracts
 - Xiangqi showcase rules
 
 ## Contract vs. Implementation Coverage
@@ -46,7 +46,11 @@ That keeps refactors free to move internal code around while still protecting th
 The new showcase-specific suites live at:
 
 - [`scenes/tests/suites/freecell_showcase_suite.gd`](../scenes/tests/suites/freecell_showcase_suite.gd)
+- [`scenes/tests/suites/freecell_history_suite.gd`](../scenes/tests/suites/freecell_history_suite.gd)
+- [`scenes/tests/suites/freecell_interaction_suite.gd`](../scenes/tests/suites/freecell_interaction_suite.gd)
 - [`scenes/tests/suites/xiangqi_showcase_suite.gd`](../scenes/tests/suites/xiangqi_showcase_suite.gd)
+
+FreeCell is now split into rules, history-foundation flow, and interaction-layout suites so its regression output reads like a teaching path instead of a single monolithic showcase file.
 
 They are intended to protect the examples as first-class reference implementations, not as disposable demos.
 
