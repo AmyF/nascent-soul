@@ -146,6 +146,22 @@ autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
 text = "Three scene-authored lanes, local ZoneConfig resources, and a small transfer rule are enough to build a useful kanban-style UI."
 
+[node name="ActionRow" type="HBoxContainer" parent="RootMargin/RootVBox/HeaderVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ResetButton" type="Button" parent="RootMargin/RootVBox/HeaderVBox/ActionRow"]
+layout_mode = 2
+theme_type_variation = &"DemoPrimaryActionButton"
+text = "Reset Sample Board"
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox/HeaderVBox/ActionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Starter board status."
+
 [node name="ContentRow" type="HBoxContainer" parent="RootMargin/RootVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
