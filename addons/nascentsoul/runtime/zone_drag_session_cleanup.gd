@@ -2,21 +2,28 @@ extends RefCounted
 
 # Internal helper for drag-session cleanup across all involved zones.
 
+var transfer_service = null
 var zone = null
 
-func _init(p_zone) -> void:
-	zone = p_zone
+func _init(p_transfer_service) -> void:
+	transfer_service = p_transfer_service
+	zone = transfer_service.zone
 
 func cleanup() -> void:
+	transfer_service = null
 	zone = null
 
 func cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit_layout_changed: bool) -> void:
 	session.prune_invalid_items()
 	var involved_zones = _collect_involved_drag_zones(session)
 	for involved_zone in involved_zones:
-		involved_zone._get_render_service().clear_preview_for_session(session)
-		involved_zone._get_input_service().clear_hover_for_items(session.items, false)
-		involved_zone._get_input_service().reset_press_state_for_item()
+		var render_service = transfer_service.resolve_zone_render_service(involved_zone)
+		if render_service != null:
+			render_service.clear_preview_for_session(session)
+		var input_service = transfer_service.resolve_zone_input_service(involved_zone)
+		if input_service != null:
+			input_service.clear_hover_for_items(session.items, false)
+			input_service.reset_press_state_for_item()
 	for item in session.items:
 		if is_instance_valid(item):
 			item.visible = true
@@ -28,7 +35,7 @@ func cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit
 	for involved_zone in involved_zones:
 		involved_zone.refresh()
 		if emit_layout_changed:
-			involved_zone._emit_layout_changed()
+			transfer_service.emit_zone_layout_changed(involved_zone)
 
 func _collect_involved_drag_zones(session: ZoneDragSession) -> Array[Zone]:
 	var involved_zones: Array[Zone] = []
@@ -41,10 +48,10 @@ func _collect_involved_drag_zones(session: ZoneDragSession) -> Array[Zone]:
 
 func _resolve_drag_coordinator(involved_zones: Array[Zone]) -> ZoneDragCoordinator:
 	for involved_zone in involved_zones:
-		var coordinator = involved_zone._get_drag_coordinator(false)
+		var coordinator = transfer_service.resolve_zone_drag_coordinator(involved_zone)
 		if coordinator != null:
 			return coordinator
-	return zone._get_drag_coordinator(false)
+	return transfer_service.resolve_zone_drag_coordinator(zone)
 
 func _append_unique_zone(zones: Array[Zone], candidate: Zone) -> void:
 	if candidate == null or candidate in zones:

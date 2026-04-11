@@ -84,6 +84,7 @@ func refresh_overlay() -> void:
 
 func start_targeting(
 	source_zone: Zone,
+	source_context: ZoneContext,
 	source_item: Control,
 	intent: ZoneTargetingIntent,
 	entry_mode: StringName,
@@ -91,7 +92,7 @@ func start_targeting(
 	pointer_global_position: Vector2
 ) -> ZoneTargetingSession:
 	clear_session(false)
-	active_session = ZoneTargetingSession.new(source_zone, source_item, intent, entry_mode, source_anchor_global, pointer_global_position)
+	active_session = ZoneTargetingSession.new(source_zone, source_context, source_item, intent, entry_mode, source_anchor_global, pointer_global_position)
 	set_process(true)
 	set_process_input(true)
 	if source_zone != null:
@@ -120,7 +121,10 @@ func _update_overlay(source_zone: Zone) -> void:
 	if source_zone == null:
 		_clear_overlay()
 		return
-	var context = source_zone._get_context()
+	var context = active_session.source_context if active_session != null else null
+	if context == null:
+		_clear_overlay()
+		return
 	var style = _resolve_style(source_zone)
 	if style == null:
 		_clear_overlay()

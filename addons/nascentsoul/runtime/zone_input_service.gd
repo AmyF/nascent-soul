@@ -21,7 +21,7 @@ func _init(p_context: ZoneContext) -> void:
 	context = p_context
 	zone = context.zone
 	selection_state = context.selection_state
-	_selection_controller = ZoneInputSelectionControllerScript.new(context, selection_state)
+	_selection_controller = ZoneInputSelectionControllerScript.new(self, context, selection_state)
 
 func bind() -> void:
 	var gui_input_callable = Callable(self, "on_zone_gui_input")
@@ -206,15 +206,6 @@ func apply_click_selection(item: ZoneItemControl, event: InputEventMouseButton) 
 func handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction) -> bool:
 	return _selection_controller.handle_keyboard_navigation(event, interaction)
 
-func matches_action(event: InputEvent, action_name: StringName) -> bool:
-	return _selection_controller._matches_action(event, action_name)
-
-func move_keyboard_selection(direction: int, wrap_navigation: bool) -> void:
-	_selection_controller._move_keyboard_selection(direction, wrap_navigation)
-
-func get_keyboard_active_item() -> ZoneItemControl:
-	return _selection_controller._get_keyboard_active_item()
-
 func resolve_drag_items(item: ZoneItemControl) -> Array[ZoneItemControl]:
 	return _selection_controller.resolve_drag_items(item)
 
@@ -251,3 +242,15 @@ func reset_press_state_for_item(item = null) -> void:
 
 func clear_background_interaction() -> void:
 	_selection_controller.clear_background_interaction()
+
+func emit_item_clicked(item: ZoneItemControl) -> void:
+	zone._emit_item_clicked(item)
+
+func emit_item_hover_entered(item: ZoneItemControl) -> void:
+	zone._emit_item_hover_entered(item)
+
+func emit_item_hover_exited(item: ZoneItemControl) -> void:
+	zone._emit_item_hover_exited(item)
+
+func emit_selection_changed() -> void:
+	zone._emit_selection_changed()

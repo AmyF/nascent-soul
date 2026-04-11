@@ -6,11 +6,13 @@ var context: ZoneContext = null
 var zone = null
 var store: ZoneStore = null
 var evaluator = null
+var transfer_service = null
 
 var input_service: ZoneInputService = null
 var render_service: ZoneRenderService = null
 
-func _init(p_context: ZoneContext, p_store: ZoneStore, p_evaluator) -> void:
+func _init(p_transfer_service, p_context: ZoneContext, p_store: ZoneStore, p_evaluator) -> void:
+	transfer_service = p_transfer_service
 	context = p_context
 	zone = context.zone
 	store = p_store
@@ -23,6 +25,7 @@ func bind_services(p_input_service: ZoneInputService, p_render_service: ZoneRend
 func cleanup() -> void:
 	input_service = null
 	render_service = null
+	transfer_service = null
 	evaluator = null
 	store = null
 	zone = null
@@ -37,18 +40,18 @@ func remove_item(item: ZoneItemControl) -> bool:
 	if items_root != null and item.get_parent() == items_root:
 		items_root.remove_child(item)
 	if previous_index >= 0:
-		zone._emit_item_removed(item, previous_index)
+		transfer_service.emit_item_removed(item, previous_index)
 	zone.refresh()
 	if selection_changed:
-		zone._emit_selection_changed()
-	zone._emit_layout_changed()
+		transfer_service.emit_selection_changed()
+	transfer_service.emit_layout_changed()
 	return true
 
 func remove_item_from_state(item, remove_from_container: bool, clear_visuals: bool) -> bool:
 	var selection_changed = false
 	var item_is_valid = is_instance_valid(item)
 	if item_is_valid and context.selection_state.hovered_item == item and context.selection_state.set_hovered(null):
-		zone._emit_item_hover_exited(item)
+		transfer_service.emit_item_hover_exited(item)
 	store.erase_item_reference(item)
 	store.clear_item_target(item)
 	store.clear_transfer_handoff(item)
@@ -99,9 +102,9 @@ func reorder_items(items_to_move: Array[ZoneItemControl], placement_target: Zone
 		var to_index = store.find_item_index(item)
 		var from_index = original_indices[item]
 		if from_index != to_index:
-			zone._emit_item_reordered(item, from_index, to_index)
+			transfer_service.emit_item_reordered(item, from_index, to_index)
 	zone.refresh()
-	zone._emit_layout_changed()
+	transfer_service.emit_layout_changed()
 	return true
 
 func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl], placement_target: ZonePlacementTarget, drop_position = null, source_zone_override: Zone = null, decision: ZoneTransferDecision = null, anchor_item: ZoneItemControl = null) -> bool:
@@ -119,8 +122,10 @@ func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl],
 		return false
 	var transfer_snapshots = store.build_transfer_snapshots(moving_items, drop_position, anchor_item)
 	var selection_changed = false
-	var target_transfer = target_zone._get_transfer_service()
-	var target_context = target_zone._get_context()
+	var target_transfer = transfer_service.resolve_zone_transfer_service(target_zone)
+	var target_context = transfer_service.resolve_zone_context(target_zone)
+	if target_transfer == null or target_context == null:
+		return false
 	var resolved_decision = decision if decision != null else ZoneTransferDecision.new(true, "", target_transfer.resolve_transfer_target(moving_items, placement_target))
 	var final_target = target_transfer.resolve_transfer_target(moving_items, resolved_decision.resolved_target)
 	if final_target == null or not final_target.is_valid():
@@ -148,7 +153,9 @@ func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl],
 			input_service.sync_item_bindings()
 			zone.refresh()
 			target_transfer.rebuild_items_from_root()
-			target_zone._get_input_service().sync_item_bindings()
+			var target_input_service = transfer_service.resolve_zone_input_service(target_zone)
+			if target_input_service != null:
+				target_input_service.sync_item_bindings()
 			target_zone.refresh()
 			return false
 		var spawned_snapshots: Dictionary = {}
@@ -161,7 +168,7 @@ func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl],
 			return false
 		for removed_item in moving_items:
 			if removed_indices.has(removed_item):
-				zone._emit_item_removed(removed_item, removed_indices[removed_item])
+				transfer_service.emit_item_removed(removed_item, removed_indices[removed_item])
 		for source_item in moving_items:
 			if is_instance_valid(source_item):
 				var items_root = zone.get_items_root()
@@ -182,17 +189,17 @@ func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl],
 			return false
 		for removed_item in moving_items:
 			if removed_indices.has(removed_item):
-				zone._emit_item_removed(removed_item, removed_indices[removed_item])
+				transfer_service.emit_item_removed(removed_item, removed_indices[removed_item])
 		for item in moving_items:
 			item.visible = true
 		emit_item_transferred(source_zone, target_zone, moving_items)
 	store.sync_container_order(zone.get_items_root(), render_service.get_preview_ghost())
 	zone.refresh()
 	if selection_changed:
-		zone._emit_selection_changed()
-	zone._emit_layout_changed()
+		transfer_service.emit_selection_changed()
+	transfer_service.emit_layout_changed()
 	if source_zone != target_zone:
-		target_zone._emit_layout_changed()
+		transfer_service.emit_zone_layout_changed(target_zone)
 		target_zone.refresh()
 	return true
 
@@ -218,7 +225,7 @@ func insert_transferred_items(moving_items: Array[ZoneItemControl], placement_ta
 		input_service.register_item(item)
 		store.items.insert(target_index + offset, item)
 		store.set_item_target(item, _resolve_reordered_target(resolved_target, target_index + offset))
-		zone._emit_item_added(item, target_index + offset)
+		transfer_service.emit_item_added(item, target_index + offset)
 	store.sync_container_order(items_root, render_service.get_preview_ghost())
 	zone.refresh()
 	return true
@@ -244,9 +251,9 @@ func restore_failed_transfer(moving_items: Array[ZoneItemControl], original_targ
 func emit_item_transferred(source_zone: Zone, target_zone: Zone, moving_items: Array[ZoneItemControl]) -> void:
 	for item in moving_items:
 		var target = target_zone.get_item_target(item)
-		target_zone._emit_item_transferred(item, source_zone, target_zone, target)
+		transfer_service.emit_zone_item_transferred(target_zone, item, source_zone, target_zone, target)
 		if source_zone != target_zone:
-			source_zone._emit_item_transferred(item, source_zone, target_zone, target)
+			transfer_service.emit_zone_item_transferred(source_zone, item, source_zone, target_zone, target)
 
 func _build_spawned_items(target_context: ZoneContext, source_items: Array[ZoneItemControl], decision: ZoneTransferDecision, placement_target: ZonePlacementTarget) -> Array[ZoneItemControl]:
 	var spawned_items: Array[ZoneItemControl] = []

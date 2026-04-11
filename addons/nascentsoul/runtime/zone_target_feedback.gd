@@ -2,20 +2,23 @@ extends RefCounted
 
 # Internal helper for targeting hover state, highlighting, and signal emission.
 
+var targeting_service = null
 var zone = null
 
 var candidate: ZoneTargetCandidate = ZoneTargetCandidate.invalid()
 var decision: ZoneTargetDecision = ZoneTargetDecision.new()
 var highlight_item: ZoneItemControl = null
 
-func _init(p_zone) -> void:
-	zone = p_zone
+func _init(p_targeting_service) -> void:
+	targeting_service = p_targeting_service
+	zone = targeting_service.zone
 
 func cleanup() -> void:
 	clear_targeting_feedback(false)
 	highlight_item = null
 	candidate = ZoneTargetCandidate.invalid()
 	decision = ZoneTargetDecision.new()
+	targeting_service = null
 	zone = null
 
 func apply_targeting_feedback(session: ZoneTargetingSession, next_candidate: ZoneTargetCandidate, next_decision: ZoneTargetDecision) -> void:
@@ -32,9 +35,9 @@ func apply_targeting_feedback(session: ZoneTargetingSession, next_candidate: Zon
 		highlight_item = next_item
 		_set_target_candidate_visual(highlight_item, highlight_item != null, next_allowed)
 	if not _target_candidates_match(previous_candidate, session.candidate):
-		zone._emit_target_preview_changed(session.source_item, session.candidate.target_zone, session.candidate)
+		targeting_service.emit_target_preview_changed(session.source_item, session.candidate.target_zone, session.candidate)
 	if not _target_decisions_match(previous_decision, session.decision):
-		zone._emit_target_hover_state_changed(session.source_item, session.candidate.target_zone, session.decision)
+		targeting_service.emit_target_hover_state_changed(session.source_item, session.candidate.target_zone, session.decision)
 
 func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
 	var had_candidate = candidate != null and candidate.is_valid()
@@ -42,8 +45,8 @@ func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemCon
 		_set_target_candidate_visual(highlight_item, false, decision.allowed if decision != null else false)
 	highlight_item = null
 	if emit_clear_signals and had_candidate:
-		zone._emit_target_preview_changed(source_item, null, ZoneTargetCandidate.invalid())
-		zone._emit_target_hover_state_changed(source_item, null, ZoneTargetDecision.new())
+		targeting_service.emit_target_preview_changed(source_item, null, ZoneTargetCandidate.invalid())
+		targeting_service.emit_target_hover_state_changed(source_item, null, ZoneTargetDecision.new())
 	candidate = ZoneTargetCandidate.invalid()
 	decision = ZoneTargetDecision.new()
 

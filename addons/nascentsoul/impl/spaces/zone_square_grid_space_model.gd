@@ -11,7 +11,8 @@ func resolve_hover_target(context: ZoneContext, _items: Array[ZoneItemControl], 
 	var column = int(floor((local_position.x - padding.x) / (cell_size.x + cell_spacing.x)))
 	var row = int(floor((local_position.y - padding.y) / (cell_size.y + cell_spacing.y)))
 	var target = ZonePlacementTarget.square(column, row, _make_cell_id(column, row), global_position, local_position)
-	return normalize_target(context, target, [])
+	var empty_items: Array[ZoneItemControl] = []
+	return normalize_target(context, target, empty_items)
 
 func normalize_target(_context: ZoneContext, target: ZonePlacementTarget, _items: Array[ZoneItemControl]) -> ZonePlacementTarget:
 	if target == null:
@@ -24,7 +25,8 @@ func normalize_target(_context: ZoneContext, target: ZonePlacementTarget, _items
 
 func resolve_add_target(context: ZoneContext, item: ZoneItemControl, hint = null) -> ZonePlacementTarget:
 	if hint is ZonePlacementTarget:
-		var normalized = normalize_target(context, hint as ZonePlacementTarget, [])
+		var empty_items: Array[ZoneItemControl] = []
+		var normalized = normalize_target(context, hint as ZonePlacementTarget, empty_items)
 		if normalized.is_valid():
 			return normalized
 	return get_first_open_target(context, item)
@@ -55,7 +57,8 @@ func resolve_target_anchor(context: ZoneContext, target: ZonePlacementTarget) ->
 	return global_offset + _cell_origin(target.coordinates.x, target.coordinates.y) + cell_size * 0.5
 
 func is_target_valid(context: ZoneContext, target: ZonePlacementTarget) -> bool:
-	return normalize_target(context, target, []).is_valid()
+	var empty_items: Array[ZoneItemControl] = []
+	return normalize_target(context, target, empty_items).is_valid()
 
 func get_first_open_target(context: ZoneContext, _item: ZoneItemControl) -> ZonePlacementTarget:
 	for row in range(rows):

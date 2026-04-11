@@ -14,8 +14,8 @@ var _feedback = null
 func _init(p_context: ZoneContext) -> void:
 	context = p_context
 	zone = context.zone
-	_resolution = ZoneTargetResolutionScript.new(context)
-	_feedback = ZoneTargetFeedbackScript.new(zone)
+	_resolution = ZoneTargetResolutionScript.new(self, context)
+	_feedback = ZoneTargetFeedbackScript.new(self)
 
 func cleanup() -> void:
 	if _feedback != null:
@@ -101,7 +101,7 @@ func start_targeting_internal(command: ZoneTargetingCommand) -> bool:
 		return false
 	command.intent = resolved_intent
 	var source_anchor = resolve_item_target_anchor_global(command.source_item)
-	var session = coordinator.start_targeting(zone, command.source_item, resolved_intent, command.entry_mode, source_anchor, command.pointer_global_position)
+	var session = coordinator.start_targeting(zone, context, command.source_item, resolved_intent, command.entry_mode, source_anchor, command.pointer_global_position)
 	if session == null:
 		return false
 	update_targeting_session(session, command.pointer_global_position)
@@ -142,3 +142,12 @@ func apply_targeting_feedback(session: ZoneTargetingSession, next_candidate: Zon
 
 func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
 	_feedback.clear_targeting_feedback(emit_clear_signals, source_item)
+
+func resolve_zone_context(target_zone: Zone) -> ZoneContext:
+	return target_zone._get_context() if target_zone != null else null
+
+func emit_target_preview_changed(source_item: ZoneItemControl, target_zone: Zone, candidate) -> void:
+	zone._emit_target_preview_changed(source_item, target_zone, candidate)
+
+func emit_target_hover_state_changed(source_item: ZoneItemControl, target_zone: Zone, decision) -> void:
+	zone._emit_target_hover_state_changed(source_item, target_zone, decision)

@@ -29,14 +29,9 @@ const CONFIG_FIELDS := [
 @export_group("Drag Visuals")
 @export var drag_visual_factory: ZoneDragVisualFactory
 
-static func make_card_defaults() -> ZoneConfig:
+static func _make_linear_defaults() -> ZoneConfig:
 	var resolved := ZoneConfig.new()
 	resolved.space_model = ZoneLinearSpaceModel.new()
-	var layout := ZoneHandLayout.new()
-	layout.arch_angle_deg = 38.0
-	layout.arch_height = 26.0
-	layout.card_spacing_angle = 5.5
-	resolved.layout_policy = layout
 	resolved.display_style = ZoneCardDisplay.new()
 	resolved.interaction = ZoneInteraction.new()
 	resolved.sort_policy = ZoneManualSort.new()
@@ -44,6 +39,24 @@ static func make_card_defaults() -> ZoneConfig:
 	resolved.drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
 	resolved.targeting_style = ZoneArrowTargetingStyle.new()
 	resolved.targeting_policy = ZoneTargetAllowAllPolicy.new()
+	return resolved
+
+static func make_card_defaults() -> ZoneConfig:
+	var resolved := _make_linear_defaults()
+	var layout := ZoneHandLayout.new()
+	layout.arch_angle_deg = 38.0
+	layout.arch_height = 26.0
+	layout.card_spacing_angle = 5.5
+	resolved.layout_policy = layout
+	return resolved
+
+static func make_zone_defaults() -> ZoneConfig:
+	var resolved := _make_linear_defaults()
+	var layout := ZoneHBoxLayout.new()
+	layout.item_spacing = 14.0
+	layout.padding_left = 12.0
+	layout.padding_top = 12.0
+	resolved.layout_policy = layout
 	return resolved
 
 static func make_battlefield_defaults(space_model_override: ZoneSpaceModel = null) -> ZoneConfig:

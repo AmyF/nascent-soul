@@ -2,14 +2,17 @@ extends RefCounted
 
 # Internal helper for targeting candidate discovery and policy evaluation.
 
+var targeting_service = null
 var context: ZoneContext = null
 var zone = null
 
-func _init(p_context: ZoneContext) -> void:
+func _init(p_targeting_service, p_context: ZoneContext) -> void:
+	targeting_service = p_targeting_service
 	context = p_context
 	zone = context.zone
 
 func cleanup() -> void:
+	targeting_service = null
 	zone = null
 	context = null
 
@@ -32,13 +35,14 @@ func resolve_target_candidate(intent: ZoneTargetingIntent, global_position: Vect
 		for target_zone in zones:
 			if not target_zone.get_global_rect().has_point(global_position):
 				continue
-			var target_context = target_zone._get_context()
+			var target_context = targeting_service.resolve_zone_context(target_zone)
 			var space_model = target_context.get_space_model()
 			if space_model == null:
 				continue
 			var local_position = global_position - target_zone.global_position
 			var placement_target = space_model.resolve_hover_target(target_context, target_context.get_items(), global_position, local_position)
-			placement_target = space_model.normalize_target(target_context, placement_target, [])
+			var empty_items: Array[ZoneItemControl] = []
+			placement_target = space_model.normalize_target(target_context, placement_target, empty_items)
 			if placement_target == null or not placement_target.is_valid():
 				continue
 			return build_placement_candidate(target_zone, placement_target, global_position)
@@ -61,7 +65,7 @@ func resolve_target_decision(source_item: ZoneItemControl, intent: ZoneTargeting
 		request = ZoneTargetRequest.new(zone, source_item, intent, resolved_candidate, global_position)
 	var target_zone = resolved_candidate.target_zone as Zone
 	if target_zone != null:
-		var target_context = target_zone._get_context()
+		var target_context = targeting_service.resolve_zone_context(target_zone)
 		var target_policy = target_context.get_targeting_policy()
 		if target_policy != null:
 			var target_decision = target_policy.evaluate_target(target_context, request)

@@ -193,7 +193,7 @@ Recommended example order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
 
 Validated on Godot 4.6.1:
 
-- Headless regression runner passes with `1659` checks.
+- Headless regression runner passes with `1668` checks.
 - Headless editor load succeeds with the plugin enabled.
 - Demo smoke coverage confirms the main-menu launcher, the compatibility shell, and both showcase scenes.
 

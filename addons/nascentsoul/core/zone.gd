@@ -400,10 +400,6 @@ func _get_context() -> ZoneContext:
 	_ensure_services()
 	return _context
 
-func _get_store() -> ZoneStore:
-	_ensure_services()
-	return _store
-
 func _get_input_service() -> ZoneInputService:
 	_ensure_services()
 	return _input_service
@@ -415,30 +411,6 @@ func _get_render_service() -> ZoneRenderService:
 func _get_transfer_service() -> ZoneTransferService:
 	_ensure_services()
 	return _transfer_service
-
-func _get_targeting_service() -> ZoneTargetingService:
-	_ensure_services()
-	return _targeting_service
-
-func _make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
-	_ensure_services()
-	return _transfer_service.make_transfer_request(target_zone, source_zone, items, placement_target, global_position)
-
-func _resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
-	_ensure_services()
-	return _transfer_service.resolve_drop_decision(request)
-
-func _apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferDecision, preview_target, preview_source: ZoneItemControl) -> bool:
-	_ensure_services()
-	return _render_service.apply_hover_feedback(items, decision, preview_target, preview_source)
-
-func _build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
-	_ensure_services()
-	return _transfer_service.build_transfer_snapshots(moving_items, drop_position, anchor_item)
-
-func _resolve_programmatic_transfer_global_position(moving_items: Array[ZoneItemControl]):
-	_ensure_services()
-	return _transfer_service.resolve_programmatic_transfer_global_position(moving_items)
 
 func _ensure_services() -> void:
 	if _runtime_bootstrap == null:
@@ -476,13 +448,7 @@ func _resolved_config() -> ZoneConfig:
 func _ensure_default_config() -> ZoneConfig:
 	if _default_config != null:
 		return _default_config
-	var resolved := ZoneConfig.make_card_defaults()
-	var layout := ZoneHBoxLayout.new()
-	layout.item_spacing = 14.0
-	layout.padding_left = 12.0
-	layout.padding_top = 12.0
-	resolved.layout_policy = layout
-	_default_config = resolved
+	_default_config = ZoneConfig.make_zone_defaults()
 	return _default_config
 
 func _ensure_internal_nodes() -> void:

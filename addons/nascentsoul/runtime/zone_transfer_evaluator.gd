@@ -1,6 +1,7 @@
 extends RefCounted
 
-# Internal helper for transfer target normalization and policy evaluation.
+# Internal helper for transfer target normalization, policy evaluation, and
+# drag-preview decision calculation.
 
 var context: ZoneContext = null
 
@@ -43,4 +44,17 @@ func resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision
 		decision = ZoneTransferDecision.new(true, "", request.placement_target)
 	if (decision.resolved_target == null or not decision.resolved_target.is_valid()) and request.placement_target != null and request.placement_target.is_valid():
 		return ZoneTransferDecision.new(decision.allowed, decision.reason, request.placement_target, decision.transfer_mode, decision.spawn_scene, decision.metadata)
+	return decision
+
+func update_hover_preview_session(target_zone: Zone, session: ZoneDragSession, visible_items: Array[ZoneItemControl], global_position: Vector2, local_position: Vector2) -> ZoneTransferDecision:
+	var space_model = context.get_space_model()
+	if space_model == null:
+		return null
+	var requested_target = space_model.resolve_hover_target(context, visible_items, global_position, local_position)
+	requested_target = space_model.normalize_target(context, requested_target, session.items)
+	var request = make_transfer_request(target_zone, session.source_zone, session.items, requested_target, global_position)
+	var decision = resolve_drop_decision(request)
+	session.hover_zone = target_zone
+	session.requested_target = requested_target
+	session.preview_target = decision.resolved_target if decision.allowed else ZonePlacementTarget.invalid()
 	return decision

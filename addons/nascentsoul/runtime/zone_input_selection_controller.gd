@@ -2,16 +2,19 @@ extends RefCounted
 
 # Internal helper for selection, hover, and keyboard-navigation behavior.
 
+var input_service = null
 var context: ZoneContext = null
 var zone = null
 var selection_state: ZoneSelectionState = null
 
-func _init(p_context: ZoneContext, p_selection_state: ZoneSelectionState) -> void:
+func _init(p_input_service, p_context: ZoneContext, p_selection_state: ZoneSelectionState) -> void:
+	input_service = p_input_service
 	context = p_context
 	zone = context.zone
 	selection_state = p_selection_state
 
 func cleanup() -> void:
+	input_service = null
 	selection_state = null
 	zone = null
 	context = null
@@ -22,10 +25,10 @@ func clear_selection() -> void:
 	var hovered = selection_state.hovered_item
 	if hovered != null and selection_state.set_hovered(null):
 		hover_changed = true
-		zone._emit_item_hover_exited(hovered)
+		input_service.emit_item_hover_exited(hovered)
 	selection_changed = selection_state.clear_selection()
 	if selection_changed:
-		zone._emit_selection_changed()
+		input_service.emit_selection_changed()
 	if hover_changed or selection_changed:
 		zone.refresh()
 
@@ -34,7 +37,7 @@ func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 		return
 	var changed = selection_state.toggle_item(item) if additive else selection_state.select_single(item)
 	if changed:
-		zone._emit_selection_changed()
+		input_service.emit_selection_changed()
 		zone.refresh()
 
 func handle_item_mouse_entered(item: ZoneItemControl) -> void:
@@ -45,7 +48,7 @@ func handle_item_mouse_entered(item: ZoneItemControl) -> void:
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if selection_state.set_hovered(item):
-		zone._emit_item_hover_entered(item)
+		input_service.emit_item_hover_entered(item)
 		zone.refresh()
 
 func handle_item_mouse_exited(item: ZoneItemControl) -> void:
@@ -56,7 +59,7 @@ func handle_item_mouse_exited(item: ZoneItemControl) -> void:
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		return
 	if selection_state.hovered_item == item and selection_state.set_hovered(null):
-		zone._emit_item_hover_exited(item)
+		input_service.emit_item_hover_exited(item)
 		zone.refresh()
 
 func handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction) -> bool:
@@ -71,7 +74,7 @@ func handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction)
 	if _matches_action(event, interaction.activate_item_action):
 		var active_item = _get_keyboard_active_item()
 		if active_item != null:
-			zone._emit_item_clicked(active_item)
+			input_service.emit_item_clicked(active_item)
 		return true
 	if _matches_action(event, interaction.clear_selection_action):
 		clear_background_interaction()
@@ -92,7 +95,7 @@ func apply_click_selection(item: ZoneItemControl, event: InputEventMouseButton) 
 		else:
 			changed = selection_state.select_single(item)
 	if changed:
-		zone._emit_selection_changed()
+		input_service.emit_selection_changed()
 		zone.refresh()
 
 func resolve_drag_items(item: ZoneItemControl) -> Array[ZoneItemControl]:
@@ -118,16 +121,16 @@ func clear_hover_for_items(items_to_clear: Array[ZoneItemControl], emit_signal: 
 	if not found:
 		return
 	if selection_state.set_hovered(null) and emit_signal:
-		zone._emit_item_hover_exited(hovered_item)
+		input_service.emit_item_hover_exited(hovered_item)
 
 func clear_background_interaction() -> void:
 	var hovered_item = selection_state.hovered_item
 	var hover_changed = selection_state.clear_hover()
 	var selection_changed = selection_state.clear_selection()
 	if hover_changed and is_instance_valid(hovered_item):
-		zone._emit_item_hover_exited(hovered_item)
+		input_service.emit_item_hover_exited(hovered_item)
 	if selection_changed:
-		zone._emit_selection_changed()
+		input_service.emit_selection_changed()
 	if hover_changed or selection_changed:
 		zone.refresh()
 
@@ -158,7 +161,7 @@ func _move_keyboard_selection(direction: int, wrap_navigation: bool) -> void:
 	if not is_instance_valid(next_item):
 		return
 	if selection_state.select_single(next_item):
-		zone._emit_selection_changed()
+		input_service.emit_selection_changed()
 		zone.refresh()
 
 func _get_keyboard_active_item() -> ZoneItemControl:

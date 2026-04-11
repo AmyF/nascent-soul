@@ -1,7 +1,8 @@
 extends RefCounted
 
-# Internal helper for drag preview ghosts and drop-hover feedback state.
+# Internal helper for drag preview ghosts and drop-hover visual state.
 
+var render_service = null
 var context: ZoneContext = null
 var zone = null
 
@@ -12,13 +13,15 @@ var hover_reason: String = ""
 var hover_target: ZonePlacementTarget = null
 var hover_preview_target: ZonePlacementTarget = null
 
-func _init(p_context: ZoneContext) -> void:
+func _init(p_render_service, p_context: ZoneContext) -> void:
+	render_service = p_render_service
 	context = p_context
 	zone = context.zone
 
 func cleanup() -> void:
 	clear_preview_internal()
 	reset_hover_feedback_tracking()
+	render_service = null
 	context = null
 	zone = null
 
@@ -38,37 +41,6 @@ func should_render_ghost_for_session(session: ZoneDragSession) -> bool:
 			return false
 	return true
 
-func update_hover_preview(session: ZoneDragSession, visible_items: Array[ZoneItemControl]) -> void:
-	var items_root = zone.get_items_root()
-	if items_root == null:
-		return
-	var global_mouse = zone.get_viewport().get_mouse_position()
-	var is_hovering = zone.get_global_rect().has_point(global_mouse)
-	if not is_hovering:
-		if session.hover_zone == zone:
-			session.hover_zone = null
-			session.requested_target = ZonePlacementTarget.invalid()
-			session.preview_target = ZonePlacementTarget.invalid()
-		if clear_hover_feedback(session.items):
-			zone.refresh()
-		return
-	var space_model = context.get_space_model()
-	if space_model == null:
-		if clear_hover_feedback(session.items):
-			zone.refresh()
-		return
-	var requested_target = space_model.resolve_hover_target(context, visible_items, global_mouse, zone.get_local_mouse_position())
-	requested_target = space_model.normalize_target(context, requested_target, session.items)
-	var request = context.transfer_service.make_transfer_request(zone, session.source_zone, session.items, requested_target, global_mouse)
-	var decision = context.transfer_service.resolve_drop_decision(request)
-	var preview_target = decision.resolved_target if decision.allowed else ZonePlacementTarget.invalid()
-	session.hover_zone = zone
-	session.requested_target = requested_target
-	session.preview_target = preview_target
-	var preview_anchor = session.anchor_item if is_instance_valid(session.anchor_item) else session.items[0] if not session.items.is_empty() and session.items[0] is ZoneItemControl else null
-	if apply_hover_feedback(session.items, decision, preview_target, preview_anchor):
-		zone.refresh()
-
 func create_cursor_proxy(source_items: Array[ZoneItemControl], anchor_item: ZoneItemControl) -> Control:
 	var resolved_anchor = anchor_item if is_instance_valid(anchor_item) else source_items[0] if not source_items.is_empty() else null
 	if not is_instance_valid(resolved_anchor):
@@ -84,11 +56,11 @@ func clear_preview_for_session(session: ZoneDragSession) -> void:
 	var should_emit_preview_clear = (hover_preview_target != null and hover_preview_target.is_valid()) \
 		or (session != null and session.hover_zone == zone and session.preview_target != null and session.preview_target.is_valid())
 	if should_emit_preview_clear:
-		zone._emit_drop_preview_changed(items, zone, invalid_target)
+		render_service.emit_drop_preview_changed(items, zone, invalid_target)
 	if is_instance_valid(ghost_instance):
 		clear_preview_internal()
 	if hover_active:
-		zone._emit_drop_hover_state_changed(items, zone, make_clear_hover_decision())
+		render_service.emit_drop_hover_state_changed(items, zone, make_clear_hover_decision())
 	reset_hover_feedback_tracking()
 
 func apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferDecision, preview_target, preview_source: ZoneItemControl) -> bool:
@@ -110,10 +82,10 @@ func apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferD
 		clear_preview_internal()
 		refresh_needed = true
 	if hover_preview_target == null or not hover_preview_target.matches(next_target):
-		zone._emit_drop_preview_changed(items, zone, next_target)
+		render_service.emit_drop_preview_changed(items, zone, next_target)
 		refresh_needed = true
 	if has_hover_state_changed(next_active, decision):
-		zone._emit_drop_hover_state_changed(items, zone, decision if decision != null else make_clear_hover_decision())
+		render_service.emit_drop_hover_state_changed(items, zone, decision if decision != null else make_clear_hover_decision())
 		refresh_needed = true
 	hover_active = next_active
 	hover_allowed = next_allowed
@@ -128,10 +100,10 @@ func clear_hover_feedback(items: Array[ZoneItemControl]) -> bool:
 		clear_preview_internal()
 		refresh_needed = true
 	if hover_preview_target != null and hover_preview_target.is_valid():
-		zone._emit_drop_preview_changed(items, zone, ZonePlacementTarget.invalid())
+		render_service.emit_drop_preview_changed(items, zone, ZonePlacementTarget.invalid())
 		refresh_needed = true
 	if hover_active:
-		zone._emit_drop_hover_state_changed(items, zone, make_clear_hover_decision())
+		render_service.emit_drop_hover_state_changed(items, zone, make_clear_hover_decision())
 		refresh_needed = true
 	reset_hover_feedback_tracking()
 	return refresh_needed

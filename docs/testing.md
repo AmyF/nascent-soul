@@ -14,7 +14,7 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `1659` checks
+- full regression runner passes with `1668` checks
 - headless editor load succeeds with the plugin enabled
 - demo smoke covers the main-menu launcher, the compatibility shell, and both showcase scenes
 

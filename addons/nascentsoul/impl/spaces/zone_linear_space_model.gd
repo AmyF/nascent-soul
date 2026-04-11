@@ -20,7 +20,8 @@ func normalize_target(context: ZoneContext, target: ZonePlacementTarget, _items:
 
 func resolve_add_target(context: ZoneContext, _item: ZoneItemControl, hint = null) -> ZonePlacementTarget:
 	if hint is ZonePlacementTarget and (hint as ZonePlacementTarget).is_linear():
-		return normalize_target(context, hint as ZonePlacementTarget, [])
+		var empty_items: Array[ZoneItemControl] = []
+		return normalize_target(context, hint as ZonePlacementTarget, empty_items)
 	if hint is int:
 		return ZonePlacementTarget.linear(clampi(hint as int, 0, context.get_item_count()))
 	return ZonePlacementTarget.linear(context.get_item_count())

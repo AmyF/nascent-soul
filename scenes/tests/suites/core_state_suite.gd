@@ -65,6 +65,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_zone_config_helpers()
 	await _reset_root()
+	await _test_base_zone_defaults()
+	await _reset_root()
 	await _test_drag_transfer_and_selection_prune()
 	await _reset_root()
 	await _test_batch_transfer_api()
@@ -153,6 +155,10 @@ func _test_zone_config_helpers() -> void:
 	_check(defaults.space_model is ZoneLinearSpaceModel, "card config helper should provide a linear space model by default")
 	_check(defaults.layout_policy is ZoneHandLayout, "card config helper should provide the default hand layout")
 	_check(defaults.transfer_policy is ZoneAllowAllTransferPolicy, "card config helper should provide the default transfer policy")
+	var zone_defaults = ZoneConfig.make_zone_defaults()
+	_check(zone_defaults.space_model is ZoneLinearSpaceModel, "zone config helper should keep the linear space model default")
+	_check(zone_defaults.layout_policy is ZoneHBoxLayout, "zone config helper should provide the row-style base Zone layout")
+	_check(not (zone_defaults.layout_policy is ZoneHandLayout), "zone config helper should not fall back to the hand layout semantics")
 	var base := ZoneConfig.new()
 	var custom_transfer := ZoneCapacityTransferPolicy.new()
 	custom_transfer.max_items = 2
@@ -179,6 +185,19 @@ func _test_zone_config_helpers() -> void:
 	_check(battlefield_defaults.space_model == square_space, "battlefield config helper should respect an explicit space model override")
 	_check(battlefield_defaults.layout_policy is ZoneBattlefieldLayout, "battlefield config helper should provide the battlefield layout")
 	_check(battlefield_defaults.transfer_policy is ZoneOccupancyTransferPolicy, "battlefield config helper should provide the battlefield occupancy policy")
+
+func _test_base_zone_defaults() -> void:
+	var panel = _make_panel("BaseZoneDefaultsPanel", Vector2(24, 24), Vector2(620, 260))
+	var zone := Zone.new()
+	zone.name = "BaseZoneDefaults"
+	zone.custom_minimum_size = Vector2(360, 220)
+	zone.size = zone.custom_minimum_size
+	panel.add_child(zone)
+	await _settle_frames(2)
+	_check(zone.get_layout_policy() is ZoneHBoxLayout, "base Zone without an explicit config should resolve the row-style default layout")
+	_check(not (zone.get_layout_policy() is ZoneHandLayout), "base Zone without an explicit config should not inherit the hand-layout default")
+	_check(zone.get_transfer_policy() is ZoneAllowAllTransferPolicy, "base Zone default config should still use the allow-all transfer policy")
+	_check(zone.get_display_style() is ZoneCardDisplay, "base Zone default config should keep the standard card display style")
 
 func _test_drag_transfer_and_selection_prune() -> void:
 	var target_panel = _make_panel("TargetPanel", Vector2.ZERO, Vector2(620, 260))
@@ -375,6 +394,8 @@ func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	session.requested_target = ZonePlacementTarget.linear(0)
 	session.preview_target = ZonePlacementTarget.invalid()
 	_check(not decision.allowed, "reject hover should resolve to a rejected decision")
+	_check(decision.reason == "Reject hover target is full.", "preview transfer should surface the same rejection reason used by drag hover feedback")
+	_check(decision.resolved_target != null and decision.resolved_target.is_linear() and decision.resolved_target.slot == 0, "preview transfer should keep the attempted target slot even when the drop is rejected")
 	_check(hover_states == [{
 		"item": "Alpha",
 		"allowed": false,

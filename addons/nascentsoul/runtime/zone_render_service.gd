@@ -13,7 +13,7 @@ var _preview_feedback = null
 func _init(p_context: ZoneContext) -> void:
 	context = p_context
 	zone = context.zone
-	_preview_feedback = ZoneDragPreviewFeedbackScript.new(context)
+	_preview_feedback = ZoneDragPreviewFeedbackScript.new(self, context)
 
 func refresh() -> void:
 	var layout_policy = context.get_layout_policy()
@@ -91,9 +91,6 @@ func resolve_item_size(item: ZoneItemControl) -> Vector2:
 		return item.custom_minimum_size
 	return Vector2(100, 150)
 
-func update_hover_preview(session: ZoneDragSession) -> void:
-	_preview_feedback.update_hover_preview(session, get_layout_items(session))
-
 func get_layout_items(session: ZoneDragSession) -> Array[ZoneItemControl]:
 	var layout_items: Array[ZoneItemControl] = []
 	var ordered_items = context.get_items_ordered()
@@ -123,3 +120,9 @@ func apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferD
 
 func clear_hover_feedback(items: Array[ZoneItemControl]) -> bool:
 	return _preview_feedback.clear_hover_feedback(items)
+
+func emit_drop_preview_changed(items: Array, target_zone: Zone, target) -> void:
+	zone._emit_drop_preview_changed(items, target_zone, target)
+
+func emit_drop_hover_state_changed(items: Array, target_zone: Zone, decision) -> void:
+	zone._emit_drop_hover_state_changed(items, target_zone, decision)
