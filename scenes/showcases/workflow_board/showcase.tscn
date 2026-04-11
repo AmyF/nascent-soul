@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="9_card_display"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_vbox_layout.gd" id="10_vbox_layout"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_allow_all_transfer_policy.gd" id="11_allow_all_transfer"]
+[ext_resource type="Script" path="res://scenes/showcases/workflow_board/workflow_wip_limit_policy.gd" id="12_wip_policy"]
 
 [sub_resource type="StyleBoxFlat" id="WorkflowInfoPanel"]
 bg_color = Color(0.10, 0.15, 0.23, 1)
@@ -80,6 +81,11 @@ padding_top = 12.0
 [sub_resource type="Resource" id="WorkflowAllowAllPolicy"]
 script = ExtResource("11_allow_all_transfer")
 
+[sub_resource type="Resource" id="WorkflowInProgressPolicy"]
+script = ExtResource("12_wip_policy")
+wip_limit = 3
+lane_label = "In Progress"
+
 [sub_resource type="Resource" id="WorkflowLaneConfig"]
 script = ExtResource("4_zone_config")
 space_model = SubResource("WorkflowLinearSpace")
@@ -97,7 +103,7 @@ layout_policy = SubResource("WorkflowLaneLayout")
 display_style = SubResource("WorkflowCardDisplay")
 interaction = SubResource("WorkflowInteraction")
 sort_policy = SubResource("WorkflowManualSort")
-transfer_policy = SubResource("WorkflowAllowAllPolicy")
+transfer_policy = SubResource("WorkflowInProgressPolicy")
 drag_visual_factory = SubResource("WorkflowDragFactory")
 
 [node name="WorkflowBoardShowcase" type="Control"]
@@ -223,7 +229,7 @@ text = "0 / 3"
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "This column will get the tiny example-side WIP rule."
+text = "This column uses a tiny example-side transfer policy with a WIP limit of 3."
 
 [node name="InProgressZone" type="Control" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
 custom_minimum_size = Vector2(0, 380)
