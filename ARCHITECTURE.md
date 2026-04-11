@@ -30,13 +30,15 @@ These types exist to make the public surface work, but they are **not** intended
 | Runtime bootstrap | `addons/nascentsoul/runtime/zone_runtime_bootstrap.gd` | Owns the shared store/context/service wiring for a `Zone` |
 | Runtime port | `addons/nascentsoul/runtime/zone_runtime_port.gd` | Owns signal emission, refresh, coordinator lookup, and cross-zone runtime lookup so services stay off the `Zone` facade |
 | Runtime hooks | `addons/nascentsoul/runtime/zone_runtime_hooks.gd` | Owns internal-only operations that coordinators, tests, and showcase scaffolding may need without keeping `_runtime_*` hooks on `Zone` itself |
+| Display cache | `addons/nascentsoul/runtime/zone_display_state_cache.gd` | Holds per-style tween/cache state so `ZoneStore` stays focused on logical item state |
+| Transfer staging | `addons/nascentsoul/runtime/zone_transfer_staging.gd` | Holds transfer handoffs and snapshot staging used while items move between zones |
 | Internal root host | `addons/nascentsoul/runtime/zone_internal_roots.gd` | Keeps `ItemsRoot` / `PreviewRoot` present, ordered, and editor-safe |
 | Transfer workflow | `addons/nascentsoul/runtime/zone_transfer_service.gd`, `zone_transfer_execution.gd`, `zone_drag_session_cleanup.gd` | `ZoneTransferService` owns transfer decision flow and drag orchestration, while execution and cleanup stay separate |
 | Input workflow | `addons/nascentsoul/runtime/zone_input_service.gd`, `zone_input_selection_controller.gd` | Gesture capture stays separate from selection / hover / keyboard flow |
 | Render workflow | `addons/nascentsoul/runtime/zone_render_service.gd`, `zone_drag_preview_feedback.gd` | Layout application stays separate from ghost + hover-preview state |
 | Targeting workflow | `addons/nascentsoul/runtime/zone_targeting_service.gd`, `zone_target_resolution.gd`, `zone_target_feedback.gd` | Candidate discovery stays separate from feedback state and signal emission |
 | Viewport coordinators | `addons/nascentsoul/runtime/*coordinator.gd` | Drag and targeting session orchestration |
-| Runtime state holders | `addons/nascentsoul/runtime/zone_context.gd`, `zone_store.gd` | Internal wiring and store state |
+| Runtime state holders | `addons/nascentsoul/runtime/zone_context.gd`, `zone_store.gd` | `ZoneContext` assembles config + runtime state collaborators, while `ZoneStore` now stays focused on logical items / targets / selection |
 | Internal workflow helpers | parts of `addons/nascentsoul/model/` | Request/session/candidate types that primarily support runtime flows |
 
 **Rule of thumb:** user code should call methods on `Zone`, configure `ZoneConfig`, and react to signals. It should not reach into `runtime/` helpers or private `_get_*()` accessors on `Zone`.

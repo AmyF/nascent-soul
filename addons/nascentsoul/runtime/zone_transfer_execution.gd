@@ -53,7 +53,7 @@ func remove_item_from_state(item, remove_from_container: bool, clear_visuals: bo
 		transfer_service.runtime_port.emit_item_hover_exited(item)
 	store.erase_item_reference(item)
 	store.clear_item_target(item)
-	store.clear_transfer_handoff(item)
+	context.clear_transfer_handoff(item)
 	if item_is_valid:
 		input_service.unregister_item(item)
 	var items_root = zone.get_items_root()
@@ -96,7 +96,7 @@ func reorder_items(items_to_move: Array[ZoneItemControl], placement_target: Zone
 	for item in moving_items:
 		store.set_item_target(item, _resolve_reordered_target(resolved_target, target_index + moving_items.find(item)))
 		item.visible = true
-	store.sync_container_order(zone.get_items_root(), render_service.get_preview_ghost())
+	render_service.sync_container_order()
 	for item in moving_items:
 		var to_index = store.find_item_index(item)
 		var from_index = original_indices[item]
@@ -119,7 +119,7 @@ func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl],
 			moving_items.append(item)
 	if moving_items.is_empty():
 		return false
-	var transfer_snapshots = store.build_transfer_snapshots(moving_items, drop_position, anchor_item)
+	var transfer_snapshots = transfer_service.build_transfer_snapshots(moving_items, drop_position, anchor_item)
 	var selection_changed = false
 	var target_transfer = ZoneRuntimePortScript.resolve_transfer_service(target_zone)
 	var target_context = ZoneRuntimePortScript.resolve_context(target_zone)
@@ -192,7 +192,7 @@ func transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl],
 		for item in moving_items:
 			item.visible = true
 		emit_item_transferred(source_zone, target_zone, moving_items)
-	store.sync_container_order(zone.get_items_root(), render_service.get_preview_ghost())
+	render_service.sync_container_order()
 	transfer_service.runtime_port.request_refresh()
 	if selection_changed:
 		transfer_service.runtime_port.emit_selection_changed()
@@ -219,13 +219,13 @@ func insert_transferred_items(moving_items: Array[ZoneItemControl], placement_ta
 				item.reparent(items_root, true)
 			else:
 				items_root.add_child(item)
-		store.set_transfer_handoff(item, transfer_snapshots.get(item, {}))
+		transfer_service.set_transfer_handoff(item, transfer_snapshots.get(item, {}))
 		item.visible = true
 		input_service.register_item(item)
 		store.items.insert(target_index + offset, item)
 		store.set_item_target(item, _resolve_reordered_target(resolved_target, target_index + offset))
 		transfer_service.runtime_port.emit_item_added(item, target_index + offset)
-	store.sync_container_order(items_root, render_service.get_preview_ghost())
+	render_service.sync_container_order()
 	transfer_service.runtime_port.request_refresh()
 	return true
 

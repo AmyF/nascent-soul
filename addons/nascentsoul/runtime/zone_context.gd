@@ -5,24 +5,30 @@ class_name ZoneContext extends RefCounted
 
 var zone = null
 var config = null
-var store = null
+var store: ZoneStore = null
+var display_state_cache = null
+var transfer_staging = null
 
 var selection_state:
 	get:
 		return store.selection_state if store != null else null
 
-func _init(p_zone, p_store = null, p_config = null) -> void:
-	attach(p_zone, p_store, p_config)
+func _init(p_zone, p_store = null, p_config = null, p_display_state_cache = null, p_transfer_staging = null) -> void:
+	attach(p_zone, p_store, p_config, p_display_state_cache, p_transfer_staging)
 
-func attach(p_zone, p_store, p_config) -> void:
+func attach(p_zone, p_store, p_config, p_display_state_cache = null, p_transfer_staging = null) -> void:
 	zone = p_zone
 	store = p_store
 	config = p_config
+	display_state_cache = p_display_state_cache
+	transfer_staging = p_transfer_staging
 
 func cleanup() -> void:
 	zone = null
 	config = null
 	store = null
+	display_state_cache = null
+	transfer_staging = null
 
 func update_config(next_config) -> void:
 	config = next_config
@@ -118,21 +124,39 @@ func resolve_target_anchor(target: ZonePlacementTarget) -> Vector2:
 	return space_model.resolve_target_anchor(self, target)
 
 func get_display_state(style: Resource) -> Dictionary:
-	return store.get_display_state(style) if store != null else {}
+	return display_state_cache.get_state(style) if display_state_cache != null else {}
+
+func clear_display_state() -> void:
+	if display_state_cache != null:
+		display_state_cache.clear(true)
+
+func prune_display_state() -> void:
+	if display_state_cache != null:
+		display_state_cache.prune()
 
 func consume_transfer_handoff(item: ZoneItemControl) -> Dictionary:
-	return store.consume_transfer_handoff(item) if store != null else {}
+	return transfer_staging.consume_transfer_handoff(item) if transfer_staging != null else {}
 
 func set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
-	if store != null:
-		store.set_transfer_handoff(item, snapshot)
+	if transfer_staging != null:
+		transfer_staging.set_transfer_handoff(item, snapshot)
+
+func clear_transfer_handoff(item) -> void:
+	if transfer_staging != null:
+		transfer_staging.clear_transfer_handoff(item)
 
 func clear_transfer_handoffs() -> void:
-	if store != null:
-		store.clear_transfer_handoffs()
+	if transfer_staging != null:
+		transfer_staging.clear_transfer_handoffs()
 
 func has_transfer_handoff(item: ZoneItemControl) -> bool:
-	return store.has_transfer_handoff(item) if store != null else false
+	return transfer_staging.has_transfer_handoff(item) if transfer_staging != null else false
 
 func get_transfer_handoff_count() -> int:
-	return store.get_transfer_handoff_count() if store != null else 0
+	return transfer_staging.get_transfer_handoff_count() if transfer_staging != null else 0
+
+func build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
+	return transfer_staging.build_transfer_snapshots(moving_items, drop_position, anchor_item) if transfer_staging != null else {}
+
+func resolve_programmatic_transfer_global_position(moving_items: Array[ZoneItemControl]):
+	return transfer_staging.resolve_programmatic_transfer_global_position(moving_items) if transfer_staging != null else null

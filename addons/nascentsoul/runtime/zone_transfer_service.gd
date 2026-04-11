@@ -55,8 +55,8 @@ func process(_delta: float) -> void:
 	var session = coordinator.get_session() if coordinator != null else null
 	if session == null:
 		var should_refresh = false
-		if context.get_space_model() is ZoneLinearSpaceModel and store.container_order_needs_sync(zone.get_items_root(), render_service.get_preview_ghost()):
-			store.sync_container_order(zone.get_items_root(), render_service.get_preview_ghost())
+		if context.get_space_model() is ZoneLinearSpaceModel and render_service.container_order_needs_sync():
+			render_service.sync_container_order()
 			should_refresh = true
 			runtime_port.emit_layout_changed()
 		if render_service.clear_hover_feedback([]):
@@ -105,7 +105,7 @@ func insert_item(item: ZoneItemControl, index: int, placement_target: ZonePlacem
 	var target_index = _resolve_linear_insert_index(index, resolved_target)
 	store.insert_item_reference(item, target_index, resolved_target)
 	item.visible = true
-	store.sync_container_order(items_root, render_service.get_preview_ghost())
+	render_service.sync_container_order()
 	runtime_port.emit_item_added(item, target_index)
 	refresh()
 	runtime_port.emit_layout_changed()
@@ -146,7 +146,7 @@ func _transfer_command_items(target_zone: Zone, items: Array[ZoneItemControl], p
 			moving_items.append(item)
 	if moving_items.is_empty():
 		return false
-	var request_position = global_position if global_position != null else store.resolve_programmatic_transfer_global_position(moving_items)
+	var request_position = global_position if global_position != null else context.resolve_programmatic_transfer_global_position(moving_items)
 	var target_context = ZoneRuntimePortScript.resolve_context(target_zone)
 	var target_transfer = ZoneRuntimePortScript.resolve_transfer_service(target_zone)
 	if target_context == null or target_transfer == null:
@@ -305,13 +305,14 @@ func get_display_state(style: Resource) -> Dictionary:
 
 # Execution helpers shared with transfer collaborators.
 func build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
-	return store.build_transfer_snapshots(moving_items, drop_position, anchor_item)
+	return context.build_transfer_snapshots(moving_items, drop_position, anchor_item) if context != null else {}
 
 func resolve_programmatic_transfer_global_position(moving_items: Array[ZoneItemControl]):
-	return store.resolve_programmatic_transfer_global_position(moving_items)
+	return context.resolve_programmatic_transfer_global_position(moving_items) if context != null else null
 
 func set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
-	store.set_transfer_handoff(item, snapshot)
+	if context != null:
+		context.set_transfer_handoff(item, snapshot)
 
 func remove_item_from_state(item, remove_from_container: bool, clear_visuals: bool) -> bool:
 	return _execution.remove_item_from_state(item, remove_from_container, clear_visuals)

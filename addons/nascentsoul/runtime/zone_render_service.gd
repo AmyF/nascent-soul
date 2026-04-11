@@ -7,7 +7,6 @@ const ZoneDragPreviewFeedbackScript = preload("res://addons/nascentsoul/runtime/
 var context: ZoneContext
 var zone: Zone
 var runtime_port = null
-var store: ZoneStore = null
 
 var _preview_feedback = null
 
@@ -15,7 +14,6 @@ func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	context = p_context
 	zone = context.zone
 	runtime_port = p_runtime_port
-	store = context.get_store()
 	_preview_feedback = ZoneDragPreviewFeedbackScript.new(self, context)
 
 func refresh() -> void:
@@ -39,48 +37,26 @@ func clear_preview() -> void:
 	_preview_feedback.clear_preview()
 
 func clear_display_state() -> void:
-	if store == null:
+	if context == null:
 		return
-	for state in store.display_state.values():
-		var active_tweens: Dictionary = state.get("active_tweens", {})
-		for item in active_tweens.keys():
-			if active_tweens[item] != null:
-				active_tweens[item].kill()
-	store.clear_display_state()
-	if context != null:
-		context.clear_transfer_handoffs()
+	context.clear_display_state()
+	context.clear_transfer_handoffs()
 
 func cleanup() -> void:
 	if _preview_feedback != null:
 		_preview_feedback.cleanup()
 	clear_display_state()
 	_preview_feedback = null
-	store = null
 	runtime_port = null
 	context = null
 	zone = null
 
 func get_display_state(style: Resource) -> Dictionary:
-	return store.get_display_state(style) if store != null else {}
+	return context.get_display_state(style) if context != null else {}
 
 func prune_display_state() -> void:
-	if store == null:
-		return
-	for state in store.display_state.values():
-		var active_tweens: Dictionary = state.get("active_tweens", {})
-		var target_cache: Dictionary = state.get("target_cache", {})
-		var stale_items: Array = []
-		for item in active_tweens.keys():
-			var tween = active_tweens[item]
-			if not is_instance_valid(item) or tween == null or not tween.is_valid() or not tween.is_running():
-				stale_items.append(item)
-		for item in target_cache.keys():
-			if not is_instance_valid(item) and item not in stale_items:
-				stale_items.append(item)
-		for item in stale_items:
-			active_tweens.erase(item)
-			if not is_instance_valid(item):
-				target_cache.erase(item)
+	if context != null:
+		context.prune_display_state()
 
 func resolve_item_size(item: ZoneItemControl) -> Vector2:
 	var layout_policy = context.get_layout_policy()
@@ -114,6 +90,43 @@ func create_cursor_proxy(source_items: Array[ZoneItemControl], anchor_item: Zone
 
 func get_preview_ghost() -> Control:
 	return _preview_feedback.ghost_instance if _preview_feedback != null else null
+
+func sync_container_order() -> void:
+	if zone == null or context == null:
+		return
+	var items_root = zone.get_items_root()
+	if items_root == null:
+		return
+	var ghost_instance = get_preview_ghost()
+	var control_index = 0
+	for item in context.get_items_ordered():
+		if not is_instance_valid(item) or item.get_parent() != items_root:
+			continue
+		var target_index = control_index
+		if is_instance_valid(ghost_instance) and ghost_instance.get_parent() == items_root and ghost_instance.get_index() <= target_index:
+			target_index += 1
+		if item.get_index() != target_index:
+			items_root.move_child(item, target_index)
+		control_index += 1
+
+func container_order_needs_sync() -> bool:
+	if zone == null or context == null:
+		return false
+	var items_root = zone.get_items_root()
+	if items_root == null:
+		return false
+	var ghost_instance = get_preview_ghost()
+	var ordered_items = context.get_items_ordered()
+	var control_index = 0
+	for child in items_root.get_children():
+		if child is not ZoneItemControl or child == ghost_instance:
+			continue
+		if control_index >= ordered_items.size():
+			return true
+		if child != ordered_items[control_index]:
+			return true
+		control_index += 1
+	return control_index != ordered_items.size()
 
 func clear_preview_for_session(session: ZoneDragSession) -> void:
 	_preview_feedback.clear_preview_for_session(session)

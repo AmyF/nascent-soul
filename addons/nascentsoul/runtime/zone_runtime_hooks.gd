@@ -20,22 +20,22 @@ func cleanup() -> void:
 	zone = null
 
 func get_transfer_handoff_count() -> int:
-	var store = _store()
-	return store.get_transfer_handoff_count() if store != null else 0
+	var context = _context()
+	return context.get_transfer_handoff_count() if context != null else 0
 
 func has_transfer_handoff(item: ZoneItemControl) -> bool:
-	var store = _store()
-	return store.has_transfer_handoff(item) if store != null else false
+	var context = _context()
+	return context.has_transfer_handoff(item) if context != null else false
 
 func set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
-	var store = _store()
-	if store != null:
-		store.set_transfer_handoff(item, snapshot)
+	var context = _context()
+	if context != null:
+		context.set_transfer_handoff(item, snapshot)
 
 func clear_transfer_handoffs() -> void:
-	var store = _store()
-	if store != null:
-		store.clear_transfer_handoffs()
+	var context = _context()
+	if context != null:
+		context.clear_transfer_handoffs()
 
 func capture_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
 	var transfer_service = _transfer_service()
@@ -90,8 +90,8 @@ static func for_zone(target_zone):
 		return null
 	return port.bootstrap.runtime_hooks if port.bootstrap.runtime_hooks is ZoneRuntimeHooks else null
 
-func _store():
-	return bootstrap.store if bootstrap != null else null
+func _context():
+	return bootstrap.context if bootstrap != null else null
 
 func _render_service():
 	return bootstrap.render_service if bootstrap != null else null

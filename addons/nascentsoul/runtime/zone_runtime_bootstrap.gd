@@ -4,8 +4,12 @@ extends RefCounted
 
 const ZoneRuntimePortScript = preload("res://addons/nascentsoul/runtime/zone_runtime_port.gd")
 const ZoneRuntimeHooksScript = preload("res://addons/nascentsoul/runtime/zone_runtime_hooks.gd")
+const ZoneDisplayStateCacheScript = preload("res://addons/nascentsoul/runtime/zone_display_state_cache.gd")
+const ZoneTransferStagingScript = preload("res://addons/nascentsoul/runtime/zone_transfer_staging.gd")
 
 var store: ZoneStore = null
+var display_state_cache = null
+var transfer_staging = null
 var context: ZoneContext = null
 var runtime_port = null
 var runtime_hooks = null
@@ -17,10 +21,14 @@ var targeting_service: ZoneTargetingService = null
 func ensure(zone, config: ZoneConfig) -> void:
 	if store == null:
 		store = ZoneStore.new()
+	if display_state_cache == null:
+		display_state_cache = ZoneDisplayStateCacheScript.new()
+	if transfer_staging == null:
+		transfer_staging = ZoneTransferStagingScript.new()
 	if context == null:
-		context = ZoneContext.new(zone, store, config)
+		context = ZoneContext.new(zone, store, config, display_state_cache, transfer_staging)
 	else:
-		context.attach(zone, store, config)
+		context.attach(zone, store, config, display_state_cache, transfer_staging)
 	if runtime_port == null:
 		runtime_port = ZoneRuntimePortScript.new(zone, self)
 	else:
@@ -53,6 +61,10 @@ func cleanup() -> void:
 		render_service.cleanup()
 	if context != null:
 		context.cleanup()
+	if transfer_staging != null:
+		transfer_staging.cleanup()
+	if display_state_cache != null:
+		display_state_cache.cleanup()
 	if store != null:
 		store.cleanup()
 	if runtime_port != null:
@@ -64,4 +76,6 @@ func cleanup() -> void:
 	runtime_hooks = null
 	runtime_port = null
 	context = null
+	transfer_staging = null
+	display_state_cache = null
 	store = null
