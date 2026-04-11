@@ -1,5 +1,7 @@
 class_name ZoneTargetingVisualFrame extends RefCounted
 
+# Public overlay-frame payload used by layered targeting styles and layers.
+
 enum VisualState {
 	NEUTRAL,
 	VALID,

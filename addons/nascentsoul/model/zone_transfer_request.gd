@@ -1,5 +1,7 @@
 class_name ZoneTransferRequest extends RefCounted
 
+# Public request payload passed into ZoneTransferPolicy implementations.
+
 var target_zone: Node = null
 var source_zone: Node = null
 var items: Array[ZoneItemControl] = []

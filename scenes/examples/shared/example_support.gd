@@ -42,41 +42,21 @@ static func make_card_zone_config(
 	base_config: ZoneConfig = null
 ) -> ZoneConfig:
 	var resolved: ZoneConfig = base_config.duplicate_config() if base_config != null else ZoneConfig.new()
-	if resolved.space_model == null:
-		resolved.space_model = ZoneLinearSpaceModel.new()
-	if resolved.layout_policy == null:
-		var hand_layout := ZoneHandLayout.new()
-		hand_layout.arch_angle_deg = 38.0
-		hand_layout.arch_height = 26.0
-		hand_layout.card_spacing_angle = 5.5
-		resolved.layout_policy = hand_layout
-	if resolved.display_style == null:
-		resolved.display_style = ZoneCardDisplay.new()
-	if resolved.interaction == null:
-		resolved.interaction = ZoneInteraction.new()
-	if resolved.sort_policy == null:
-		resolved.sort_policy = ZoneManualSort.new()
-	if resolved.transfer_policy == null:
-		resolved.transfer_policy = ZoneAllowAllTransferPolicy.new()
-	if resolved.drag_visual_factory == null:
-		resolved.drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
-	if resolved.targeting_style == null:
-		resolved.targeting_style = ZoneArrowTargetingStyle.new()
-	if resolved.targeting_policy == null:
-		resolved.targeting_policy = ZoneTargetAllowAllPolicy.new()
+	resolved = resolved.filled_from(ZoneConfig.make_card_defaults())
+	var overrides := {}
 	if layout_policy != null:
-		resolved.layout_policy = layout_policy
+		overrides["layout_policy"] = layout_policy
 	if display_style != null:
-		resolved.display_style = display_style
+		overrides["display_style"] = display_style
 	if transfer_policy != null:
-		resolved.transfer_policy = transfer_policy
+		overrides["transfer_policy"] = transfer_policy
 	if sort_policy != null:
-		resolved.sort_policy = sort_policy
+		overrides["sort_policy"] = sort_policy
 	if interaction != null:
-		resolved.interaction = interaction
+		overrides["interaction"] = interaction
 	if drag_visual_factory != null:
-		resolved.drag_visual_factory = drag_visual_factory
-	return resolved
+		overrides["drag_visual_factory"] = drag_visual_factory
+	return resolved.with_overrides(overrides)
 
 static func make_battlefield_zone_config(
 	space_model: ZoneSpaceModel,
@@ -86,35 +66,21 @@ static func make_battlefield_zone_config(
 	drag_visual_factory: ZoneDragVisualFactory = null,
 	base_config: ZoneConfig = null
 ) -> ZoneConfig:
+	var defaults = ZoneConfig.make_battlefield_defaults(space_model)
 	var resolved: ZoneConfig = base_config.duplicate_config() if base_config != null else ZoneConfig.new()
-	if resolved.space_model == null:
-		var square_space := ZoneSquareGridSpaceModel.new()
-		resolved.space_model = square_space
-	if resolved.layout_policy == null:
-		resolved.layout_policy = ZoneBattlefieldLayout.new()
-	if resolved.display_style == null:
-		resolved.display_style = ZoneCardDisplay.new()
-	if resolved.interaction == null:
-		resolved.interaction = ZoneInteraction.new()
-	if resolved.transfer_policy == null:
-		resolved.transfer_policy = ZoneOccupancyTransferPolicy.new()
-	if resolved.drag_visual_factory == null:
-		resolved.drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
-	if resolved.targeting_style == null:
-		resolved.targeting_style = ZoneArrowTargetingStyle.new()
-	if resolved.targeting_policy == null:
-		resolved.targeting_policy = ZoneTargetAllowAllPolicy.new()
+	resolved = resolved.filled_from(defaults)
+	var overrides := {}
 	if space_model != null:
-		resolved.space_model = space_model
+		overrides["space_model"] = space_model
 	if transfer_policy != null:
-		resolved.transfer_policy = transfer_policy
+		overrides["transfer_policy"] = transfer_policy
 	if display_style != null:
-		resolved.display_style = display_style
+		overrides["display_style"] = display_style
 	if interaction != null:
-		resolved.interaction = interaction
+		overrides["interaction"] = interaction
 	if drag_visual_factory != null:
-		resolved.drag_visual_factory = drag_visual_factory
-	return resolved
+		overrides["drag_visual_factory"] = drag_visual_factory
+	return resolved.with_overrides(overrides)
 
 static func get_zone_config(zone: Zone) -> ZoneConfig:
 	if zone == null:
@@ -122,80 +88,41 @@ static func get_zone_config(zone: Zone) -> ZoneConfig:
 	if zone.config != null:
 		return zone.config
 	if zone is BattlefieldZone:
-		return make_battlefield_zone_config(null)
-	return make_card_zone_config(null)
+		return ZoneConfig.make_battlefield_defaults()
+	return ZoneConfig.make_card_defaults()
+
+static func _assign_zone_config_overrides(zone: Zone, overrides: Dictionary) -> void:
+	var next_config = get_zone_config(zone)
+	if next_config == null:
+		return
+	zone.config = next_config.with_overrides(overrides)
 
 static func set_zone_layout_policy(zone: Zone, layout_policy: ZoneLayoutPolicy) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.layout_policy = layout_policy
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"layout_policy": layout_policy})
 
 static func set_zone_display_style(zone: Zone, display_style: ZoneDisplayStyle) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.display_style = display_style
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"display_style": display_style})
 
 static func set_zone_interaction(zone: Zone, interaction: ZoneInteraction) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.interaction = interaction
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"interaction": interaction})
 
 static func set_zone_sort_policy(zone: Zone, sort_policy: ZoneSortPolicy) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.sort_policy = sort_policy
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"sort_policy": sort_policy})
 
 static func set_zone_transfer_policy(zone: Zone, transfer_policy: ZoneTransferPolicy) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.transfer_policy = transfer_policy
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"transfer_policy": transfer_policy})
 
 static func set_zone_drag_visual_factory(zone: Zone, drag_visual_factory: ZoneDragVisualFactory) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.drag_visual_factory = drag_visual_factory
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"drag_visual_factory": drag_visual_factory})
 
 static func set_zone_space_model(zone: Zone, space_model: ZoneSpaceModel) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.space_model = space_model
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"space_model": space_model})
 
 static func set_zone_targeting_style(zone: Zone, targeting_style: ZoneTargetingStyle) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.targeting_style = targeting_style
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"targeting_style": targeting_style})
 
 static func set_zone_targeting_policy(zone: Zone, targeting_policy: ZoneTargetingPolicy) -> void:
-	var next_config = get_zone_config(zone)
-	if next_config == null:
-		return
-	var duplicated = next_config.duplicate_config()
-	duplicated.targeting_policy = targeting_policy
-	zone.config = duplicated
+	_assign_zone_config_overrides(zone, {"targeting_policy": targeting_policy})
 
 static func get_zone_layout_policy(zone: Zone) -> ZoneLayoutPolicy:
 	return zone.get_layout_policy() if zone != null else null

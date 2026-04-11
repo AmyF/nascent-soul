@@ -1,5 +1,7 @@
 class_name ZoneDragCoordinator extends Node
 
+# Internal viewport-level helper that owns the active drag session.
+
 const COORDINATOR_NAME := "__NascentSoulDragCoordinator"
 const CURSOR_PROXY_Z_INDEX := 2048
 

@@ -36,6 +36,21 @@ The editor plugin adds:
 - `Create Square Battlefield Zone`
 - `Create Hex Battlefield Zone`
 
+## Config Composition
+
+Use one of these two patterns:
+
+1. **Inspector-first**: assign a preset `.tres`, then duplicate it into a local resource or local subresource before making scene-specific overrides in the Inspector.
+2. **Script-first**: start from `ZoneConfig.make_card_defaults()` or `ZoneConfig.make_battlefield_defaults()` and apply focused overrides with `with_overrides(...)`.
+
+```gdscript
+var config := ZoneConfig.make_card_defaults().with_overrides({
+	"layout_policy": ZoneHBoxLayout.new(),
+	"transfer_policy": my_transfer_policy
+})
+hand.config = config
+```
+
 ## Quick Start
 
 ### Card Zone
@@ -136,19 +151,49 @@ The showcase scenes live at:
 
 ## Documentation
 
+- [Architecture](ARCHITECTURE.md)
 - [Getting Started](docs/getting-started.md)
+- [Decision Framework](docs/decision-framework.md)
 - [Card Zones](docs/card-zones.md)
 - [Battlefields](docs/battlefields.md)
 - [Transfers and Targeting](docs/transfers-and-targeting.md)
+- [Extending Policies](docs/extending-policies.md)
+- [Extending Layouts](docs/extending-layouts.md)
+- [Game Implementation Checklist](docs/game-implementation-checklist.md)
 - [Showcase: FreeCell](docs/showcase-freecell.md)
 - [Showcase: Xiangqi](docs/showcase-xiangqi.md)
 - [Testing](docs/testing.md)
+
+## Learning Path
+
+Recommended reading order:
+
+1. [Getting Started](docs/getting-started.md)
+2. [Decision Framework](docs/decision-framework.md)
+3. [Card Zones](docs/card-zones.md) and [Battlefields](docs/battlefields.md)
+4. [Transfers and Targeting](docs/transfers-and-targeting.md)
+5. [Extending Policies](docs/extending-policies.md) and [Extending Layouts](docs/extending-layouts.md)
+6. [Game Implementation Checklist](docs/game-implementation-checklist.md)
+7. [Architecture](ARCHITECTURE.md)
+
+Recommended example order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
+
+1. `Transfer`
+2. `Layouts`
+3. `Rules`
+4. `Recipes`
+5. `Square`
+6. `Hex`
+7. `Modes`
+8. `Targeting`
+9. `FreeCell`
+10. `Xiangqi`
 
 ## Validation
 
 Validated on Godot 4.6.1:
 
-- Headless regression runner passes with `697` checks.
+- Headless regression runner passes with `1659` checks.
 - Headless editor load succeeds with the plugin enabled.
 - Demo smoke coverage confirms the main-menu launcher, the compatibility shell, and both showcase scenes.
 

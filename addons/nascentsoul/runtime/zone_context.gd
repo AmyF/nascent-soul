@@ -1,5 +1,8 @@
 class_name ZoneContext extends RefCounted
 
+# Internal runtime context shared by zone services. External code should not
+# depend on this type directly.
+
 var zone = null
 var config = null
 var store = null

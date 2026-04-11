@@ -63,6 +63,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_internal_roots_and_config_override()
 	await _reset_root()
+	await _test_zone_config_helpers()
+	await _reset_root()
 	await _test_drag_transfer_and_selection_prune()
 	await _reset_root()
 	await _test_batch_transfer_api()
@@ -145,6 +147,38 @@ func _test_internal_roots_and_config_override() -> void:
 	_check(ExampleSupport.get_zone_transfer_policy(zone) == override_policy, "transfer override should take precedence over config transfer policy")
 	_check(ExampleSupport.get_zone_display_style(zone) == HAND_CONFIG.display_style, "config display style should resolve when no override exists")
 	_check(ExampleSupport.get_zone_drag_visual_factory(zone) == HAND_CONFIG.drag_visual_factory, "config drag visual factory should resolve when no override exists")
+
+func _test_zone_config_helpers() -> void:
+	var defaults = ZoneConfig.make_card_defaults()
+	_check(defaults.space_model is ZoneLinearSpaceModel, "card config helper should provide a linear space model by default")
+	_check(defaults.layout_policy is ZoneHandLayout, "card config helper should provide the default hand layout")
+	_check(defaults.transfer_policy is ZoneAllowAllTransferPolicy, "card config helper should provide the default transfer policy")
+	var base := ZoneConfig.new()
+	var custom_transfer := ZoneCapacityTransferPolicy.new()
+	custom_transfer.max_items = 2
+	var custom_display := ZoneTweenDisplay.new()
+	base.transfer_policy = custom_transfer
+	base.display_style = custom_display
+	var merged = base.filled_from(defaults)
+	_check(merged.transfer_policy == custom_transfer, "filled_from should preserve already assigned policies")
+	_check(merged.display_style == custom_display, "filled_from should preserve already assigned display styles")
+	_check(merged.space_model is ZoneLinearSpaceModel, "filled_from should supply any missing default fields")
+	var override_layout := ZoneHBoxLayout.new()
+	override_layout.item_spacing = 22.0
+	var override_sort := ZoneGroupSortScript.new()
+	var overridden = merged.with_overrides({
+		"layout_policy": override_layout,
+		"sort_policy": override_sort
+	})
+	_check(overridden != merged, "with_overrides should return a duplicated ZoneConfig instance")
+	_check(overridden.layout_policy == override_layout, "with_overrides should replace the requested layout policy")
+	_check(overridden.sort_policy == override_sort, "with_overrides should replace the requested sort policy")
+	_check(merged.layout_policy != override_layout, "with_overrides should not mutate the source config")
+	var square_space := ZoneSquareGridSpaceModel.new()
+	var battlefield_defaults = ZoneConfig.make_battlefield_defaults(square_space)
+	_check(battlefield_defaults.space_model == square_space, "battlefield config helper should respect an explicit space model override")
+	_check(battlefield_defaults.layout_policy is ZoneBattlefieldLayout, "battlefield config helper should provide the battlefield layout")
+	_check(battlefield_defaults.transfer_policy is ZoneOccupancyTransferPolicy, "battlefield config helper should provide the battlefield occupancy policy")
 
 func _test_drag_transfer_and_selection_prune() -> void:
 	var target_panel = _make_panel("TargetPanel", Vector2.ZERO, Vector2(620, 260))

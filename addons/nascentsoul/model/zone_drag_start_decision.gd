@@ -1,5 +1,7 @@
 class_name ZoneDragStartDecision extends RefCounted
 
+# Public decision contract returned by drag-start evaluation hooks.
+
 var allowed: bool = true
 var reason: String = ""
 var items: Array[ZoneItemControl] = []

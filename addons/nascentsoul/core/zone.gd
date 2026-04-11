@@ -1,9 +1,14 @@
 @tool
 class_name Zone extends Control
 
+# Public facade for NascentSoul zone behavior. Game code should prefer Zone,
+# ZoneConfig, commands, and signals over runtime/* helpers or private _get_* APIs.
+
 const ITEMS_ROOT_NAME := "ItemsRoot"
 const PREVIEW_ROOT_NAME := "PreviewRoot"
 const TARGETING_ZONE_GROUP := "__NascentSoulZones"
+const ZoneInternalRootsScript := preload("res://addons/nascentsoul/runtime/zone_internal_roots.gd")
+const ZoneRuntimeBootstrapScript := preload("res://addons/nascentsoul/runtime/zone_runtime_bootstrap.gd")
 
 signal item_clicked(item: ZoneItemControl)
 signal item_double_clicked(item: ZoneItemControl)
@@ -33,6 +38,9 @@ var _items_root: Control = null
 var _preview_root: Control = null
 
 var _default_config: ZoneConfig = null
+
+var _internal_roots = null
+var _runtime_bootstrap = null
 
 var _store: ZoneStore = null
 var _context: ZoneContext = null
@@ -433,47 +441,32 @@ func _resolve_programmatic_transfer_global_position(moving_items: Array[ZoneItem
 	return _transfer_service.resolve_programmatic_transfer_global_position(moving_items)
 
 func _ensure_services() -> void:
-	if _store != null and _context != null and _input_service != null and _render_service != null and _transfer_service != null and _targeting_service != null:
-		_context.update_config(_resolved_config())
-		return
-	if _store == null:
-		_store = ZoneStore.new()
-	if _context == null:
-		_context = ZoneContext.new(self, _store, _resolved_config())
-	else:
-		_context.store = _store
-		_context.zone = self
-		_context.update_config(_resolved_config())
-	if _input_service == null:
-		_input_service = ZoneInputService.new(_context)
-	if _render_service == null:
-		_render_service = ZoneRenderService.new(_context)
-	if _transfer_service == null:
-		_transfer_service = ZoneTransferService.new(_context)
-	if _targeting_service == null:
-		_targeting_service = ZoneTargetingService.new(_context)
-	_context.bind_services(_input_service, _render_service, _transfer_service, _targeting_service)
-	_transfer_service.bind_services(_input_service, _render_service, _targeting_service)
+	if _runtime_bootstrap == null:
+		_runtime_bootstrap = ZoneRuntimeBootstrapScript.new()
+	_runtime_bootstrap.ensure(self, _resolved_config())
+	_sync_runtime_service_references()
 
 func _cleanup_runtime_services() -> void:
-	if _input_service != null:
-		_input_service.cleanup()
-	if _targeting_service != null:
-		_targeting_service.cleanup()
-	if _transfer_service != null:
-		_transfer_service.cleanup()
-	if _render_service != null:
-		_render_service.cleanup()
-	if _context != null:
-		_context.cleanup()
-	if _store != null:
-		_store.cleanup()
-	_input_service = null
-	_targeting_service = null
-	_transfer_service = null
-	_render_service = null
-	_context = null
-	_store = null
+	if _runtime_bootstrap != null:
+		_runtime_bootstrap.cleanup()
+		_runtime_bootstrap = null
+	_sync_runtime_service_references()
+
+func _sync_runtime_service_references() -> void:
+	if _runtime_bootstrap == null:
+		_store = null
+		_context = null
+		_input_service = null
+		_render_service = null
+		_transfer_service = null
+		_targeting_service = null
+		return
+	_store = _runtime_bootstrap.store
+	_context = _runtime_bootstrap.context
+	_input_service = _runtime_bootstrap.input_service
+	_render_service = _runtime_bootstrap.render_service
+	_transfer_service = _runtime_bootstrap.transfer_service
+	_targeting_service = _runtime_bootstrap.targeting_service
 
 func _resolved_config() -> ZoneConfig:
 	if _config != null:
@@ -483,91 +476,31 @@ func _resolved_config() -> ZoneConfig:
 func _ensure_default_config() -> ZoneConfig:
 	if _default_config != null:
 		return _default_config
-	var resolved := ZoneConfig.new()
-	resolved.space_model = ZoneLinearSpaceModel.new()
+	var resolved := ZoneConfig.make_card_defaults()
 	var layout := ZoneHBoxLayout.new()
 	layout.item_spacing = 14.0
 	layout.padding_left = 12.0
 	layout.padding_top = 12.0
 	resolved.layout_policy = layout
-	resolved.display_style = ZoneCardDisplay.new()
-	resolved.interaction = ZoneInteraction.new()
-	resolved.sort_policy = ZoneManualSort.new()
-	resolved.transfer_policy = ZoneAllowAllTransferPolicy.new()
-	resolved.drag_visual_factory = ZoneConfigurableDragVisualFactory.new()
-	resolved.targeting_style = ZoneArrowTargetingStyle.new()
-	resolved.targeting_policy = ZoneTargetAllowAllPolicy.new()
 	_default_config = resolved
 	return _default_config
 
 func _ensure_internal_nodes() -> void:
-	_items_root = _ensure_internal_root(_items_root, ITEMS_ROOT_NAME)
-	_preview_root = _ensure_internal_root(_preview_root, PREVIEW_ROOT_NAME)
-	if _items_root != null and _preview_root != null and _items_root.get_index() > _preview_root.get_index():
-		move_child(_items_root, 0)
-	if _preview_root != null:
-		move_child(_preview_root, get_child_count() - 1)
-
-func _ensure_internal_root(existing: Control, node_name: String) -> Control:
-	var root = existing
-	if root == null or not is_instance_valid(root) or root.get_parent() != self:
-		root = _find_internal_root(node_name)
-	if root == null:
-		root = Control.new()
-		root.name = node_name
-		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(root)
-	_merge_duplicate_internal_roots(root, node_name)
-	_sync_internal_root_owner(root)
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.offset_left = 0.0
-	root.offset_top = 0.0
-	root.offset_right = 0.0
-	root.offset_bottom = 0.0
-	root.focus_mode = Control.FOCUS_NONE
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.clip_contents = false
-	return root
-
-func _find_internal_root(node_name: String) -> Control:
-	for child in get_children():
-		if child is Control and child.name == node_name:
-			return child as Control
-	return null
-
-func _merge_duplicate_internal_roots(root: Control, node_name: String) -> void:
-	if root == null:
-		return
-	var duplicate_roots: Array[Control] = []
-	for child in get_children():
-		if child == root:
-			continue
-		if child is Control and child.name == node_name:
-			duplicate_roots.append(child as Control)
-	for duplicate_root in duplicate_roots:
-		for duplicate_child in duplicate_root.get_children():
-			if duplicate_child == null:
-				continue
-			duplicate_child.reparent(root, true)
-		duplicate_root.queue_free()
-
-func _sync_internal_root_owner(root: Node) -> void:
-	if root == null:
-		return
-	if owner != null and root.owner != owner:
-		root.owner = owner
+	if _internal_roots == null:
+		_internal_roots = ZoneInternalRootsScript.new(self, ITEMS_ROOT_NAME, PREVIEW_ROOT_NAME)
+	_internal_roots.ensure_nodes()
+	_items_root = _internal_roots.items_root
+	_preview_root = _internal_roots.preview_root
 
 func _is_expected_direct_child(child: Node) -> bool:
-	return child == _items_root \
-		or child == _preview_root \
-		or child.name.begins_with("__NascentSoul")
+	_ensure_internal_nodes()
+	return _internal_roots.is_expected_direct_child(child)
 
 func _handle_configuration_changed() -> void:
 	if not is_inside_tree():
 		return
 	_ensure_internal_nodes()
 	_ensure_services()
-	_context.update_config(_resolved_config())
 	update_configuration_warnings()
 	queue_redraw()
 	if is_inside_tree():

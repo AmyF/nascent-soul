@@ -897,10 +897,10 @@ func _card_lookup_by_code() -> Dictionary:
 func _move_card_for_restore(card: ZoneItemControl, source_zone: Zone, target_zone: Zone, target_index: int) -> bool:
 	if card == null or source_zone == null or target_zone == null:
 		return false
-	var snapshots = source_zone._get_transfer_service().build_transfer_snapshots([card], null, card)
+	var snapshots = source_zone.capture_transfer_snapshots([card], null, card)
 	if not source_zone.remove_item(card):
 		return false
-	target_zone._get_transfer_service().set_transfer_handoff(card, snapshots.get(card, {}))
+	target_zone.set_transfer_handoff(card, snapshots.get(card, {}))
 	return target_zone.add_item(card, ZonePlacementTarget.linear(target_index))
 
 func _freecell_animation_duration() -> float:

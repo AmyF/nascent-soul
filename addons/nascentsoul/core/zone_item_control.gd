@@ -61,11 +61,38 @@ func get_zone_item_metadata() -> Dictionary:
 func set_zone_item_metadata(metadata: Dictionary) -> void:
 	zone_item_metadata = metadata.duplicate(true)
 
+func set_zone_hovered_visual(value: bool) -> void:
+	var state = get_zone_visual_state()
+	state.hovered = value
+	apply_zone_visual_state(state)
+
+func set_zone_selected_visual(value: bool) -> void:
+	var state = get_zone_visual_state()
+	state.selected = value
+	apply_zone_visual_state(state)
+
+func set_zone_target_candidate_visual(active: bool, allowed: bool) -> void:
+	var state = get_zone_visual_state()
+	state.target_candidate_active = active
+	state.target_candidate_allowed = allowed
+	apply_zone_visual_state(state)
+
 func apply_zone_visual_state(state: ZoneItemVisualState) -> void:
 	_zone_visual_state = state.duplicate_state() if state != null else ZoneItemVisualState.new()
 
 func get_zone_visual_state() -> ZoneItemVisualState:
 	return _zone_visual_state.duplicate_state()
+
+func did_zone_visual_state_change(next_state: ZoneItemVisualState, include_targeting: bool = true) -> bool:
+	var current = _zone_visual_state if _zone_visual_state != null else ZoneItemVisualState.new()
+	if current.hovered != next_state.hovered or current.selected != next_state.selected:
+		return true
+	if include_targeting and (
+		current.target_candidate_active != next_state.target_candidate_active \
+		or current.target_candidate_allowed != next_state.target_candidate_allowed
+	):
+		return true
+	return false
 
 func _resolved_item_size() -> Vector2:
 	if size != Vector2.ZERO:

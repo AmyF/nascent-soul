@@ -1,5 +1,7 @@
 class_name ZoneTargetingCoordinator extends Node
 
+# Internal viewport-level helper that owns the active targeting session.
+
 const COORDINATOR_NAME := "__NascentSoulTargetingCoordinator"
 const ZONE_GROUP := "__NascentSoulZones"
 const OVERLAY_LAYER_NAME := "__NascentSoulTargetingLayer"

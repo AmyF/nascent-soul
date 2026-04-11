@@ -1,5 +1,7 @@
 class_name ZoneTransferCommand extends RefCounted
 
+# Public command contract for programmatic inserts, reorders, and transfers.
+
 enum CommandKind {
 	INSERT,
 	TRANSFER,

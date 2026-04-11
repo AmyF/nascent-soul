@@ -1,5 +1,7 @@
 class_name ZoneTargetCandidate extends RefCounted
 
+# Public targeting candidate payload used by policies, signals, and examples.
+
 enum CandidateKind {
 	NONE,
 	ITEM,

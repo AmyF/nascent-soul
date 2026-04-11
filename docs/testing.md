@@ -14,7 +14,7 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `697` checks
+- full regression runner passes with `1659` checks
 - headless editor load succeeds with the plugin enabled
 - demo smoke covers the main-menu launcher, the compatibility shell, and both showcase scenes
 
@@ -29,6 +29,15 @@ Validated on Godot 4.6.1:
 - launcher and compatibility-shell smoke coverage
 - FreeCell showcase rules
 - Xiangqi showcase rules
+
+## Contract vs. Implementation Coverage
+
+When adding tests:
+
+1. prefer **contract coverage** for public behavior on `Zone`, `ZoneConfig`, commands, signals, presets, and showcase flows
+2. add **implementation-support coverage** only when an internal helper split needs direct protection
+
+That keeps refactors free to move internal code around while still protecting the public learning surface.
 
 ## Showcase Suites
 

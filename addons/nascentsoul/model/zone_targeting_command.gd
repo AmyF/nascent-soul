@@ -1,5 +1,7 @@
 class_name ZoneTargetingCommand extends RefCounted
 
+# Public command contract for gameplay-triggered targeting flows.
+
 var source_zone = null
 var source_item = null
 var intent: ZoneTargetingIntent = null

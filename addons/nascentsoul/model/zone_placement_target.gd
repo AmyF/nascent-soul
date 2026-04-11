@@ -1,5 +1,7 @@
 class_name ZonePlacementTarget extends RefCounted
 
+# Public target descriptor shared by transfer APIs, spaces, and layouts.
+
 enum TargetKind {
 	NONE,
 	LINEAR,

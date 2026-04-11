@@ -1,5 +1,7 @@
 class_name ZoneTransferDecision extends RefCounted
 
+# Public decision contract returned by transfer policies and preview APIs.
+
 enum TransferMode {
 	DIRECT_PLACE,
 	SPAWN_PIECE

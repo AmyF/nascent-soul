@@ -1,6 +1,11 @@
 class_name ZoneTransferService extends RefCounted
 
+# Internal runtime helper for transfer evaluation and execution.
+
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
+const ZoneTransferEvaluatorScript = preload("res://addons/nascentsoul/runtime/zone_transfer_evaluator.gd")
+const ZoneTransferExecutionScript = preload("res://addons/nascentsoul/runtime/zone_transfer_execution.gd")
+const ZoneDragSessionCleanupScript = preload("res://addons/nascentsoul/runtime/zone_drag_session_cleanup.gd")
 
 var context: ZoneContext
 var zone: Zone
@@ -8,22 +13,36 @@ var store: ZoneStore
 
 var input_service: ZoneInputService = null
 var render_service: ZoneRenderService = null
-var targeting_service: ZoneTargetingService = null
+
+var _evaluator = null
+var _execution = null
+var _drag_session_cleanup = null
 
 func _init(p_context: ZoneContext) -> void:
 	context = p_context
 	zone = context.zone
 	store = context.store
+	_evaluator = ZoneTransferEvaluatorScript.new(context)
+	_execution = ZoneTransferExecutionScript.new(context, store, _evaluator)
+	_drag_session_cleanup = ZoneDragSessionCleanupScript.new(zone)
 
-func bind_services(p_input_service: ZoneInputService, p_render_service: ZoneRenderService, p_targeting_service: ZoneTargetingService) -> void:
+func bind_services(p_input_service: ZoneInputService, p_render_service: ZoneRenderService) -> void:
 	input_service = p_input_service
 	render_service = p_render_service
-	targeting_service = p_targeting_service
+	_execution.bind_services(input_service, render_service)
 
 func cleanup() -> void:
+	if _drag_session_cleanup != null:
+		_drag_session_cleanup.cleanup()
+	if _execution != null:
+		_execution.cleanup()
+	if _evaluator != null:
+		_evaluator.cleanup()
 	input_service = null
 	render_service = null
-	targeting_service = null
+	_drag_session_cleanup = null
+	_execution = null
+	_evaluator = null
 	store = null
 	zone = null
 	context = null
@@ -36,8 +55,8 @@ func process(_delta: float) -> void:
 	var session = coordinator.get_session() if coordinator != null else null
 	if session == null:
 		var should_refresh = false
-		if context.get_space_model() is ZoneLinearSpaceModel and store.container_order_needs_sync(zone.get_items_root(), render_service.ghost_instance):
-			store.sync_container_order(zone.get_items_root(), render_service.ghost_instance)
+		if context.get_space_model() is ZoneLinearSpaceModel and store.container_order_needs_sync(zone.get_items_root(), render_service.get_preview_ghost()):
+			store.sync_container_order(zone.get_items_root(), render_service.get_preview_ghost())
 			should_refresh = true
 			zone._emit_layout_changed()
 		if render_service.clear_hover_feedback([]):
@@ -57,13 +76,7 @@ func rebuild_items_from_root() -> bool:
 	return store.rebuild_items_from_root(context, zone.get_items_root())
 
 func resolve_transfer_target(items: Array[ZoneItemControl], placement_target: ZonePlacementTarget) -> ZonePlacementTarget:
-	var space_model = context.get_space_model()
-	if space_model == null:
-		return ZonePlacementTarget.invalid()
-	if placement_target != null and placement_target.is_valid():
-		return space_model.normalize_target(context, placement_target, items)
-	var reference_item = items[0] if not items.is_empty() else null
-	return space_model.resolve_add_target(context, reference_item, null)
+	return _evaluator.resolve_transfer_target(items, placement_target)
 
 func add_item(item: ZoneItemControl, placement_target: ZonePlacementTarget = null) -> bool:
 	return insert_item(item, store.items.size(), placement_target)
@@ -86,27 +99,14 @@ func insert_item(item: ZoneItemControl, index: int, placement_target: ZonePlacem
 	var target_index = _resolve_linear_insert_index(index, resolved_target)
 	store.insert_item_reference(item, target_index, resolved_target)
 	item.visible = true
-	store.sync_container_order(items_root, render_service.ghost_instance)
+	store.sync_container_order(items_root, render_service.get_preview_ghost())
 	zone._emit_item_added(item, target_index)
 	refresh()
 	zone._emit_layout_changed()
 	return true
 
 func remove_item(item: ZoneItemControl) -> bool:
-	if not store.has_item(item):
-		return false
-	var previous_index = store.find_item_index(item)
-	var selection_changed = remove_item_from_state(item, false, true)
-	var items_root = zone.get_items_root()
-	if items_root != null and item.get_parent() == items_root:
-		items_root.remove_child(item)
-	if previous_index >= 0:
-		zone._emit_item_removed(item, previous_index)
-	refresh()
-	if selection_changed:
-		zone._emit_selection_changed()
-	zone._emit_layout_changed()
-	return true
+	return _execution.remove_item(item)
 
 func perform_transfer(command: ZoneTransferCommand) -> bool:
 	if command == null:
@@ -297,33 +297,10 @@ func set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
 	store.set_transfer_handoff(item, snapshot)
 
 func remove_item_from_state(item, remove_from_container: bool, clear_visuals: bool) -> bool:
-	var selection_changed = false
-	var item_is_valid = is_instance_valid(item)
-	if item_is_valid and context.selection_state.hovered_item == item and context.selection_state.set_hovered(null):
-		zone._emit_item_hover_exited(item)
-	store.erase_item_reference(item)
-	store.clear_item_target(item)
-	store.clear_transfer_handoff(item)
-	if item_is_valid:
-		input_service.unregister_item(item)
-	var items_root = zone.get_items_root()
-	if item_is_valid and remove_from_container and items_root != null and item.get_parent() == items_root:
-		items_root.remove_child(item)
-	if clear_visuals:
-		_clear_item_visual_state(item, true)
-	if context.selection_state.prune(store.items):
-		selection_changed = true
-	return selection_changed
+	return _execution.remove_item_from_state(item, remove_from_container, clear_visuals)
 
 func _clear_item_visual_state(item, reset_transform: bool) -> void:
-	if not is_instance_valid(item):
-		return
-	if item is ZoneItemControl:
-		(item as ZoneItemControl).apply_zone_visual_state(ZoneItemVisualState.new())
-	if reset_transform:
-		item.scale = Vector2.ONE
-		item.rotation = 0.0
-		item.z_index = 0
+	_execution.clear_item_visual_state(item, reset_transform)
 
 func _resolve_insert_target(item: ZoneItemControl, placement_target: ZonePlacementTarget, index_hint: int) -> ZonePlacementTarget:
 	var space_model = context.get_space_model()
@@ -349,200 +326,19 @@ func _resolve_reordered_target(base_target: ZonePlacementTarget, linear_index: i
 	return base_target.duplicate_target() if base_target != null else ZonePlacementTarget.invalid()
 
 func _reorder_items(items_to_move: Array[ZoneItemControl], placement_target: ZonePlacementTarget) -> bool:
-	var moving_items: Array[ZoneItemControl] = []
-	var original_indices: Dictionary = {}
-	for item in store.items:
-		if item in items_to_move:
-			original_indices[item] = store.find_item_index(item)
-			moving_items.append(item)
-	if moving_items.is_empty():
-		return false
-	var resolved_target = resolve_transfer_target(moving_items, placement_target)
-	if resolved_target == null or not resolved_target.is_valid():
-		return false
-	var target_index = _resolve_linear_insert_index(store.find_item_index(moving_items[0]), resolved_target)
-	for item in moving_items:
-		store.erase_item_reference(item)
-	target_index = clampi(target_index, 0, store.items.size())
-	for offset in range(moving_items.size()):
-		store.items.insert(target_index + offset, moving_items[offset])
-	for item in moving_items:
-		store.set_item_target(item, _resolve_reordered_target(resolved_target, target_index + moving_items.find(item)))
-		item.visible = true
-	store.sync_container_order(zone.get_items_root(), render_service.ghost_instance)
-	for item in moving_items:
-			var to_index = store.find_item_index(item)
-			var from_index = original_indices[item]
-			if from_index != to_index:
-				zone._emit_item_reordered(item, from_index, to_index)
-	refresh()
-	zone._emit_layout_changed()
-	return true
+	return _execution.reorder_items(items_to_move, placement_target)
 
 func _transfer_items_to(target_zone: Zone, items_to_move: Array[ZoneItemControl], placement_target: ZonePlacementTarget, drop_position = null, source_zone_override: Zone = null, decision: ZoneTransferDecision = null, anchor_item: ZoneItemControl = null) -> bool:
-	if target_zone == null or target_zone.get_items_root() == null:
-		return false
-	var source_zone = source_zone_override if source_zone_override != null else zone
-	var moving_items: Array[ZoneItemControl] = []
-	var original_indices: Dictionary = {}
-	var removed_indices: Dictionary = {}
-	for item in store.items:
-		if item in items_to_move:
-			original_indices[item] = store.find_item_index(item)
-			moving_items.append(item)
-	if moving_items.is_empty():
-		return false
-	var transfer_snapshots = build_transfer_snapshots(moving_items, drop_position, anchor_item)
-	var selection_changed = false
-	var target_transfer = target_zone._get_transfer_service()
-	var target_context = target_zone._get_context()
-	var resolved_decision = decision if decision != null else ZoneTransferDecision.new(true, "", target_transfer.resolve_transfer_target(moving_items, placement_target))
-	var final_target = target_transfer.resolve_transfer_target(moving_items, resolved_decision.resolved_target)
-	if final_target == null or not final_target.is_valid():
-		final_target = target_transfer.resolve_transfer_target(moving_items, null)
-	if final_target == null or not final_target.is_valid():
-		target_transfer.emit_drop_rejected_items(moving_items, source_zone, "Invalid drop target.")
-		return false
-	var original_targets: Dictionary = {}
-	for item in moving_items:
-		original_targets[item] = store.get_item_target(context, item)
-	for item in moving_items:
-		selection_changed = remove_item_from_state(item, false, false) or selection_changed
-		_clear_item_visual_state(item, false)
-		var from_index = original_indices.get(item, -1)
-		if from_index >= 0:
-			removed_indices[item] = from_index
-	if resolved_decision.transfer_mode == ZoneTransferDecision.TransferMode.SPAWN_PIECE:
-		var spawned_items = _build_spawned_items(target_context, moving_items, resolved_decision, final_target)
-		if spawned_items.is_empty():
-			target_transfer.emit_drop_rejected_items(moving_items, source_zone, "No spawn item could be created.")
-			for item in moving_items:
-				if is_instance_valid(item):
-					item.visible = true
-			rebuild_items_from_root()
-			input_service.sync_item_bindings()
-			refresh()
-			target_transfer.rebuild_items_from_root()
-			target_zone._get_input_service().sync_item_bindings()
-			target_zone.refresh()
-			return false
-		var spawned_snapshots: Dictionary = {}
-		for index in range(min(spawned_items.size(), moving_items.size())):
-			spawned_snapshots[spawned_items[index]] = transfer_snapshots.get(moving_items[index], {})
-		var spawned_inserted = target_transfer._insert_transferred_items(spawned_items, final_target, spawned_snapshots)
-		if not spawned_inserted:
-			target_transfer.emit_drop_rejected_items(moving_items, source_zone, "Failed to insert spawned items.")
-			_restore_failed_transfer(moving_items, original_targets)
-			return false
-		for removed_item in moving_items:
-			if removed_indices.has(removed_item):
-				zone._emit_item_removed(removed_item, removed_indices[removed_item])
-		for source_item in moving_items:
-			if is_instance_valid(source_item):
-				var items_root = zone.get_items_root()
-				if items_root != null and source_item.get_parent() == items_root:
-					items_root.remove_child(source_item)
-				source_item.queue_free()
-		_emit_item_transferred(source_zone, target_zone, spawned_items)
-	else:
-		var inserted = target_transfer._insert_transferred_items(moving_items, final_target, transfer_snapshots)
-		if inserted:
-			for item in moving_items:
-				if not target_context.has_item(item):
-					inserted = false
-					break
-		if not inserted:
-			target_transfer.emit_drop_rejected_items(moving_items, source_zone, "Failed to insert items.")
-			_restore_failed_transfer(moving_items, original_targets)
-			return false
-		for removed_item in moving_items:
-			if removed_indices.has(removed_item):
-				zone._emit_item_removed(removed_item, removed_indices[removed_item])
-		for item in moving_items:
-			item.visible = true
-		_emit_item_transferred(source_zone, target_zone, moving_items)
-	store.sync_container_order(zone.get_items_root(), render_service.ghost_instance)
-	refresh()
-	if selection_changed:
-		zone._emit_selection_changed()
-	zone._emit_layout_changed()
-	if source_zone != target_zone:
-		target_zone._emit_layout_changed()
-		target_zone.refresh()
-	return true
-
-func _build_spawned_items(target_context: ZoneContext, source_items: Array[ZoneItemControl], decision: ZoneTransferDecision, placement_target: ZonePlacementTarget) -> Array[ZoneItemControl]:
-	var spawned_items: Array[ZoneItemControl] = []
-	for source_item in source_items:
-		var spawned = _instantiate_spawn_item(target_context, source_item, decision, placement_target)
-		if spawned == null:
-			continue
-		spawned_items.append(spawned)
-	return spawned_items
-
-func _instantiate_spawn_item(target_context: ZoneContext, source_item: ZoneItemControl, decision: ZoneTransferDecision, placement_target: ZonePlacementTarget) -> ZoneItemControl:
-	if decision.spawn_scene != null:
-		var created = decision.spawn_scene.instantiate()
-		if created is ZoneItemControl:
-			source_item.configure_zone_spawned_item(created as ZoneItemControl, target_context, placement_target)
-			return created as ZoneItemControl
-	var from_item = source_item.create_zone_spawned_item(target_context, decision, placement_target)
-	if from_item != null:
-		source_item.configure_zone_spawned_item(from_item, target_context, placement_target)
-		return from_item
-	return null
+	return _execution.transfer_items_to(target_zone, items_to_move, placement_target, drop_position, source_zone_override, decision, anchor_item)
 
 func _insert_transferred_items(moving_items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, transfer_snapshots: Dictionary) -> bool:
-	var items_root = zone.get_items_root()
-	if items_root == null:
-		return false
-	var resolved_target = resolve_transfer_target(moving_items, placement_target)
-	if resolved_target == null or not resolved_target.is_valid():
-		return false
-	var target_index = _resolve_linear_insert_index(store.items.size(), resolved_target)
-	for offset in range(moving_items.size()):
-		var item = moving_items[offset]
-		if store.contains_item_reference(item):
-			store.erase_item_reference(item)
-		if item.get_parent() != items_root:
-			if item.get_parent() != null:
-				item.reparent(items_root, true)
-			else:
-				items_root.add_child(item)
-		set_transfer_handoff(item, transfer_snapshots.get(item, {}))
-		item.visible = true
-		input_service.register_item(item)
-		store.items.insert(target_index + offset, item)
-		store.set_item_target(item, _resolve_reordered_target(resolved_target, target_index + offset))
-		zone._emit_item_added(item, target_index + offset)
-	store.sync_container_order(items_root, render_service.ghost_instance)
-	refresh()
-	return true
+	return _execution.insert_transferred_items(moving_items, placement_target, transfer_snapshots)
 
 func _restore_failed_transfer(moving_items: Array[ZoneItemControl], original_targets: Dictionary) -> void:
-	var source_root = zone.get_items_root()
-	for item in moving_items:
-		if not is_instance_valid(item):
-			continue
-		item.visible = true
-		if source_root != null and item.get_parent() != source_root:
-			if item.get_parent() != null:
-				item.reparent(source_root, true)
-			else:
-				source_root.add_child(item)
-		var original_target = original_targets.get(item, ZonePlacementTarget.invalid())
-		if original_target is ZonePlacementTarget and (original_target as ZonePlacementTarget).is_valid():
-			store.set_item_target(item, original_target)
-	rebuild_items_from_root()
-	input_service.sync_item_bindings()
-	refresh()
+	_execution.restore_failed_transfer(moving_items, original_targets)
 
 func _emit_item_transferred(source_zone: Zone, target_zone: Zone, moving_items: Array[ZoneItemControl]) -> void:
-	for item in moving_items:
-		var target = target_zone.get_item_target(item)
-		target_zone._emit_item_transferred(item, source_zone, target_zone, target)
-		if source_zone != target_zone:
-			source_zone._emit_item_transferred(item, source_zone, target_zone, target)
+	_execution.emit_item_transferred(source_zone, target_zone, moving_items)
 
 func _emit_drop_rejected(session: ZoneDragSession, reason: String) -> void:
 	var source_zone = session.source_zone as Zone
@@ -556,45 +352,7 @@ func emit_drop_rejected_items(items: Array[ZoneItemControl], source_zone: Zone, 
 		source_zone._emit_drop_rejected(items, source_zone, zone, reason)
 
 func _cleanup_drag_session(session: ZoneDragSession, refresh_involved: bool, emit_layout_changed: bool) -> void:
-	session.prune_invalid_items()
-	var involved_zones = _collect_involved_drag_zones(session)
-	for involved_zone in involved_zones:
-		involved_zone._get_render_service().clear_preview_for_session(session)
-		involved_zone._get_input_service().clear_hover_for_items(session.items, false)
-		involved_zone._get_input_service().reset_press_state_for_item()
-	for item in session.items:
-		if is_instance_valid(item):
-			item.visible = true
-	var coordinator = _resolve_drag_coordinator(involved_zones)
-	if coordinator != null:
-		coordinator.clear_session()
-	if not refresh_involved:
-		return
-	for involved_zone in involved_zones:
-		involved_zone.refresh()
-		if emit_layout_changed:
-			involved_zone._emit_layout_changed()
-
-func _collect_involved_drag_zones(session: ZoneDragSession) -> Array[Zone]:
-	var involved_zones: Array[Zone] = []
-	_append_unique_zone(involved_zones, zone)
-	if session.source_zone is Zone:
-		_append_unique_zone(involved_zones, session.source_zone as Zone)
-	if session.hover_zone is Zone:
-		_append_unique_zone(involved_zones, session.hover_zone as Zone)
-	return involved_zones
-
-func _resolve_drag_coordinator(involved_zones: Array[Zone]) -> ZoneDragCoordinator:
-	for involved_zone in involved_zones:
-		var coordinator = involved_zone._get_drag_coordinator(false)
-		if coordinator != null:
-			return coordinator
-	return zone._get_drag_coordinator(false)
-
-func _append_unique_zone(zones: Array[Zone], candidate: Zone) -> void:
-	if candidate == null or candidate in zones:
-		return
-	zones.append(candidate)
+	_drag_session_cleanup.cleanup_drag_session(session, refresh_involved, emit_layout_changed)
 
 func _get_drop_global_position(session: ZoneDragSession) -> Vector2:
 	if session == null:
@@ -607,27 +365,10 @@ func _get_drop_global_position(session: ZoneDragSession) -> Vector2:
 	return Vector2.ZERO
 
 func make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
-	return ZoneTransferRequest.new(target_zone, source_zone, items, placement_target, global_position)
+	return _evaluator.make_transfer_request(target_zone, source_zone, items, placement_target, global_position)
 
 func _evaluate_drop_request(request: ZoneTransferRequest) -> ZoneTransferDecision:
-	var target = request.placement_target.duplicate_target() if request.placement_target != null else ZonePlacementTarget.invalid()
-	var space_model = context.get_space_model()
-	if space_model == null:
-		return ZoneTransferDecision.new(false, "This zone rejected the drop target.", ZonePlacementTarget.invalid())
-	if not space_model.is_target_valid(context, target):
-		return ZoneTransferDecision.new(false, "This zone rejected the drop target.", ZonePlacementTarget.invalid())
-	var decision = ZoneTransferDecision.new(true, "", target)
-	var transfer_policy = context.get_transfer_policy()
-	if transfer_policy != null:
-		decision = transfer_policy.evaluate_transfer(context, request)
-	if decision == null:
-		return ZoneTransferDecision.new(true, "", target)
-	return decision
+	return _evaluator.evaluate_drop_request(request)
 
 func resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
-	var decision = _evaluate_drop_request(request)
-	if decision == null:
-		decision = ZoneTransferDecision.new(true, "", request.placement_target)
-	if (decision.resolved_target == null or not decision.resolved_target.is_valid()) and request.placement_target != null and request.placement_target.is_valid():
-		return ZoneTransferDecision.new(decision.allowed, decision.reason, request.placement_target, decision.transfer_mode, decision.spawn_scene, decision.metadata)
-	return decision
+	return _evaluator.resolve_drop_decision(request)

@@ -1,5 +1,7 @@
 class_name ZoneTargetDecision extends RefCounted
 
+# Public decision contract returned by targeting policies and hover feedback.
+
 var allowed: bool = false
 var reason: String = ""
 var resolved_candidate: ZoneTargetCandidate = null

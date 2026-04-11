@@ -1,5 +1,7 @@
 class_name ZoneItemVisualState extends RefCounted
 
+# Public visual-state payload applied by Zone to managed items.
+
 var hovered: bool = false
 var selected: bool = false
 var target_candidate_active: bool = false

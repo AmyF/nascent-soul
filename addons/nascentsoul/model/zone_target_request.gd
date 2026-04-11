@@ -1,5 +1,7 @@
 class_name ZoneTargetRequest extends RefCounted
 
+# Public request payload passed into ZoneTargetingPolicy implementations.
+
 var source_zone: Node = null
 var source_item: Control = null
 var intent: ZoneTargetingIntent = null

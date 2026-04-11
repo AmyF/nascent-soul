@@ -1,6 +1,8 @@
 @tool
 class_name ZoneTransferPolicy extends Resource
 
+# Public extension point for transfer rules used from ZoneConfig.
+
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
 func evaluate_drag_start(context: ZoneContext, anchor_item: ZoneItemControl, selected_items: Array[ZoneItemControl]):

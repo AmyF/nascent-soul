@@ -1,5 +1,7 @@
 class_name ZonePlacement extends RefCounted
 
+# Public layout-to-display handoff model used by layout policies and displays.
+
 var item: Control = null
 var position: Vector2 = Vector2.ZERO
 var rotation: float = 0.0

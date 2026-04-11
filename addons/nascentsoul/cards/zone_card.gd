@@ -30,10 +30,6 @@ var _highlighted: bool = false
 		_highlighted = value
 		_refresh_visuals()
 
-var _hovered_visual: bool = false
-var _selected_visual: bool = false
-var _target_candidate_active: bool = false
-var _target_candidate_allowed: bool = false
 var _flip_tween: Tween = null
 var _visual_root: Control
 var _background_panel: Panel
@@ -77,16 +73,6 @@ func _kill_flip_tween() -> void:
 func _apply_flip_state(to_face_up: bool) -> void:
 	face_up = to_face_up
 
-func set_hovered_visual(value: bool) -> void:
-	var state = get_zone_visual_state()
-	state.hovered = value
-	apply_zone_visual_state(state)
-
-func set_selected_visual(value: bool) -> void:
-	var state = get_zone_visual_state()
-	state.selected = value
-	apply_zone_visual_state(state)
-
 func create_zone_drag_ghost(_context: ZoneContext) -> Control:
 	var ghost := Panel.new()
 	ghost.custom_minimum_size = _resolved_card_size()
@@ -123,12 +109,6 @@ func create_zone_targeting_intent(_command: ZoneTargetingCommand, _entry_mode: S
 
 func get_zone_target_anchor_global() -> Vector2:
 	return global_position + size * 0.5
-
-func set_target_candidate_visual(active: bool, allowed: bool) -> void:
-	var state = get_zone_visual_state()
-	state.target_candidate_active = active
-	state.target_candidate_allowed = allowed
-	apply_zone_visual_state(state)
 
 func create_zone_spawned_item(
 	_context: ZoneContext,
@@ -169,15 +149,8 @@ func create_zone_piece() -> Control:
 
 func apply_zone_visual_state(state: ZoneItemVisualState) -> void:
 	var next_state = state if state != null else ZoneItemVisualState.new()
-	var changed = _hovered_visual != next_state.hovered \
-		or _selected_visual != next_state.selected \
-		or _target_candidate_active != next_state.target_candidate_active \
-		or _target_candidate_allowed != next_state.target_candidate_allowed
+	var changed = did_zone_visual_state_change(next_state)
 	super.apply_zone_visual_state(next_state)
-	_hovered_visual = next_state.hovered
-	_selected_visual = next_state.selected
-	_target_candidate_active = next_state.target_candidate_active
-	_target_candidate_allowed = next_state.target_candidate_allowed
 	if changed:
 		_refresh_visuals()
 
@@ -278,7 +251,8 @@ func _refresh_visuals() -> void:
 	if not is_node_ready():
 		return
 	_ensure_nodes()
-	_apply_card_style()
+	var visual_state = get_zone_visual_state()
+	_apply_card_style(visual_state)
 	var title = data.title if data != null and data.title != "" else name
 	var cost_text = str(data.cost) if data != null else ""
 	_title_label.text = title
@@ -294,23 +268,23 @@ func _refresh_visuals() -> void:
 	_back_label.visible = not face_up
 	var overlay_alpha = 0.0
 	var overlay_color = Color(0.92, 0.86, 0.52, 1.0)
-	if _target_candidate_active:
+	if visual_state.target_candidate_active:
 		overlay_alpha = max(overlay_alpha, 0.30)
-		overlay_color = Color(0.44, 0.92, 0.62, 1.0) if _target_candidate_allowed else Color(1.0, 0.40, 0.40, 1.0)
+		overlay_color = Color(0.44, 0.92, 0.62, 1.0) if visual_state.target_candidate_allowed else Color(1.0, 0.40, 0.40, 1.0)
 	if highlighted:
 		overlay_alpha = max(overlay_alpha, 0.16)
-	if _selected_visual:
+	if visual_state.selected:
 		overlay_alpha = max(overlay_alpha, 0.26)
-	if _hovered_visual:
+	if visual_state.hovered:
 		overlay_alpha = max(overlay_alpha, 0.20)
 	_highlight_overlay.color = Color(overlay_color.r, overlay_color.g, overlay_color.b, overlay_alpha)
 	_highlight_overlay.visible = overlay_alpha > 0.0
 
-func _apply_card_style() -> void:
+func _apply_card_style(visual_state: ZoneItemVisualState) -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.13, 0.14, 0.19, 1.0) if face_up else Color(0.09, 0.11, 0.16, 1.0)
-	style.border_color = Color(1, 1, 1, 0.55) if _hovered_visual else Color(1, 1, 1, 0.2)
-	if _selected_visual:
+	style.border_color = Color(1, 1, 1, 0.55) if visual_state.hovered else Color(1, 1, 1, 0.2)
+	if visual_state.selected:
 		style.border_color = Color(0.95, 0.84, 0.44, 0.95)
 	style.border_width_left = 2
 	style.border_width_top = 2

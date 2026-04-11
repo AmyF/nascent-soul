@@ -1,6 +1,8 @@
 @tool
 class_name ZoneTargetingIntent extends Resource
 
+# Public targeting intent resource attached to items and targeting commands.
+
 @export var policy: ZoneTargetingPolicy
 @export var style_override: ZoneTargetingStyle
 @export var allowed_candidate_kinds: PackedInt32Array = PackedInt32Array([

@@ -854,7 +854,7 @@ func _apply_undo_transition(state: Dictionary, transition: Dictionary) -> bool:
 		if captured_coords is not Vector2i:
 			return false
 		var restored_piece = _create_piece(captured_side, captured_type)
-		_board_zone._get_transfer_service().set_transfer_handoff(restored_piece, restore_snapshot)
+		_board_zone.set_transfer_handoff(restored_piece, restore_snapshot)
 		if not _board_zone.add_item(restored_piece, ZonePlacementTarget.square(captured_coords.x, captured_coords.y)):
 			restored_piece.queue_free()
 			return false
