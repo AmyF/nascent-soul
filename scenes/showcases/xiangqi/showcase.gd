@@ -25,6 +25,12 @@ const UNDO_ANIMATION_PADDING := 0.08
 @onready var board_column: VBoxContainer = $RootMargin/RootVBox/ContentRow/BoardColumn
 @onready var board_panel: Panel = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel
 @onready var board_host: Control = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost
+@onready var board_overlay := $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/BoardOverlay as XiangqiBoardOverlayScript
+@onready var board_zone_scene: BattlefieldZone = $RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel/BoardHost/XiangqiBoardZone
+@onready var red_captures_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel/RedCapturesVBox/RedCapturesLabel
+@onready var turn_value_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/TurnValueLabel
+@onready var status_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox/StatusLabel
+@onready var black_captures_label: Label = $RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel/BlackCapturesVBox/BlackCapturesLabel
 
 var _board_zone: BattlefieldZone = null
 var _board_overlay: Control = null
@@ -180,33 +186,13 @@ func evaluate_xiangqi_target(request: ZoneTargetRequest) -> ZoneTargetDecision:
 func _build_board() -> void:
 	if _board_zone != null:
 		return
-	_space_model = ZoneSquareGridSpaceModel.new()
-	_space_model.columns = XiangqiStateModelScript.BOARD_COLUMNS
-	_space_model.rows = XiangqiStateModelScript.BOARD_ROWS
-	_space_model.cell_size = Vector2(72, 72)
-	_space_model.cell_spacing = Vector2.ZERO
-	_space_model.padding = Vector2(20, 20)
-	_board_overlay = XiangqiBoardOverlayScript.new()
-	_board_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_board_overlay.columns = XiangqiStateModelScript.BOARD_COLUMNS
-	_board_overlay.rows = XiangqiStateModelScript.BOARD_ROWS
-	_board_overlay.cell_size = _space_model.cell_size
-	_board_overlay.cell_spacing = _space_model.cell_spacing
-	_board_overlay.padding = _space_model.padding
-	board_host.add_child(_board_overlay)
-	var display_style := ZoneCardDisplay.new()
-	display_style.hovered_scale = 1.03
-	display_style.selected_scale = 1.02
-	display_style.hovered_lift = 0.0
-	display_style.selected_lift = 0.0
-	var interaction := ZoneInteraction.new()
-	interaction.drag_enabled = false
-	interaction.multi_select_enabled = false
-	interaction.keyboard_navigation_enabled = false
-	var transfer_policy := ZoneOccupancyTransferPolicy.new()
-	_board_zone = ExampleZoneSupport.make_battlefield_zone(board_host, "XiangqiBoardZone", _space_model, transfer_policy, display_style, interaction)
+	_board_zone = board_zone_scene
+	_board_overlay = board_overlay
+	_space_model = ExampleZoneSupport.get_zone_space_model(_board_zone) as ZoneSquareGridSpaceModel
+	if _board_zone == null or _board_overlay == null or _space_model == null:
+		push_error("Xiangqi showcase board surface is missing its scene-authored zone, overlay, or space model.")
+		return
 	_board.attach(_board_zone)
-	ExampleZoneSupport.set_zone_targeting_style(_board_zone, TargetingSupport.builtin_targeting_style(&"tactical"))
 	_board_zone.item_clicked.connect(_on_board_item_clicked)
 	_board_zone.targeting_started.connect(_on_targeting_started)
 	_board_zone.target_hover_state_changed.connect(_on_target_hover_state_changed)
@@ -366,10 +352,20 @@ func _record_capture(capturing_side: StringName, captured_piece: XiangqiPieceScr
 		_captured_by_black.append(captured_piece.glyph)
 
 func _refresh_side_panels() -> void:
-	pass
+	if is_instance_valid(red_captures_label):
+		red_captures_label.text = _captured_glyphs_text(_captured_by_red)
+	if is_instance_valid(black_captures_label):
+		black_captures_label.text = _captured_glyphs_text(_captured_by_black)
 
 func _refresh_turn_label() -> void:
-	pass
+	if not is_instance_valid(turn_value_label):
+		return
+	if _game_over and _winner_side != &"":
+		turn_value_label.text = "%s wins" % _side_name(_winner_side)
+		turn_value_label.modulate = WIN_STATUS_COLOR
+		return
+	turn_value_label.text = "%s to move" % _side_name(_current_side)
+	turn_value_label.modulate = NORMAL_STATUS_COLOR
 
 func _coords_label(coords: Vector2i) -> String:
 	return "(%d, %d)" % [coords.x, coords.y]
@@ -380,6 +376,9 @@ func _side_name(side: StringName) -> String:
 func _set_status(message: String, color: Color = NORMAL_STATUS_COLOR) -> void:
 	_last_status_message = message
 	_last_status_color = color
+	if is_instance_valid(status_label):
+		status_label.text = message
+		status_label.modulate = color
 
 func _queue_layout_refresh() -> void:
 	call_deferred("_apply_responsive_layout")
@@ -527,3 +526,8 @@ func _state_matches_board(state: Dictionary) -> bool:
 
 func _snapshot_board() -> Array:
 	return _state_model.snapshot_board(_board.get_pieces(), Callable(_board, "get_piece_coords"))
+
+func _captured_glyphs_text(glyphs: Array[String]) -> String:
+	if glyphs.is_empty():
+		return "None"
+	return " ".join(PackedStringArray(glyphs))

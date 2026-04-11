@@ -2,18 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/showcases/xiangqi/showcase.gd" id="1_scene"]
 [ext_resource type="Theme" path="res://scenes/showcases/shared/demo_theme.tres" id="2_theme"]
-
-[sub_resource type="StyleBoxFlat" id="XiangqiBoardPanel"]
-bg_color = Color(0.15, 0.10, 0.07, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.48, 0.33, 0.20, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
+[ext_resource type="PackedScene" path="res://scenes/showcases/xiangqi/board/xiangqi_board_surface.tscn" id="3_board_surface"]
 
 [sub_resource type="StyleBoxFlat" id="XiangqiSidePanel"]
 bg_color = Color(0.09, 0.11, 0.15, 0.98)
@@ -77,15 +66,70 @@ size_flags_vertical = 3
 layout_mode = 2
 theme_type_variation = &"DemoColumnVBox"
 
-[node name="BoardPanel" type="Panel" parent="RootMargin/RootVBox/ContentRow/BoardColumn"]
-custom_minimum_size = Vector2(688, 760)
-layout_mode = 2
-theme_override_styles/panel = SubResource("XiangqiBoardPanel")
+[node name="BoardPanel" parent="RootMargin/RootVBox/ContentRow/BoardColumn" instance=ExtResource("3_board_surface")]
 
-[node name="BoardHost" type="Control" parent="RootMargin/RootVBox/ContentRow/BoardColumn/BoardPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="InfoRow" type="HBoxContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="RedCapturesPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("XiangqiSidePanel")
+
+[node name="RedCapturesVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel"]
+layout_mode = 2
+
+[node name="RedCapturesHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel/RedCapturesVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Red Captures"
+
+[node name="RedCapturesLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/RedCapturesPanel/RedCapturesVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "None"
+
+[node name="TurnPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("XiangqiSidePanel")
+
+[node name="TurnVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel"]
+layout_mode = 2
+
+[node name="TurnHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Turn"
+
+[node name="TurnValueLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoDetailLabel"
+text = "Red to move"
+
+[node name="StatusLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/TurnPanel/TurnVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoStatusLabel"
+text = "Red moves first. Click a red piece to begin targeting."
+
+[node name="BlackCapturesPanel" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("XiangqiSidePanel")
+
+[node name="BlackCapturesVBox" type="VBoxContainer" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel"]
+layout_mode = 2
+
+[node name="BlackCapturesHeading" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel/BlackCapturesVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Black Captures"
+
+[node name="BlackCapturesLabel" type="Label" parent="RootMargin/RootVBox/ContentRow/BoardColumn/InfoRow/BlackCapturesPanel/BlackCapturesVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "None"

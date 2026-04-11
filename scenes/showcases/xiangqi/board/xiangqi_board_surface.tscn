@@ -1,0 +1,106 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/showcases/xiangqi/xiangqi_board_overlay.gd" id="1_overlay"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="2_zone_config"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_square_grid_space_model.gd" id="3_space_model"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/layouts/zone_battlefield_layout.gd" id="4_battlefield_layout"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/displays/zone_card_display.gd" id="5_card_display"]
+[ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="6_interaction"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/permissions/zone_occupancy_transfer_policy.gd" id="7_transfer_policy"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_drag_factory"]
+[ext_resource type="Script" path="res://addons/nascentsoul/impl/targeting/zone_target_allow_all_policy.gd" id="9_target_policy"]
+[ext_resource type="Resource" path="res://addons/nascentsoul/presets/targeting/tactical_beam_targeting_style.tres" id="10_target_style"]
+[ext_resource type="Script" path="res://addons/nascentsoul/core/battlefield_zone.gd" id="11_battlefield_zone"]
+
+[sub_resource type="StyleBoxFlat" id="XiangqiBoardPanel"]
+bg_color = Color(0.15, 0.10, 0.07, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.48, 0.33, 0.20, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="Resource" id="XiangqiBoardSpaceModel"]
+script = ExtResource("3_space_model")
+columns = 9
+rows = 10
+cell_size = Vector2(72, 72)
+cell_spacing = Vector2(0, 0)
+padding = Vector2(20, 20)
+
+[sub_resource type="Resource" id="XiangqiBoardLayout"]
+script = ExtResource("4_battlefield_layout")
+
+[sub_resource type="Resource" id="XiangqiBoardDisplay"]
+script = ExtResource("5_card_display")
+hovered_scale = 1.03
+selected_scale = 1.02
+hovered_lift = 0.0
+selected_lift = 0.0
+
+[sub_resource type="Resource" id="XiangqiBoardInteraction"]
+script = ExtResource("6_interaction")
+drag_enabled = false
+multi_select_enabled = false
+keyboard_navigation_enabled = false
+
+[sub_resource type="Resource" id="XiangqiBoardTransferPolicy"]
+script = ExtResource("7_transfer_policy")
+
+[sub_resource type="Resource" id="XiangqiBoardDragVisualFactory"]
+script = ExtResource("8_drag_factory")
+
+[sub_resource type="Resource" id="XiangqiBoardTargetPolicy"]
+script = ExtResource("9_target_policy")
+
+[sub_resource type="Resource" id="XiangqiBoardConfig"]
+script = ExtResource("2_zone_config")
+space_model = SubResource("XiangqiBoardSpaceModel")
+layout_policy = SubResource("XiangqiBoardLayout")
+display_style = SubResource("XiangqiBoardDisplay")
+interaction = SubResource("XiangqiBoardInteraction")
+transfer_policy = SubResource("XiangqiBoardTransferPolicy")
+targeting_style = ExtResource("10_target_style")
+targeting_policy = SubResource("XiangqiBoardTargetPolicy")
+drag_visual_factory = SubResource("XiangqiBoardDragVisualFactory")
+
+[node name="BoardPanel" type="Panel"]
+custom_minimum_size = Vector2(688, 760)
+layout_mode = 2
+theme_override_styles/panel = SubResource("XiangqiBoardPanel")
+
+[node name="BoardHost" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BoardOverlay" type="Control" parent="BoardHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_overlay")
+columns = 9
+rows = 10
+cell_size = Vector2(72, 72)
+cell_spacing = Vector2(0, 0)
+padding = Vector2(20, 20)
+
+[node name="XiangqiBoardZone" type="Control" parent="BoardHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("11_battlefield_zone")
+config = SubResource("XiangqiBoardConfig")
