@@ -146,6 +146,8 @@ For a fuller first walkthrough, read [docs/getting-started.md](docs/getting-star
 
 ## Showcase
 
+![FreeCell preview](assets/free_cell_preview.png)
+
 Use [`scenes/main_menu.tscn`](scenes/main_menu.tscn) as the public entry point.
 
 Read the examples in this order:
