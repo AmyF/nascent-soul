@@ -63,7 +63,7 @@ func resolve_target_decision(source_item: ZoneItemControl, intent: ZoneTargeting
 			return ZoneTargetDecision.new(false, source_decision.reason, resolve_target_candidate_from_decision(source_decision, resolved_candidate), metadata)
 		resolved_candidate = resolve_target_candidate_from_decision(source_decision, resolved_candidate)
 		request = ZoneTargetRequest.new(zone, source_item, intent, resolved_candidate, global_position)
-	var target_zone = resolved_candidate.target_zone as Zone
+	var target_zone = resolved_candidate.get_target_zone() as Zone
 	if target_zone != null:
 		var target_context = targeting_service.resolve_zone_context(target_zone)
 		var target_policy = target_context.get_targeting_policy()

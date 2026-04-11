@@ -64,6 +64,15 @@ func is_valid() -> bool:
 		_:
 			return false
 
+func has_target_zone() -> bool:
+	return target_zone != null and is_instance_valid(target_zone)
+
+func get_target_zone(default_value: Node = null) -> Node:
+	return target_zone if has_target_zone() else default_value
+
+func targets_zone(zone: Node) -> bool:
+	return zone != null and get_target_zone() == zone
+
 func is_item() -> bool:
 	return kind == CandidateKind.ITEM and is_valid()
 

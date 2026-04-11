@@ -34,10 +34,11 @@ func apply_targeting_feedback(session: ZoneTargetingSession, next_candidate: Zon
 		_set_target_candidate_visual(highlight_item, false, previous_decision.allowed)
 		highlight_item = next_item
 		_set_target_candidate_visual(highlight_item, highlight_item != null, next_allowed)
+	var target_zone = session.get_target_zone()
 	if not _target_candidates_match(previous_candidate, session.candidate):
-		targeting_service.emit_target_preview_changed(session.source_item, session.candidate.target_zone, session.candidate)
+		targeting_service.emit_target_preview_changed(session.source_item, target_zone, session.candidate)
 	if not _target_decisions_match(previous_decision, session.decision):
-		targeting_service.emit_target_hover_state_changed(session.source_item, session.candidate.target_zone, session.decision)
+		targeting_service.emit_target_hover_state_changed(session.source_item, target_zone, session.decision)
 
 func clear_targeting_feedback(emit_clear_signals: bool, source_item: ZoneItemControl = null) -> void:
 	var had_candidate = candidate != null and candidate.is_valid()

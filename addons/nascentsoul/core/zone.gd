@@ -91,7 +91,7 @@ func _exit_tree() -> void:
 	var targeting_coordinator = ZoneRuntimePortScript.resolve_targeting_coordinator(self, false)
 	if targeting_coordinator != null and targeting_coordinator.get_session() != null:
 		var session = targeting_coordinator.get_session()
-		if session.source_zone == self or session.candidate.target_zone == self:
+		if session.source_zone == self or session.targets_zone(self):
 			targeting_coordinator.clear_session()
 	_unbind_items_root_signals(_items_root)
 	_cleanup_runtime_services()

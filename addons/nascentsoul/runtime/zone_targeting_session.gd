@@ -34,3 +34,12 @@ func cleanup() -> void:
 	intent = null
 	candidate = ZoneTargetCandidate.invalid()
 	decision = ZoneTargetDecision.new()
+
+func has_target_zone() -> bool:
+	return candidate != null and candidate.has_target_zone()
+
+func get_target_zone(default_value: Node = null) -> Node:
+	return candidate.get_target_zone(default_value) if candidate != null else default_value
+
+func targets_zone(zone: Node) -> bool:
+	return candidate != null and candidate.targets_zone(zone)

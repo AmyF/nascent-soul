@@ -22,7 +22,7 @@ func matches(request: ZoneTargetRequest) -> bool:
 		if not _matches_item_script(request.candidate.target_item, target_item_script):
 			return false
 	if target_zone_name != "":
-		var target_zone = request.candidate.target_zone as Zone
+		var target_zone = request.candidate.get_target_zone() as Zone
 		if target_zone == null or target_zone.name != target_zone_name:
 			return false
 	if target_candidate_kind != ZoneTargetCandidate.CandidateKind.NONE and request.candidate.kind != target_candidate_kind:
