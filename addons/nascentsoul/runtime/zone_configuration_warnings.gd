@@ -7,8 +7,17 @@ static func build(zone: Zone, context: ZoneContext, is_expected_direct_child: Ca
 	var warnings := PackedStringArray()
 	if zone == null or context == null:
 		return warnings
+	var resolved_space = context.get_space_model()
 	var resolved_layout = context.get_layout_policy()
 	var resolved_display = context.get_display_style()
+	if zone is CardZone and not _is_linear_space_model(resolved_space):
+		warnings.append("CardZone expects ZoneLinearSpaceModel semantics. Use a linear card-zone preset, or switch this node to BattlefieldZone if it should target a board.")
+	if zone is BattlefieldZone and not _is_battlefield_space_model(resolved_space):
+		warnings.append("BattlefieldZone expects a square or hex grid space model. Use a battlefield preset, or switch this node to CardZone/Zone if the items should stay in a linear lane.")
+	if resolved_layout is ZoneBattlefieldLayout and not _is_battlefield_space_model(resolved_space):
+		warnings.append("ZoneBattlefieldLayout expects ZoneSquareGridSpaceModel or ZoneHexGridSpaceModel. Pair battlefield layouts with a board-style space model.")
+	if _is_linear_layout(resolved_layout) and _is_battlefield_space_model(resolved_space):
+		warnings.append("Hand, pile, and row layouts expect ZoneLinearSpaceModel. Pair linear card layouts with CardZone or a linear Zone config instead of a battlefield grid.")
 	if zone.clip_contents and (resolved_layout is ZoneHandLayout or resolved_layout is ZonePileLayout or resolved_display is ZoneCardDisplay):
 		warnings.append("Zone clips its children. Hover lift, drag previews, and pile overlap may be cut off.")
 	if zone.size != Vector2.ZERO:
@@ -23,3 +32,12 @@ static func build(zone: Zone, context: ZoneContext, is_expected_direct_child: Ca
 			warnings.append("Direct child '%s' is not managed. Put zone items under ItemsRoot instead of attaching them directly to Zone." % child.name)
 			break
 	return warnings
+
+static func _is_linear_layout(layout: ZoneLayoutPolicy) -> bool:
+	return layout is ZoneHBoxLayout or layout is ZoneHandLayout or layout is ZonePileLayout
+
+static func _is_linear_space_model(space_model: ZoneSpaceModel) -> bool:
+	return space_model is ZoneLinearSpaceModel
+
+static func _is_battlefield_space_model(space_model: ZoneSpaceModel) -> bool:
+	return space_model is ZoneSquareGridSpaceModel or space_model is ZoneHexGridSpaceModel
