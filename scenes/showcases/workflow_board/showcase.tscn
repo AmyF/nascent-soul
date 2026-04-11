@@ -30,16 +30,20 @@ content_margin_right = 14.0
 content_margin_bottom = 14.0
 
 [sub_resource type="StyleBoxFlat" id="WorkflowLaneZonePanel"]
-bg_color = Color(0.07, 0.11, 0.17, 1)
+bg_color = Color(0.05, 0.08, 0.13, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.23, 0.33, 0.44, 1)
+border_color = Color(0.18, 0.28, 0.40, 1)
 corner_radius_top_left = 14
 corner_radius_top_right = 14
 corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
 
 [sub_resource type="StyleBoxFlat" id="WorkflowCountPill"]
 bg_color = Color(0.19, 0.31, 0.48, 1)
@@ -75,8 +79,8 @@ script = ExtResource("8_drag_factory")
 
 [sub_resource type="Resource" id="WorkflowLaneLayout"]
 script = ExtResource("10_vbox_layout")
-item_spacing = 12.0
-padding_top = 12.0
+item_spacing = 14.0
+padding_top = 16.0
 
 [sub_resource type="Resource" id="WorkflowAllowAllPolicy"]
 script = ExtResource("11_allow_all_transfer")
@@ -203,12 +207,30 @@ autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
 text = "Scene-authored lane with the plain starter config."
 
-[node name="BacklogZone" type="Control" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
-custom_minimum_size = Vector2(0, 380)
+[node name="BacklogLaneBody" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("WorkflowLaneZonePanel")
+
+[node name="BacklogScroll" type="ScrollContainer" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogLaneBody"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BacklogZoneHost" type="Control" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogLaneBody/BacklogScroll"]
+custom_minimum_size = Vector2(0, 380)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BacklogZone" type="Control" parent="RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogLaneBody/BacklogScroll/BacklogZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("3_card_zone")
 config = SubResource("WorkflowLaneConfig")
 
@@ -247,12 +269,30 @@ autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
 text = "This column uses a tiny example-side transfer policy with a WIP limit of 3."
 
-[node name="InProgressZone" type="Control" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
-custom_minimum_size = Vector2(0, 380)
+[node name="InProgressLaneBody" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("WorkflowLaneZonePanel")
+
+[node name="InProgressScroll" type="ScrollContainer" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressLaneBody"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="InProgressZoneHost" type="Control" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressLaneBody/InProgressScroll"]
+custom_minimum_size = Vector2(0, 380)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="InProgressZone" type="Control" parent="RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressLaneBody/InProgressScroll/InProgressZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("3_card_zone")
 config = SubResource("WorkflowInProgressConfig")
 
@@ -291,12 +331,30 @@ autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
 text = "Destination lane using the same scene-authored base config."
 
-[node name="DoneZone" type="Control" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
-custom_minimum_size = Vector2(0, 380)
+[node name="DoneLaneBody" type="PanelContainer" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("WorkflowLaneZonePanel")
+
+[node name="DoneScroll" type="ScrollContainer" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneLaneBody"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DoneZoneHost" type="Control" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneLaneBody/DoneScroll"]
+custom_minimum_size = Vector2(0, 380)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DoneZone" type="Control" parent="RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneLaneBody/DoneScroll/DoneZoneHost"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("3_card_zone")
 config = SubResource("WorkflowLaneConfig")
 

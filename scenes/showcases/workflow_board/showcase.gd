@@ -3,6 +3,7 @@ extends Control
 const WorkflowTaskCardScript = preload("res://scenes/showcases/workflow_board/workflow_task_card.gd")
 
 const WIP_LIMIT := 3
+const LANE_MIN_CONTENT_HEIGHT := 380.0
 const SAMPLE_TASKS := [
 	{
 		"id": "starter-shell",
@@ -55,9 +56,15 @@ const ACCENT_BY_LABEL := {
 
 @onready var reset_button: Button = $RootMargin/RootVBox/HeaderVBox/ActionRow/ResetButton
 @onready var status_label: Label = $RootMargin/RootVBox/HeaderVBox/ActionRow/StatusLabel
-@onready var backlog_zone: Zone = $RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogZone
-@onready var in_progress_zone: Zone = $RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressZone
-@onready var done_zone: Zone = $RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneZone
+@onready var backlog_scroll: ScrollContainer = $RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogLaneBody/BacklogScroll
+@onready var in_progress_scroll: ScrollContainer = $RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressLaneBody/InProgressScroll
+@onready var done_scroll: ScrollContainer = $RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneLaneBody/DoneScroll
+@onready var backlog_zone_host: Control = $RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogLaneBody/BacklogScroll/BacklogZoneHost
+@onready var in_progress_zone_host: Control = $RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressLaneBody/InProgressScroll/InProgressZoneHost
+@onready var done_zone_host: Control = $RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneLaneBody/DoneScroll/DoneZoneHost
+@onready var backlog_zone: Zone = $RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogLaneBody/BacklogScroll/BacklogZoneHost/BacklogZone
+@onready var in_progress_zone: Zone = $RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressLaneBody/InProgressScroll/InProgressZoneHost/InProgressZone
+@onready var done_zone: Zone = $RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneLaneBody/DoneScroll/DoneZoneHost/DoneZone
 @onready var backlog_count_label: Label = $RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogHeaderRow/BacklogCountPanel/BacklogCountLabel
 @onready var in_progress_count_label: Label = $RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressHeaderRow/InProgressCountPanel/InProgressCountLabel
 @onready var done_count_label: Label = $RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneHeaderRow/DoneCountPanel/DoneCountLabel
@@ -67,10 +74,13 @@ var _is_resetting := false
 
 func _ready() -> void:
 	reset_button.pressed.connect(_reset_board)
+	resized.connect(_queue_lane_surface_refresh)
+	visibility_changed.connect(_queue_lane_surface_refresh)
 	_bind_zone_events(backlog_zone, "Backlog")
 	_bind_zone_events(in_progress_zone, "In Progress")
 	_bind_zone_events(done_zone, "Done")
 	_reset_board()
+	_queue_lane_surface_refresh()
 
 func _reset_board() -> void:
 	_is_resetting = true
@@ -135,9 +145,10 @@ func _refresh_lane_counts() -> void:
 	backlog_count_label.text = _count_text(backlog_zone)
 	in_progress_count_label.text = "%d / %d" % [in_progress_zone.get_item_count(), WIP_LIMIT]
 	done_count_label.text = _count_text(done_zone)
+	_queue_lane_surface_refresh()
 
 func _refresh_teaching_copy() -> void:
-	teaching_label.text = "Scene: 3 CardZone nodes in showcase.tscn. Config: 2 local ZoneConfig resources. Rule: WorkflowWipLimitPolicy only on In Progress. Controller: this file just seeds tasks, resets the board, updates counts, and surfaces rejection copy."
+	teaching_label.text = "Scene: 3 CardZone nodes with scrollable lane bodies in showcase.tscn. Config: 2 local ZoneConfig resources. Rule: WorkflowWipLimitPolicy only on In Progress. Controller: this file just seeds tasks, resets the board, updates counts, and surfaces rejection copy."
 
 func _count_text(zone: Zone) -> String:
 	var count = zone.get_item_count()
@@ -157,3 +168,44 @@ func _accent_for_label(label: String) -> Color:
 
 func _set_status(message: String) -> void:
 	status_label.text = message
+
+func _queue_lane_surface_refresh() -> void:
+	if not is_node_ready():
+		return
+	call_deferred("_refresh_lane_surfaces")
+
+func _refresh_lane_surfaces() -> void:
+	_sync_lane_surface(backlog_zone, backlog_zone_host, backlog_scroll)
+	_sync_lane_surface(in_progress_zone, in_progress_zone_host, in_progress_scroll)
+	_sync_lane_surface(done_zone, done_zone_host, done_scroll)
+
+func _sync_lane_surface(zone: Zone, zone_host: Control, scroll: ScrollContainer) -> void:
+	if zone == null or zone_host == null or scroll == null:
+		return
+	var lane_height = max(max(LANE_MIN_CONTENT_HEIGHT, scroll.size.y), _lane_content_height(zone))
+	zone_host.custom_minimum_size = Vector2(0.0, lane_height)
+	zone.custom_minimum_size = Vector2(0.0, lane_height)
+
+func _lane_content_height(zone: Zone) -> float:
+	var items = zone.get_items()
+	var total_height = _layout_padding(zone) * 2.0
+	for item in items:
+		total_height += _item_height(item)
+	if items.size() > 1:
+		total_height += float(items.size() - 1) * _layout_spacing(zone)
+	return max(LANE_MIN_CONTENT_HEIGHT, total_height)
+
+func _item_height(item: ZoneItemControl) -> float:
+	if item == null:
+		return WorkflowTaskCardScript.TASK_SIZE.y
+	if item.custom_minimum_size.y > 0.0:
+		return item.custom_minimum_size.y
+	if item.size.y > 0.0:
+		return item.size.y
+	return WorkflowTaskCardScript.TASK_SIZE.y
+
+func _layout_spacing(zone: Zone) -> float:
+	return float(zone.config.layout_policy.get("item_spacing")) if zone != null and zone.config != null and zone.config.layout_policy != null else 0.0
+
+func _layout_padding(zone: Zone) -> float:
+	return float(zone.config.layout_policy.get("padding_top")) if zone != null and zone.config != null and zone.config.layout_policy != null else 0.0

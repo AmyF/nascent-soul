@@ -1,6 +1,6 @@
 extends ZoneCard
 
-const TASK_SIZE := Vector2(176, 108)
+const TASK_SIZE := Vector2(188, 116)
 const DEFAULT_ACCENT := Color(0.24, 0.53, 0.86, 1.0)
 
 var task_id: String = ""
@@ -56,21 +56,25 @@ func _refresh_visuals() -> void:
 func _apply_card_style(visual_state: ZoneItemVisualState) -> void:
 	var resolved_accent = accent_color if accent_color.a > 0.0 else DEFAULT_ACCENT
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.95, 0.97, 1.0, 1.0)
+	style.bg_color = resolved_accent.lerp(Color(0.98, 0.99, 1.0, 1.0), 0.84)
 	style.border_color = resolved_accent.darkened(0.18)
 	if visual_state.hovered:
-		style.border_color = resolved_accent.lightened(0.08)
+		style.border_color = resolved_accent.darkened(0.04)
 	if visual_state.selected:
 		style.border_color = Color(0.96, 0.77, 0.28, 1.0)
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
+	style.border_width_left = 1
+	style.border_width_top = 6
+	style.border_width_right = 1
+	style.border_width_bottom = 1
 	style.corner_radius_top_left = 12
 	style.corner_radius_top_right = 12
 	style.corner_radius_bottom_right = 12
 	style.corner_radius_bottom_left = 12
 	_background_panel.add_theme_stylebox_override("panel", style)
+	_title_label.add_theme_color_override("font_color", Color(0.08, 0.13, 0.20, 1.0))
+	_title_label.add_theme_color_override("font_outline_color", Color(1.0, 1.0, 1.0, 0.0))
+	_cost_label.add_theme_color_override("font_color", resolved_accent.darkened(0.34))
+	_tag_label.add_theme_color_override("font_color", Color(0.29, 0.35, 0.44, 1.0))
 
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings := PackedStringArray()
@@ -83,24 +87,27 @@ func _get_configuration_warnings() -> PackedStringArray:
 func _ensure_task_layout() -> void:
 	_title_label.offset_left = 14
 	_title_label.offset_top = 14
-	_title_label.offset_right = -14
-	_title_label.offset_bottom = 48
+	_title_label.offset_right = -86
+	_title_label.offset_bottom = 62
 	_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_title_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_title_label.add_theme_font_size_override("font_size", 15)
 	_cost_label.anchor_left = 1.0
 	_cost_label.anchor_right = 1.0
-	_cost_label.offset_left = -70
+	_cost_label.offset_left = -82
 	_cost_label.offset_top = 14
 	_cost_label.offset_right = -14
-	_cost_label.offset_bottom = 36
+	_cost_label.offset_bottom = 38
 	_cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_cost_label.add_theme_font_size_override("font_size", 12)
 	_tag_label.anchor_right = 1.0
 	_tag_label.anchor_bottom = 1.0
 	_tag_label.offset_left = 14
-	_tag_label.offset_top = -30
+	_tag_label.offset_top = -34
 	_tag_label.offset_right = -14
 	_tag_label.offset_bottom = -12
 	_tag_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_tag_label.add_theme_font_size_override("font_size", 12)
 
 func _sync_task_metadata() -> void:
 	if data == null:

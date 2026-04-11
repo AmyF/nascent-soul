@@ -1,6 +1,12 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
 const WORKFLOW_BOARD_SCENE = preload("res://scenes/showcases/workflow_board/showcase.tscn")
+const BACKLOG_ZONE_PATH := "RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogLaneBody/BacklogScroll/BacklogZoneHost/BacklogZone"
+const IN_PROGRESS_ZONE_PATH := "RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressLaneBody/InProgressScroll/InProgressZoneHost/InProgressZone"
+const DONE_ZONE_PATH := "RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneLaneBody/DoneScroll/DoneZoneHost/DoneZone"
+const BACKLOG_SCROLL_PATH := "RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogLaneBody/BacklogScroll"
+const IN_PROGRESS_SCROLL_PATH := "RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressLaneBody/InProgressScroll"
+const DONE_SCROLL_PATH := "RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneLaneBody/DoneScroll"
 
 func _init() -> void:
 	_suite_name = "workflow-board-showcase"
@@ -31,9 +37,9 @@ func _test_initial_board_state() -> void:
 	var reset_button = scene.get_node_or_null("RootMargin/RootVBox/HeaderVBox/ActionRow/ResetButton") as Button
 	var status_label = scene.get_node_or_null("RootMargin/RootVBox/HeaderVBox/ActionRow/StatusLabel") as Label
 	var teaching_label = scene.get_node_or_null("RootMargin/RootVBox/TeachingPanel/TeachingLabel") as Label
-	var backlog_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogZone") as Zone
-	var in_progress_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressZone") as Zone
-	var done_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneZone") as Zone
+	var backlog_zone = scene.get_node_or_null(BACKLOG_ZONE_PATH) as Zone
+	var in_progress_zone = scene.get_node_or_null(IN_PROGRESS_ZONE_PATH) as Zone
+	var done_zone = scene.get_node_or_null(DONE_ZONE_PATH) as Zone
 	var backlog_count_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogHeaderRow/BacklogCountPanel/BacklogCountLabel") as Label
 	var in_progress_count_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressHeaderRow/InProgressCountPanel/InProgressCountLabel") as Label
 	var done_count_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneHeaderRow/DoneCountPanel/DoneCountLabel") as Label
@@ -48,13 +54,16 @@ func _test_initial_board_state() -> void:
 	_check(backlog_zone != null and _zone_item_names(backlog_zone).has("tag-pills") and _zone_item_names(backlog_zone).has("policy-note"), "workflow board should seed the expected backlog task cards")
 	_check(in_progress_zone != null and _zone_item_names(in_progress_zone).has("lane-copy") and _zone_item_names(in_progress_zone).has("spacing-pass"), "workflow board should seed the expected in-progress task cards")
 	_check(done_zone != null and _zone_item_names(done_zone) == ["starter-shell"], "workflow board should seed the finished starter-shell task in Done")
+	var sample_card = backlog_zone.get_items()[0] as ZoneCard if backlog_zone != null and backlog_zone.get_item_count() > 0 else null
+	var title_label = sample_card.get_node_or_null("VisualRoot/TitleLabel") as Label if sample_card != null else null
+	_check(title_label != null and title_label.get_theme_color("font_color").r < 0.35 and title_label.get_theme_color("font_color").g < 0.35, "workflow board task cards should override the shared light-on-dark label theme with a darker readable title color")
 	_check(status_label != null and status_label.text.contains("Backlog") and status_label.text.contains("WIP limit"), "workflow board should expose visible starter guidance after seeding the sample board")
-	_check(teaching_label != null and teaching_label.text.contains("3 CardZone nodes") and teaching_label.text.contains("WorkflowWipLimitPolicy"), "workflow board should explain its scene/config/policy split in the teaching footer")
+	_check(teaching_label != null and teaching_label.text.contains("scrollable lane bodies") and teaching_label.text.contains("WorkflowWipLimitPolicy"), "workflow board should explain its scene/config/policy split in the teaching footer")
 
 func _test_wip_limit_status_flow() -> void:
 	var scene = await _spawn_scene()
-	var backlog_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogZone") as Zone
-	var in_progress_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressZone") as Zone
+	var backlog_zone = scene.get_node_or_null(BACKLOG_ZONE_PATH) as Zone
+	var in_progress_zone = scene.get_node_or_null(IN_PROGRESS_ZONE_PATH) as Zone
 	var status_label = scene.get_node_or_null("RootMargin/RootVBox/HeaderVBox/ActionRow/StatusLabel") as Label
 	var in_progress_count_label = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressHeaderRow/InProgressCountPanel/InProgressCountLabel") as Label
 	_check(backlog_zone != null and in_progress_zone != null, "workflow board WIP test should mount both source and target lanes")
@@ -75,8 +84,8 @@ func _test_wip_limit_status_flow() -> void:
 func _test_reset_restores_sample_board() -> void:
 	var scene = await _spawn_scene()
 	var reset_button = scene.get_node_or_null("RootMargin/RootVBox/HeaderVBox/ActionRow/ResetButton") as Button
-	var backlog_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogZone") as Zone
-	var done_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneZone") as Zone
+	var backlog_zone = scene.get_node_or_null(BACKLOG_ZONE_PATH) as Zone
+	var done_zone = scene.get_node_or_null(DONE_ZONE_PATH) as Zone
 	var status_label = scene.get_node_or_null("RootMargin/RootVBox/HeaderVBox/ActionRow/StatusLabel") as Label
 	_check(reset_button != null and backlog_zone != null and done_zone != null, "workflow board reset test should mount the reset button and lane zones")
 	if reset_button == null or backlog_zone == null or done_zone == null:
@@ -95,11 +104,15 @@ func _test_embedded_layout_contract() -> void:
 	var scene = await _spawn_scene_in_host(Vector2(980, 760))
 	var action_row = scene.get_node_or_null("RootMargin/RootVBox/HeaderVBox/ActionRow") as Control
 	var content_row = scene.get_node_or_null("RootMargin/RootVBox/ContentRow") as Control
-	var backlog_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/BacklogPanel/BacklogVBox/BacklogZone") as Zone
-	var in_progress_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/InProgressPanel/InProgressVBox/InProgressZone") as Zone
-	var done_zone = scene.get_node_or_null("RootMargin/RootVBox/ContentRow/DonePanel/DoneVBox/DoneZone") as Zone
+	var backlog_scroll = scene.get_node_or_null(BACKLOG_SCROLL_PATH) as ScrollContainer
+	var in_progress_scroll = scene.get_node_or_null(IN_PROGRESS_SCROLL_PATH) as ScrollContainer
+	var done_scroll = scene.get_node_or_null(DONE_SCROLL_PATH) as ScrollContainer
+	var backlog_zone = scene.get_node_or_null(BACKLOG_ZONE_PATH) as Zone
+	var in_progress_zone = scene.get_node_or_null(IN_PROGRESS_ZONE_PATH) as Zone
+	var done_zone = scene.get_node_or_null(DONE_ZONE_PATH) as Zone
 	_check(action_row != null and action_row.size.y > 0.0, "workflow board should keep its starter action row visible inside an embedded host")
 	_check(content_row != null and content_row.size.y > 0.0, "workflow board should keep its three-column content row visible inside an embedded host")
+	_check(backlog_scroll != null and in_progress_scroll != null and done_scroll != null, "workflow board should keep scrollable lane bodies mounted inside an embedded host")
 	_check(backlog_zone != null and _all_items_within(backlog_zone, backlog_zone, 2.0), "workflow board backlog cards should stay within the embedded lane bounds")
 	_check(in_progress_zone != null and _all_items_within(in_progress_zone, in_progress_zone, 2.0), "workflow board in-progress cards should stay within the embedded lane bounds")
 	_check(done_zone != null and _all_items_within(done_zone, done_zone, 2.0), "workflow board done cards should stay within the embedded lane bounds")
