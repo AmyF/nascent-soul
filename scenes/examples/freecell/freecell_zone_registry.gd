@@ -1,6 +1,6 @@
 extends RefCounted
 
-const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
 const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card.gd")
 const FreeCellZonePolicyScript = preload("res://scenes/examples/freecell/freecell_zone_policy.gd")
 
@@ -100,7 +100,7 @@ func _collect_scene_zones(row: Control, role: StringName, policy_controller: Obj
 		var zone = (lane as Node).get_node_or_null("ZoneHost") as Zone
 		if zone == null:
 			continue
-		var policy = ExampleSupport.get_zone_transfer_policy(zone)
+		var policy = ExampleZoneSupport.get_zone_transfer_policy(zone)
 		if policy is FreeCellZonePolicyScript:
 			(policy as FreeCellZonePolicyScript).controller = policy_controller
 		_zone_info[zone] = {
@@ -115,7 +115,7 @@ func _collect_scene_zones(row: Control, role: StringName, policy_controller: Obj
 func _collect_zone_policies() -> Array:
 	var policies: Array = []
 	for zone in all_zones_ref():
-		var policy = ExampleSupport.get_zone_transfer_policy(zone)
+		var policy = ExampleZoneSupport.get_zone_transfer_policy(zone)
 		if policy != null and policy not in policies:
 			policies.append(policy)
 	return policies

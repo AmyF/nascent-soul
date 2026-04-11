@@ -1,6 +1,6 @@
 extends Control
 
-const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
 const FreeCellCardFactoryScript = preload("res://scenes/examples/freecell/freecell_card_factory.gd")
 const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card.gd")
 const FreeCellHistoryScript = preload("res://scenes/examples/freecell/freecell_history.gd")
@@ -139,7 +139,7 @@ func try_move_cards(items: Array[ZoneItemControl], target_zone: Zone) -> bool:
 	var source_zone = _move_rules.zone_for_item(items[0])
 	if source_zone == null:
 		return false
-	return ExampleSupport.transfer_items(source_zone, items, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
+	return ExampleZoneSupport.transfer_items(source_zone, items, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
 
 func try_auto_foundation(card: Control) -> bool:
 	if _history.is_undo_animation_active():
@@ -361,7 +361,7 @@ func _move_card_to_foundation(card: FreeCellCardScript) -> bool:
 	var target_zone = _move_rules.foundation_zone_for_card(card)
 	if target_zone == null:
 		return false
-	return ExampleSupport.move_item(source_zone, card, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
+	return ExampleZoneSupport.move_item(source_zone, card, target_zone, ZonePlacementTarget.linear(target_zone.get_item_count()))
 
 func _build_deal_state(deal_number: int) -> Dictionary:
 	return FreeCellStateModelScript.build_deal_state(deal_number)
@@ -433,7 +433,7 @@ func _restore_state_from_history(state: Dictionary) -> bool:
 		_zones.tableau_zones_ref(),
 		Callable(_move_rules, "zone_for_item"),
 		Callable(self, "_move_card_for_restore"),
-		Callable(ExampleSupport, "reorder_items"),
+		Callable(ExampleZoneSupport, "reorder_items"),
 		Callable(self, "_clear_selection_all"),
 		Callable(self, "_hide_select_game_overlay"),
 		_last_deal_number,
@@ -466,7 +466,7 @@ func _move_card_for_restore(card: ZoneItemControl, source_zone: Zone, target_zon
 
 func _freecell_animation_duration() -> float:
 	for zone in _all_zones():
-		var display_style = ExampleSupport.get_zone_display_style(zone)
+		var display_style = ExampleZoneSupport.get_zone_display_style(zone)
 		if display_style is ZoneTweenDisplay:
 			return max(0.0, (display_style as ZoneTweenDisplay).duration)
 	return 0.0

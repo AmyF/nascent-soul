@@ -1,6 +1,6 @@
 extends Control
 
-const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
 
 const SUITE_SCENES := [
 	preload("res://scenes/tests/suites/battlefield_smoke_suite.tscn"),
@@ -48,8 +48,8 @@ func _run_all() -> void:
 		await get_tree().process_frame
 
 func _cleanup_resources() -> void:
-	if ExampleSupport != null:
-		ExampleSupport.clear_card_texture_cache()
+	if ExampleItemSupport != null:
+		ExampleItemSupport.clear_card_texture_cache()
 	_cleanup_viewport_helpers()
 	await get_tree().process_frame
 

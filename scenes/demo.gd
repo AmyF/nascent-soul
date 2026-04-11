@@ -1,6 +1,6 @@
 extends Control
 
-const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
 
 @export var freecell_scene: PackedScene
 @export var xiangqi_scene: PackedScene
@@ -45,7 +45,7 @@ func _shutdown_headless() -> void:
 func _cleanup_before_quit() -> void:
 	_cleanup_current_content()
 	_cleanup_viewport_helpers()
-	ExampleSupport.clear_card_texture_cache()
+	ExampleItemSupport.clear_card_texture_cache()
 	var tree = get_tree()
 	if tree == null:
 		return

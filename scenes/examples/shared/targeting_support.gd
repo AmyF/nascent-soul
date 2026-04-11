@@ -1,6 +1,6 @@
 class_name TargetingSupport extends RefCounted
 
-const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
 const ZonePieceScript = preload("res://addons/nascentsoul/pieces/zone_piece.gd")
 const ZoneTargetRuleTablePolicyScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule_table_policy.gd")
 const ZoneTargetRuleScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule.gd")
@@ -49,12 +49,12 @@ static func _coerce_builtin_style_id(index_or_id) -> StringName:
 	return &"classic"
 
 static func make_spell_card(title: String, cost: int = 2, tags: Array = ["spell", "target"]) -> ZoneCard:
-	var card = ExampleSupport.make_card(title, cost, tags, true)
+	var card = ExampleItemSupport.make_card(title, cost, tags, true)
 	card.zone_targeting_intent_override = _make_enemy_spell_intent(title)
 	return card
 
 static func make_target_piece(title: String, team: String, attack: int, defense: int) -> ZonePiece:
-	var piece = ExampleSupport.make_piece(title, team, attack, defense)
+	var piece = ExampleItemSupport.make_piece(title, team, attack, defense)
 	var metadata = piece.get_zone_item_metadata()
 	metadata["target_team"] = team
 	piece.set_zone_item_metadata(metadata)

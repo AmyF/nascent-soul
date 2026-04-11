@@ -1,7 +1,8 @@
 extends Control
 class_name ZoneTestHarness
 
-const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
+const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
 
 var _checks_run: int = 0
 var _failures: Array[String] = []
@@ -14,7 +15,7 @@ func run_suite() -> Dictionary:
 	await _run_suite()
 	await _reset_root()
 	await _cleanup_viewport_helpers()
-	ExampleSupport.clear_card_texture_cache()
+	ExampleItemSupport.clear_card_texture_cache()
 	return {
 		"name": _suite_name,
 		"checks": _checks_run,
@@ -52,19 +53,19 @@ func _zone_item_names(zone: Zone) -> Array[String]:
 	return names
 
 func _move_item(source_zone: Zone, item: Control, target_zone: Zone, placement_target: ZonePlacementTarget = null) -> bool:
-	return ExampleSupport.move_item(source_zone, item, target_zone, placement_target)
+	return ExampleZoneSupport.move_item(source_zone, item, target_zone, placement_target)
 
 func _transfer_items(source_zone: Zone, items: Array, target_zone: Zone, placement_target: ZonePlacementTarget = null) -> bool:
-	return ExampleSupport.transfer_items(source_zone, items, target_zone, placement_target)
+	return ExampleZoneSupport.transfer_items(source_zone, items, target_zone, placement_target)
 
 func _reorder_items(zone: Zone, items: Array, placement_target: ZonePlacementTarget = null) -> bool:
-	return ExampleSupport.reorder_items(zone, items, placement_target)
+	return ExampleZoneSupport.reorder_items(zone, items, placement_target)
 
 func _begin_item_targeting(zone: Zone, item: Control, intent: ZoneTargetingIntent = null, pointer_global_position: Vector2 = Vector2.ZERO) -> bool:
-	return ExampleSupport.begin_item_targeting(zone, item, intent, pointer_global_position)
+	return ExampleZoneSupport.begin_item_targeting(zone, item, intent, pointer_global_position)
 
 func _first_open_target(zone: Zone, item: Control) -> ZonePlacementTarget:
-	return ExampleSupport.get_first_open_target(zone, item)
+	return ExampleZoneSupport.get_first_open_target(zone, item)
 
 func _drag_session(zone: Zone) -> ZoneDragSession:
 	return zone.get_drag_session() if zone != null else null

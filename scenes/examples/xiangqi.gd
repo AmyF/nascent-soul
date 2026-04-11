@@ -1,6 +1,6 @@
 extends Control
 
-const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
+const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
 const TargetingSupport = preload("res://scenes/examples/shared/targeting_support.gd")
 const XiangqiBoardOverlayScript = preload("res://scenes/examples/xiangqi/xiangqi_board_overlay.gd")
 const XiangqiBoardRegistryScript = preload("res://scenes/examples/xiangqi/xiangqi_board_registry.gd")
@@ -203,9 +203,9 @@ func _build_board() -> void:
 	interaction.multi_select_enabled = false
 	interaction.keyboard_navigation_enabled = false
 	var transfer_policy := ZoneOccupancyTransferPolicy.new()
-	_board_zone = ExampleSupport.make_battlefield_zone(board_host, "XiangqiBoardZone", _space_model, transfer_policy, display_style, interaction)
+	_board_zone = ExampleZoneSupport.make_battlefield_zone(board_host, "XiangqiBoardZone", _space_model, transfer_policy, display_style, interaction)
 	_board.attach(_board_zone)
-	ExampleSupport.set_zone_targeting_style(_board_zone, TargetingSupport.builtin_targeting_style(&"tactical"))
+	ExampleZoneSupport.set_zone_targeting_style(_board_zone, TargetingSupport.builtin_targeting_style(&"tactical"))
 	_board_zone.item_clicked.connect(_on_board_item_clicked)
 	_board_zone.targeting_started.connect(_on_targeting_started)
 	_board_zone.target_hover_state_changed.connect(_on_target_hover_state_changed)
@@ -233,7 +233,7 @@ func _on_board_item_clicked(item: Control) -> void:
 		_set_status("It is %s's turn." % _side_name(_current_side), REJECT_STATUS_COLOR)
 		return
 	var intent = _make_targeting_intent()
-	if ExampleSupport.begin_item_targeting(_board_zone, piece, intent):
+	if ExampleZoneSupport.begin_item_targeting(_board_zone, piece, intent):
 		_set_status("%s selected. Choose a legal destination." % piece.display_name())
 
 func _on_targeting_started(source_item: Control, _source_zone: Zone, _intent: ZoneTargetingIntent) -> void:
@@ -289,7 +289,7 @@ func _attempt_piece_move(piece: XiangqiPieceScript, target_coords: Vector2i, ann
 		_record_capture(piece.side, captured_piece)
 		if _board_zone.remove_item(captured_piece):
 			captured_piece.queue_free()
-	var moved = ExampleSupport.move_item(_board_zone, piece, _board_zone, ZonePlacementTarget.square(target_coords.x, target_coords.y))
+	var moved = ExampleZoneSupport.move_item(_board_zone, piece, _board_zone, ZonePlacementTarget.square(target_coords.x, target_coords.y))
 	if not moved:
 		if announce:
 			_set_status("The battlefield could not apply that move.", REJECT_STATUS_COLOR)
@@ -478,7 +478,7 @@ func _apply_undo_transition(state: Dictionary, transition: Dictionary) -> bool:
 	if String(moved_piece.side) != str(moving.get("side", "")) or String(moved_piece.piece_type) != str(moving.get("type", "")):
 		return false
 	var restore_snapshot = _piece_restore_snapshot(moved_piece)
-	if not ExampleSupport.move_item(_board_zone, moved_piece, _board_zone, ZonePlacementTarget.square(from_coords.x, from_coords.y)):
+	if not ExampleZoneSupport.move_item(_board_zone, moved_piece, _board_zone, ZonePlacementTarget.square(from_coords.x, from_coords.y)):
 		return false
 	var captured = transition.get("captured", {})
 	if not captured.is_empty():
@@ -507,7 +507,7 @@ func _piece_restore_snapshot(piece: XiangqiPieceScript) -> Dictionary:
 func _xiangqi_animation_duration() -> float:
 	if _board_zone == null:
 		return 0.0
-	var display_style = ExampleSupport.get_zone_display_style(_board_zone)
+	var display_style = ExampleZoneSupport.get_zone_display_style(_board_zone)
 	if display_style is ZoneTweenDisplay:
 		return max(0.0, (display_style as ZoneTweenDisplay).duration)
 	return 0.0
