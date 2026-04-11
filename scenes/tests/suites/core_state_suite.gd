@@ -12,6 +12,8 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_base_zone_defaults()
 	await _reset_root()
+	await _test_configuration_warning_guardrails()
+	await _reset_root()
 	await _test_runtime_port_contract()
 	await _reset_root()
 	await _test_runtime_hook_boundary_contract()

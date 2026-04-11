@@ -210,6 +210,28 @@ func _test_base_zone_defaults() -> void:
 	_check(zone.get_transfer_policy() is ZoneAllowAllTransferPolicy, "base Zone default config should still use the allow-all transfer policy")
 	_check(zone.get_display_style() is ZoneCardDisplay, "base Zone default config should keep the standard card display style")
 
+func _test_configuration_warning_guardrails() -> void:
+	var card_space_panel = _make_panel("WarningCardSpacePanel", Vector2(24, 24), Vector2(360, 220))
+	var card_space_zone = ExampleSupport.make_zone(card_space_panel, "WarningCardSpaceZone", ZoneHBoxLayout.new())
+	ExampleSupport.set_zone_space_model(card_space_zone, ZoneSquareGridSpaceModel.new())
+	var battlefield_space_panel = _make_panel("WarningBattlefieldSpacePanel", Vector2(420, 24), Vector2(420, 220))
+	var battlefield_space_zone = ExampleSupport.make_battlefield_zone(battlefield_space_panel, "WarningBattlefieldSpaceZone", ZoneSquareGridSpaceModel.new(), ZoneOccupancyTransferPolicy.new())
+	ExampleSupport.set_zone_space_model(battlefield_space_zone, ZoneLinearSpaceModel.new())
+	var battlefield_layout_panel = _make_panel("WarningBattlefieldLayoutPanel", Vector2(24, 280), Vector2(360, 220))
+	var battlefield_layout_zone = ExampleSupport.make_zone(battlefield_layout_panel, "WarningBattlefieldLayoutZone", ZoneBattlefieldLayout.new())
+	var linear_layout_panel = _make_panel("WarningLinearLayoutPanel", Vector2(420, 280), Vector2(420, 220))
+	var linear_layout_zone = ExampleSupport.make_battlefield_zone(linear_layout_panel, "WarningLinearLayoutZone", ZoneSquareGridSpaceModel.new(), ZoneOccupancyTransferPolicy.new())
+	ExampleSupport.set_zone_layout_policy(linear_layout_zone, ZoneHBoxLayout.new())
+	await _settle_frames(2)
+	var card_space_warnings = card_space_zone._get_configuration_warnings()
+	var battlefield_space_warnings = battlefield_space_zone._get_configuration_warnings()
+	var battlefield_layout_warnings = battlefield_layout_zone._get_configuration_warnings()
+	var linear_layout_warnings = linear_layout_zone._get_configuration_warnings()
+	_check(_warnings_include(card_space_warnings, "CardZone expects ZoneLinearSpaceModel semantics."), "CardZone should warn when configured with a battlefield grid space model")
+	_check(_warnings_include(battlefield_space_warnings, "BattlefieldZone expects a square or hex grid space model."), "BattlefieldZone should warn when configured with a linear space model")
+	_check(_warnings_include(battlefield_layout_warnings, "ZoneBattlefieldLayout expects ZoneSquareGridSpaceModel or ZoneHexGridSpaceModel."), "battlefield layout should warn when paired with a linear space model")
+	_check(_warnings_include(linear_layout_warnings, "Hand, pile, and row layouts expect ZoneLinearSpaceModel."), "linear layouts should warn when paired with a battlefield grid")
+
 func _test_runtime_port_contract() -> void:
 	var panel = _make_panel("RuntimePortPanel", Vector2(24, 24), Vector2(620, 260))
 	var zone = ExampleSupport.make_zone(panel, "RuntimePortZone", ZoneHBoxLayout.new())
@@ -891,3 +913,9 @@ func _control_name_list(items: Array[ZoneItemControl]) -> Array[String]:
 	for item in items:
 		names.append(item.name)
 	return names
+
+func _warnings_include(warnings: PackedStringArray, snippet: String) -> bool:
+	for warning in warnings:
+		if warning.contains(snippet):
+			return true
+	return false
