@@ -2,7 +2,7 @@ extends RefCounted
 
 const ExampleZoneSupport = preload("res://scenes/showcases/shared/example_zone_support.gd")
 const FreeCellCardScript = preload("res://scenes/showcases/freecell/freecell_card.gd")
-const FreeCellLaneViewScript = preload("res://scenes/showcases/freecell/ui/freecell_lane_view.gd")
+const ShowcaseZoneLaneViewScript = preload("res://scenes/showcases/shared/ui/showcase_zone_lane_view.gd")
 const FreeCellZonePolicyScript = preload("res://scenes/showcases/freecell/freecell_zone_policy.gd")
 
 var _tableau_zones: Array[Zone] = []
@@ -98,7 +98,7 @@ func _collect_scene_zones(row: Control, role: StringName, policy_controller: Obj
 	for child in row.get_children():
 		if child is not Control:
 			continue
-		if (child as Control).get_script() != FreeCellLaneViewScript:
+		if (child as Control).get_script() != ShowcaseZoneLaneViewScript:
 			continue
 		lane_views.append(child)
 	lane_views.sort_custom(func(a, b): return int(a.call("get_lane_index")) < int(b.call("get_lane_index")))

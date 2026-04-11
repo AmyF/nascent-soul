@@ -12,8 +12,8 @@
 [ext_resource type="Script" path="res://scenes/showcases/freecell/freecell_slot_layout.gd" id="10_freecell_slot_layout"]
 [ext_resource type="Script" path="res://scenes/showcases/freecell/freecell_tableau_layout.gd" id="11_freecell_tableau_layout"]
 [ext_resource type="Script" path="res://scenes/showcases/freecell/freecell_zone_policy.gd" id="12_freecell_zone_policy"]
-[ext_resource type="Script" path="res://scenes/showcases/freecell/ui/freecell_lane_view.gd" id="13_freecell_lane_view"]
-[ext_resource type="PackedScene" path="res://scenes/showcases/freecell/ui/freecell_select_game_overlay.tscn" id="14_select_game_overlay"]
+[ext_resource type="Script" path="res://scenes/showcases/shared/ui/showcase_zone_lane_view.gd" id="13_lane_view"]
+[ext_resource type="PackedScene" path="res://scenes/showcases/shared/ui/showcase_number_prompt.tscn" id="14_select_game_overlay"]
 
 [sub_resource type="StyleBoxFlat" id="FreeCellWindowFrame"]
 bg_color = Color(0.0, 0.50, 0.0, 1)
@@ -243,7 +243,7 @@ theme_override_constants/separation = 8
 [node name="Cell1" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
 layout_mode = 2
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"freecell"
 lane_index = 0
 theme_override_styles/panel = SubResource("FreeCellSlotPanel")
@@ -270,7 +270,7 @@ mouse_filter = 2
 [node name="Cell2" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
 layout_mode = 2
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"freecell"
 lane_index = 1
 theme_override_styles/panel = SubResource("FreeCellSlotPanel")
@@ -297,7 +297,7 @@ mouse_filter = 2
 [node name="Cell3" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
 layout_mode = 2
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"freecell"
 lane_index = 2
 theme_override_styles/panel = SubResource("FreeCellSlotPanel")
@@ -324,7 +324,7 @@ mouse_filter = 2
 [node name="Cell4" type="Panel" parent="RootMargin/RootVBox/TopRow/FreeCellsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
 layout_mode = 2
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"freecell"
 lane_index = 3
 theme_override_styles/panel = SubResource("FreeCellSlotPanel")
@@ -359,7 +359,7 @@ theme_override_constants/separation = 8
 [node name="Foundation1" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
 layout_mode = 2
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"foundation"
 lane_index = 0
 theme_override_styles/panel = SubResource("FreeCellFoundationPanel")
@@ -386,7 +386,7 @@ mouse_filter = 2
 [node name="Foundation2" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
 layout_mode = 2
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"foundation"
 lane_index = 1
 theme_override_styles/panel = SubResource("FreeCellFoundationPanel")
@@ -413,7 +413,7 @@ mouse_filter = 2
 [node name="Foundation3" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
 layout_mode = 2
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"foundation"
 lane_index = 2
 theme_override_styles/panel = SubResource("FreeCellFoundationPanel")
@@ -440,7 +440,7 @@ mouse_filter = 2
 [node name="Foundation4" type="Panel" parent="RootMargin/RootVBox/TopRow/FoundationsSlotsRow"]
 custom_minimum_size = Vector2(82, 114)
 layout_mode = 2
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"foundation"
 lane_index = 3
 theme_override_styles/panel = SubResource("FreeCellFoundationPanel")
@@ -478,7 +478,7 @@ theme_override_constants/separation = 8
 custom_minimum_size = Vector2(82, 380)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"tableau"
 lane_index = 0
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
@@ -506,7 +506,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(82, 380)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"tableau"
 lane_index = 1
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
@@ -534,7 +534,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(82, 380)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"tableau"
 lane_index = 2
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
@@ -562,7 +562,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(82, 380)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"tableau"
 lane_index = 3
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
@@ -590,7 +590,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(82, 380)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"tableau"
 lane_index = 4
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
@@ -618,7 +618,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(82, 380)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"tableau"
 lane_index = 5
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
@@ -646,7 +646,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(82, 380)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"tableau"
 lane_index = 6
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
@@ -674,7 +674,7 @@ mouse_filter = 2
 custom_minimum_size = Vector2(82, 380)
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("13_freecell_lane_view")
+script = ExtResource("13_lane_view")
 lane_role = &"tableau"
 lane_index = 7
 theme_override_styles/panel = SubResource("FreeCellTableauPanel")
@@ -717,3 +717,5 @@ theme_type_variation = &"DemoStatusLabel"
 text = "Classic FreeCell ready."
 
 [node name="SelectGameOverlay" parent="." instance=ExtResource("14_select_game_overlay")]
+title_text = "Select Game"
+detail_text = "Enter a classic Microsoft FreeCell deal number."

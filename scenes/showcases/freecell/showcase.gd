@@ -9,6 +9,7 @@ const FreeCellMoveRulesScript = preload("res://scenes/showcases/freecell/freecel
 const FreeCellRulesScript = preload("res://scenes/showcases/freecell/freecell_rules.gd")
 const FreeCellStateModelScript = preload("res://scenes/showcases/freecell/freecell_state_model.gd")
 const FreeCellZoneRegistryScript = preload("res://scenes/showcases/freecell/freecell_zone_registry.gd")
+const ShowcaseNumberPromptScript = preload("res://scenes/showcases/shared/ui/showcase_number_prompt.gd")
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
 const GAME_MENU_NEW := 1
@@ -42,10 +43,7 @@ const DEAL_MAX := FreeCellRulesScript.DEAL_MAX
 @onready var victory_label: Label = $RootMargin/RootVBox/VictoryLabel
 @onready var status_bar: PanelContainer = $RootMargin/RootVBox/StatusBar
 @onready var status_label: Label = $RootMargin/RootVBox/StatusBar/StatusLabel
-@onready var select_game_overlay: Control = $SelectGameOverlay
-@onready var select_game_spin_box: SpinBox = $SelectGameOverlay/DialogPanel/DialogVBox/SelectGameSpinBox
-@onready var select_game_ok_button: Button = $SelectGameOverlay/DialogPanel/DialogVBox/ButtonRow/SelectGameOkButton
-@onready var select_game_cancel_button: Button = $SelectGameOverlay/DialogPanel/DialogVBox/ButtonRow/SelectGameCancelButton
+@onready var select_game_overlay := $SelectGameOverlay as ShowcaseNumberPromptScript
 
 var _rng := RandomNumberGenerator.new()
 var _last_deal_number: int = 1
@@ -79,7 +77,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if key_event.keycode == KEY_ENTER or key_event.keycode == KEY_KP_ENTER:
-			_on_select_game_confirmed()
+			select_game_overlay.confirm()
 			get_viewport().set_input_as_handled()
 			return
 	if key_event.keycode == KEY_F2:
@@ -190,14 +188,11 @@ func evaluate_freecell_drag_start(zone_role: StringName, _zone_index: int, conte
 	return _move_rules.evaluate_drag_start(zone_role, context, anchor_item)
 
 func _wire_controls() -> void:
-	select_game_overlay.visible = false
-	select_game_spin_box.min_value = 1
-	select_game_spin_box.max_value = DEAL_MAX
-	select_game_spin_box.step = 1
+	select_game_overlay.hide_prompt()
+	select_game_overlay.configure_range(1, DEAL_MAX, 1)
 	new_game_button.pressed.connect(_on_new_game_button_pressed)
 	undo_button.pressed.connect(_on_undo_button_pressed)
-	select_game_ok_button.pressed.connect(_on_select_game_confirmed)
-	select_game_cancel_button.pressed.connect(_hide_select_game_overlay)
+	select_game_overlay.confirmed.connect(_on_select_game_confirmed)
 
 	var game_popup = game_menu_button.get_popup()
 	game_popup.clear()
@@ -299,18 +294,15 @@ func _on_new_game_button_pressed() -> void:
 func _on_undo_button_pressed() -> void:
 	undo_last_move()
 
-func _on_select_game_confirmed() -> void:
-	var next_deal = int(select_game_spin_box.value)
+func _on_select_game_confirmed(next_deal: int) -> void:
 	_hide_select_game_overlay()
 	start_new_game(next_deal)
 
 func _show_select_game_overlay() -> void:
-	select_game_spin_box.value = _last_deal_number
-	select_game_overlay.visible = true
-	select_game_spin_box.grab_focus()
+	select_game_overlay.popup_prompt(_last_deal_number)
 
 func _hide_select_game_overlay() -> void:
-	select_game_overlay.visible = false
+	select_game_overlay.hide_prompt()
 
 func _select_single_card(zone: Zone, card: Control) -> void:
 	if zone == null or card == null:

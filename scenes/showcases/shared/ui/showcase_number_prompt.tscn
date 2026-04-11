@@ -1,6 +1,8 @@
-[gd_scene format=3]
+[gd_scene load_steps=2 format=3]
 
-[sub_resource type="StyleBoxFlat" id="FreeCellDialogPanel"]
+[ext_resource type="Script" path="res://scenes/showcases/shared/ui/showcase_number_prompt.gd" id="1_prompt"]
+
+[sub_resource type="StyleBoxFlat" id="ShowcaseDialogPanel"]
 bg_color = Color(0.93, 0.92, 0.86, 1)
 border_width_left = 1
 border_width_top = 1
@@ -12,7 +14,7 @@ content_margin_top = 14.0
 content_margin_right = 14.0
 content_margin_bottom = 14.0
 
-[node name="SelectGameOverlay" type="Control"]
+[node name="ShowcaseNumberPrompt" type="Control"]
 visible = false
 z_index = 10
 layout_mode = 3
@@ -22,6 +24,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
+script = ExtResource("1_prompt")
 
 [node name="Shade" type="ColorRect" parent="."]
 layout_mode = 1
@@ -47,7 +50,7 @@ offset_right = 160.0
 offset_bottom = 94.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("FreeCellDialogPanel")
+theme_override_styles/panel = SubResource("ShowcaseDialogPanel")
 
 [node name="DialogVBox" type="VBoxContainer" parent="DialogPanel"]
 layout_mode = 2
@@ -56,13 +59,13 @@ theme_override_constants/separation = 10
 [node name="TitleLabel" type="Label" parent="DialogPanel/DialogVBox"]
 layout_mode = 2
 theme_type_variation = &"DemoBlueHeading"
-text = "Select Game"
+text = "Select Value"
 
 [node name="DetailLabel" type="Label" parent="DialogPanel/DialogVBox"]
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "Enter a classic Microsoft FreeCell deal number."
+text = "Enter a value."
 
 [node name="SelectGameSpinBox" type="SpinBox" parent="DialogPanel/DialogVBox"]
 layout_mode = 2
