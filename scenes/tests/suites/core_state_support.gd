@@ -6,6 +6,7 @@ const ZoneCompositeTransferPolicyScript = preload("res://addons/nascentsoul/impl
 const ZoneConfigurableDragVisualFactoryScript = preload("res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd")
 const ZoneGroupSortScript = preload("res://addons/nascentsoul/impl/sorts/zone_group_sort.gd")
 const ZoneRuntimePortScript = preload("res://addons/nascentsoul/runtime/zone_runtime_port.gd")
+const TargetingSupport = preload("res://scenes/showcases/shared/targeting_support.gd")
 const HAND_CONFIG = preload("res://addons/nascentsoul/presets/hand_zone_config.tres")
 const BOARD_CONFIG = preload("res://addons/nascentsoul/presets/board_zone_config.tres")
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
@@ -775,6 +776,66 @@ func _test_drag_cancel_cleanup() -> void:
 	_check(alpha.visible, "cancel should restore the dragged item visibility")
 	_check(_zone_item_names(zone) == ["Alpha"], "cancel should preserve the logical order")
 	_check(_unmanaged_control_names(zone).is_empty(), "cancel should clear any ghost controls")
+
+func _test_invalid_targeting_feedback_handles_missing_target_zone() -> void:
+	var panel = _make_panel("InvalidTargetFeedbackPanel", Vector2(24, 24), Vector2(860, 520))
+	var square_space := ZoneSquareGridSpaceModel.new()
+	square_space.columns = 4
+	square_space.rows = 3
+	var battlefield = ExampleSupport.make_battlefield_zone(panel, "InvalidTargetFeedbackZone", square_space, ZoneOccupancyTransferPolicy.new())
+	var piece = TargetingSupport.make_target_piece("Guardian", "ally", 3, 5)
+	battlefield.add_item(piece, ZonePlacementTarget.square(0, 0))
+	await _settle_frames(2)
+	var preview_target_zones: Array = []
+	var hover_target_zones: Array = []
+	battlefield.target_preview_changed.connect(func(_source_item, target_zone, _candidate) -> void:
+		preview_target_zones.append(target_zone)
+	)
+	battlefield.target_hover_state_changed.connect(func(_source_item, target_zone, _decision) -> void:
+		hover_target_zones.append(target_zone)
+	)
+	var intent = TargetingSupport.make_square_placement_intent("Guardian Dash")
+	_check(_begin_item_targeting(battlefield, piece, intent), "invalid targeting feedback test should start explicit targeting")
+	var session = battlefield.get_targeting_session()
+	_check(session != null, "invalid targeting feedback test requires an active targeting session")
+	if session == null:
+		return
+	_update_targeting_session(battlefield, session, battlefield.resolve_target_anchor(ZonePlacementTarget.square(2, 1)))
+	_update_targeting_session(battlefield, session, battlefield.global_position - Vector2(96, 96))
+	_check(not session.candidate.is_valid(), "moving outside every target zone should resolve an invalid candidate")
+	_check(not session.has_target_zone() and session.get_target_zone() == null, "invalid targeting candidates should resolve a null target zone through the session helper")
+	_check(not preview_target_zones.is_empty() and preview_target_zones[preview_target_zones.size() - 1] == null, "invalid targeting feedback should emit a null target zone instead of dereferencing a missing candidate zone")
+	_check(not hover_target_zones.is_empty() and hover_target_zones[hover_target_zones.size() - 1] == null, "invalid targeting hover feedback should also clear the target zone payload")
+	battlefield.cancel_targeting()
+	await _settle_frames(1)
+
+func _test_invalid_targeting_candidate_survives_unrelated_zone_teardown() -> void:
+	var source_panel = _make_panel("InvalidTargetTeardownSourcePanel", Vector2(24, 24), Vector2(420, 220))
+	var target_panel = _make_panel("InvalidTargetTeardownTargetPanel", Vector2(24, 280), Vector2(720, 420))
+	var source_zone = ExampleSupport.make_zone(source_panel, "InvalidTargetTeardownSourceZone", ZoneHBoxLayout.new())
+	var square_space := ZoneSquareGridSpaceModel.new()
+	square_space.columns = 3
+	square_space.rows = 2
+	var battlefield = ExampleSupport.make_battlefield_zone(target_panel, "InvalidTargetTeardownBattlefieldZone", square_space, ZoneOccupancyTransferPolicy.new())
+	var spell = TargetingSupport.make_spell_card("Meteor")
+	var enemy = TargetingSupport.make_target_piece("Enemy Sentinel", "enemy", 3, 3)
+	source_zone.add_item(spell)
+	battlefield.add_item(enemy, ZonePlacementTarget.square(1, 0))
+	await _settle_frames(2)
+	var invalid_pointer = source_zone.global_position - Vector2(96, 96)
+	_check(_begin_item_targeting(source_zone, spell, null, invalid_pointer), "invalid teardown test should start targeting even when the pointer begins off every target zone")
+	var session = source_zone.get_targeting_session()
+	_check(session != null, "invalid teardown test requires an active targeting session")
+	if session == null:
+		return
+	_check(not session.candidate.is_valid() and session.get_target_zone() == null, "starting outside every target zone should keep the targeting candidate invalid")
+	battlefield.queue_free()
+	await _settle_frames(3)
+	_check(source_zone.get_targeting_session() != null, "freeing an unrelated zone should not break an active targeting session with an invalid candidate")
+	source_zone.cancel_targeting()
+	await _settle_frames(2)
+	_check(source_zone.get_targeting_session() == null, "cancelling after unrelated zone teardown should still clear the targeting session cleanly")
+	_check(_unmanaged_control_names(source_zone).is_empty(), "invalid teardown cleanup should not leave unmanaged controls in the source zone")
 
 func _test_external_reconciliation() -> void:
 	var panel = _make_panel("ReconcilePanel", Vector2(24, 24), Vector2(620, 260))
