@@ -40,6 +40,17 @@ var config := ZoneConfig.make_card_defaults().with_overrides({
 hand.config = config
 ```
 
+## Common Setup Guardrails
+
+Keep the built-in zone families and config pieces aligned:
+
+- `CardZone` -> `ZoneLinearSpaceModel`
+- `BattlefieldZone` -> `ZoneSquareGridSpaceModel` or `ZoneHexGridSpaceModel`
+- `ZoneBattlefieldLayout` -> board-style grid spaces
+- `ZoneHBoxLayout`, `ZoneHandLayout`, `ZonePileLayout` -> linear spaces
+
+NascentSoul now surfaces these built-in mismatches as editor configuration warnings. If a zone shows warnings in the Inspector, fix that pairing before debugging transfer or targeting behavior.
+
 ## First Card Zone
 
 ```gdscript
@@ -115,4 +126,4 @@ Each action creates a zone node, assigns a preset config, and drops it into the 
 - Read [Transfers and Targeting](transfers-and-targeting.md) for cross-zone actions and targeting flows.
 - Read [Extending Policies](extending-policies.md) and [Extending Layouts](extending-layouts.md) once the stock presets are no longer enough.
 - Read [Game Implementation Checklist](game-implementation-checklist.md) when you are turning a prototype into a real game scene.
-- Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and start with the two public showcases: `FreeCell`, then `Xiangqi`. Open [`scenes/demo.tscn`](../scenes/demo.tscn) only if you specifically want the compatibility shell that keeps those same two showcases together when launched directly.
+- Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and walk the two public showcases in order: `FreeCell`, then `Xiangqi`. Open [`scenes/demo.tscn`](../scenes/demo.tscn) only if you specifically want the compatibility shell that keeps those same two showcases together when launched directly.

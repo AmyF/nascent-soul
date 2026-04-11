@@ -25,6 +25,15 @@ If the game creates zones dynamically, start from:
 - `ZoneConfig.make_card_defaults()`
 - `ZoneConfig.make_battlefield_defaults()`
 
+Keep the built-in pieces aligned:
+
+- `CardZone` + `ZoneLinearSpaceModel`
+- `BattlefieldZone` + `ZoneSquareGridSpaceModel` / `ZoneHexGridSpaceModel`
+- linear layouts (`ZoneHBoxLayout`, `ZoneHandLayout`, `ZonePileLayout`) + linear spaces
+- `ZoneBattlefieldLayout` + grid spaces
+
+The editor now warns on those incompatible built-in combinations. Treat configuration warnings as setup bugs, not as optional polish.
+
 ## 3. Decide What Lives In Item Data
 
 Store per-item gameplay facts in your item data or metadata, for example:
@@ -82,24 +91,22 @@ When the controller starts growing, use the same helper pattern as the built-in 
 
 FreeCell and Xiangqi now both follow that structure.
 
-## 7. Teach Through Examples
+## 7. Teach Through References
 
-Walk the built-in examples in this order when you need a reference:
+Walk the reference material in this order when you need help:
 
-| Example | What it teaches |
+1. [Transfers and Targeting](transfers-and-targeting.md)
+2. [Extending Policies](extending-policies.md)
+3. [Extending Layouts](extending-layouts.md)
+4. `FreeCell`
+5. `Xiangqi`
+
+| Reference | What it teaches |
 | --- | --- |
-| `Transfer` | basic cross-zone movement and destination-driven acceptance |
-| `Layouts` | how layout choice changes the same runtime surface |
-| `Rules` | transfer-policy variation and rule-focused behavior changes |
-| `Recipes` | config composition patterns worth reusing |
-| `Square` | square-grid targets and battlefield placement |
-| `Hex` | hex-grid targets and battlefield placement |
-| `Modes` | transfer outcomes such as direct placement vs spawned results |
-| `Targeting` | explicit item/cell targeting and hover feedback |
-| `FreeCell` | a full card game controller built on public APIs |
-| `Xiangqi` | a full board game controller using battlefields and targeting |
+| `FreeCell` | scene-authored card lanes, move rules, carry-capacity checks, history/restore structure |
+| `Xiangqi` | scene-authored battlefield setup, board targeting, state orchestration, and side-panel UX |
 
-Use [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) as the public first screen for this path.
+Use [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) as the public first screen for the showcase half of this path.
 
 ## 8. Add Regression Coverage
 
@@ -115,7 +122,7 @@ When a suite gets too large, split it by story:
 
 - scene contracts / serialized authoring checks
 - launcher and navigation flows
-- example behavior stories
+- showcase behavior stories
 - showcase-specific rule suites
 
-The current `demo-*` suites are organized that way on purpose.
+The current core, launcher, and showcase suites are organized that way on purpose.

@@ -130,15 +130,9 @@ Read and run things in this order:
 6. [Game Implementation Checklist](game-implementation-checklist.md)
 7. [Architecture](../ARCHITECTURE.md)
 
-Then walk the main-menu examples in order:
+Then walk the two public main-menu showcases in order:
 
-1. `Transfer`
-2. `Layouts`
-3. `Rules`
-4. `Recipes`
-5. `Square`
-6. `Hex`
-7. `Modes`
-8. `Targeting`
-9. `FreeCell`
-10. `Xiangqi`
+1. `FreeCell`
+2. `Xiangqi`
+
+For smaller transfer/layout/targeting questions, use the focused docs above instead of looking for the old deleted demo scenes.

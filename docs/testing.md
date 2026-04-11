@@ -14,7 +14,7 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `591` checks
+- full regression runner passes with `607` checks
 - headless editor load succeeds with the plugin enabled
 - launcher regression coverage now focuses on the two public showcase entry points
 
@@ -22,7 +22,7 @@ Validated on Godot 4.6.1:
 
 - core zone contracts
 - core transfer contracts
-- core runtime resilience and cleanup
+- core runtime resilience, cleanup, and targeting edge cases
 - card-zone interaction
 - battlefield behavior
 - layout visual contracts
@@ -76,8 +76,9 @@ That keeps the core regression output closer to the way a maintainer reads the a
 
 The current core suites intentionally protect the new teaching seams too:
 
-- `core-zone-contracts` locks the `Zone` facade plus the internal runtime-port/runtime-hook lookup seam.
+- `core-zone-contracts` locks the `Zone` facade, the runtime-port/runtime-hook lookup seam, and the new configuration-warning guardrails.
 - `core-transfer-contracts` exercises the routed transfer workflow rather than relying on one monolithic transfer service file.
+- `core-runtime-resilience` now also protects invalid targeting candidates, unrelated-zone teardown, and cleanup guarantees that are easy to break during refactors.
 - `interaction-smoke` and showcase suites keep the input binding / pointer / selection split honest through real drag, click, and long-press behavior.
 
 ## Useful Commands
