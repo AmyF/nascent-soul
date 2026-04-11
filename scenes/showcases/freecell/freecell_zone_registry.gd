@@ -2,6 +2,7 @@ extends RefCounted
 
 const ExampleZoneSupport = preload("res://scenes/showcases/shared/example_zone_support.gd")
 const FreeCellCardScript = preload("res://scenes/showcases/freecell/freecell_card.gd")
+const FreeCellLaneViewScript = preload("res://scenes/showcases/freecell/ui/freecell_lane_view.gd")
 const FreeCellZonePolicyScript = preload("res://scenes/showcases/freecell/freecell_zone_policy.gd")
 
 var _tableau_zones: Array[Zone] = []
@@ -93,19 +94,28 @@ func clear_selection_all() -> void:
 
 func _collect_scene_zones(row: Control, role: StringName, policy_controller: Object, bind_zone_events: Callable) -> Array[Zone]:
 	var zones: Array[Zone] = []
-	for index in range(row.get_child_count()):
-		var lane = row.get_child(index)
-		if lane is not Node:
+	var lane_views: Array = []
+	for child in row.get_children():
+		if child is not Control:
 			continue
-		var zone = (lane as Node).get_node_or_null("ZoneHost") as Zone
+		if (child as Control).get_script() != FreeCellLaneViewScript:
+			continue
+		lane_views.append(child)
+	lane_views.sort_custom(func(a, b): return int(a.call("get_lane_index")) < int(b.call("get_lane_index")))
+	for lane in lane_views:
+		var lane_role := StringName(lane.call("get_lane_role"))
+		if lane_role != role:
+			continue
+		var zone = lane.call("resolve_zone") as Zone
 		if zone == null:
 			continue
 		var policy = ExampleZoneSupport.get_zone_transfer_policy(zone)
 		if policy is FreeCellZonePolicyScript:
 			(policy as FreeCellZonePolicyScript).controller = policy_controller
+		var lane_index := int(lane.call("get_lane_index"))
 		_zone_info[zone] = {
-			"role": role,
-			"index": index
+			"role": lane_role,
+			"index": lane_index
 		}
 		if bind_zone_events.is_valid():
 			bind_zone_events.call(zone)

@@ -1,0 +1,86 @@
+[gd_scene format=3]
+
+[sub_resource type="StyleBoxFlat" id="FreeCellDialogPanel"]
+bg_color = Color(0.93, 0.92, 0.86, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.22, 0.22, 1)
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+
+[node name="SelectGameOverlay" type="Control"]
+visible = false
+z_index = 10
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Shade" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+color = Color(0, 0, 0, 0.35)
+
+[node name="DialogPanel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -94.0
+offset_right = 160.0
+offset_bottom = 94.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("FreeCellDialogPanel")
+
+[node name="DialogVBox" type="VBoxContainer" parent="DialogPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="DialogPanel/DialogVBox"]
+layout_mode = 2
+theme_type_variation = &"DemoBlueHeading"
+text = "Select Game"
+
+[node name="DetailLabel" type="Label" parent="DialogPanel/DialogVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_type_variation = &"DemoDetailLabel"
+text = "Enter a classic Microsoft FreeCell deal number."
+
+[node name="SelectGameSpinBox" type="SpinBox" parent="DialogPanel/DialogVBox"]
+layout_mode = 2
+min_value = 1.0
+max_value = 1000000.0
+step = 1.0
+rounded = true
+value = 1.0
+
+[node name="ButtonRow" type="HBoxContainer" parent="DialogPanel/DialogVBox"]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 8
+
+[node name="SelectGameOkButton" type="Button" parent="DialogPanel/DialogVBox/ButtonRow"]
+layout_mode = 2
+text = "OK"
+
+[node name="SelectGameCancelButton" type="Button" parent="DialogPanel/DialogVBox/ButtonRow"]
+layout_mode = 2
+text = "Cancel"
