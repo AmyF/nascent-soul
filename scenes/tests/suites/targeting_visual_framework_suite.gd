@@ -1,6 +1,6 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
-const TargetingSupport = preload("res://scenes/examples/shared/targeting_support.gd")
+const TargetingSupport = preload("res://scenes/showcases/shared/targeting_support.gd")
 const MockTargetingVisualLayerScript = preload("res://scenes/tests/shared/mock_targeting_visual_layer.gd")
 const ZoneLayeredTargetingStyleScript = preload("res://addons/nascentsoul/resources/zone_layered_targeting_style.gd")
 const OverlayHostScript = preload("res://addons/nascentsoul/runtime/zone_targeting_overlay_host.gd")

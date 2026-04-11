@@ -1,6 +1,6 @@
 extends Control
 
-const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
+const ExampleItemSupport = preload("res://scenes/showcases/shared/example_item_support.gd")
 
 @export var freecell_scene: PackedScene
 @export var xiangqi_scene: PackedScene

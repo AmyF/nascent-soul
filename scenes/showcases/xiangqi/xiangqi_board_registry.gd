@@ -1,7 +1,7 @@
 extends RefCounted
 
-const XiangqiPieceScript = preload("res://scenes/examples/xiangqi/xiangqi_piece.gd")
-const XiangqiStateModelScript = preload("res://scenes/examples/xiangqi/xiangqi_state_model.gd")
+const XiangqiPieceScript = preload("res://scenes/showcases/xiangqi/xiangqi_piece.gd")
+const XiangqiStateModelScript = preload("res://scenes/showcases/xiangqi/xiangqi_state_model.gd")
 
 var _board_zone: BattlefieldZone = null
 

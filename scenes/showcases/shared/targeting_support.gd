@@ -1,6 +1,6 @@
 class_name TargetingSupport extends RefCounted
 
-const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
+const ExampleItemSupport = preload("res://scenes/showcases/shared/example_item_support.gd")
 const ZonePieceScript = preload("res://addons/nascentsoul/pieces/zone_piece.gd")
 const ZoneTargetRuleTablePolicyScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule_table_policy.gd")
 const ZoneTargetRuleScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule.gd")

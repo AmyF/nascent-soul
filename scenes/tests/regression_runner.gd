@@ -1,6 +1,6 @@
 extends Control
 
-const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
+const ExampleItemSupport = preload("res://scenes/showcases/shared/example_item_support.gd")
 
 const SUITE_SCENES := [
 	preload("res://scenes/tests/suites/battlefield_smoke_suite.tscn"),

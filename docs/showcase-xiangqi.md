@@ -4,15 +4,15 @@ The Xiangqi showcase is a full local two-player implementation built on `Battlef
 
 Primary files:
 
-- [`scenes/examples/xiangqi.tscn`](../scenes/examples/xiangqi.tscn)
-- [`scenes/examples/xiangqi.gd`](../scenes/examples/xiangqi.gd)
-- [`scenes/examples/xiangqi/xiangqi_board_registry.gd`](../scenes/examples/xiangqi/xiangqi_board_registry.gd)
-- [`scenes/examples/xiangqi/xiangqi_state_model.gd`](../scenes/examples/xiangqi/xiangqi_state_model.gd)
-- [`scenes/examples/xiangqi/xiangqi_move_rules.gd`](../scenes/examples/xiangqi/xiangqi_move_rules.gd)
-- [`scenes/examples/xiangqi/xiangqi_history.gd`](../scenes/examples/xiangqi/xiangqi_history.gd)
-- [`scenes/examples/xiangqi/xiangqi_piece.gd`](../scenes/examples/xiangqi/xiangqi_piece.gd)
-- [`scenes/examples/xiangqi/xiangqi_target_policy.gd`](../scenes/examples/xiangqi/xiangqi_target_policy.gd)
-- [`scenes/examples/xiangqi/xiangqi_board_overlay.gd`](../scenes/examples/xiangqi/xiangqi_board_overlay.gd)
+- [`scenes/showcases/xiangqi/showcase.tscn`](../scenes/showcases/xiangqi/showcase.tscn)
+- [`scenes/showcases/xiangqi/showcase.gd`](../scenes/showcases/xiangqi/showcase.gd)
+- [`scenes/showcases/xiangqi/xiangqi_board_registry.gd`](../scenes/showcases/xiangqi/xiangqi_board_registry.gd)
+- [`scenes/showcases/xiangqi/xiangqi_state_model.gd`](../scenes/showcases/xiangqi/xiangqi_state_model.gd)
+- [`scenes/showcases/xiangqi/xiangqi_move_rules.gd`](../scenes/showcases/xiangqi/xiangqi_move_rules.gd)
+- [`scenes/showcases/xiangqi/xiangqi_history.gd`](../scenes/showcases/xiangqi/xiangqi_history.gd)
+- [`scenes/showcases/xiangqi/xiangqi_piece.gd`](../scenes/showcases/xiangqi/xiangqi_piece.gd)
+- [`scenes/showcases/xiangqi/xiangqi_target_policy.gd`](../scenes/showcases/xiangqi/xiangqi_target_policy.gd)
+- [`scenes/showcases/xiangqi/xiangqi_board_overlay.gd`](../scenes/showcases/xiangqi/xiangqi_board_overlay.gd)
 
 ## What It Demonstrates
 

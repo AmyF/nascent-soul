@@ -124,8 +124,8 @@ The launcher scene is [`scenes/main_menu.tscn`](scenes/main_menu.tscn). It is th
 
 The showcase scenes live at:
 
-- [`scenes/examples/freecell.tscn`](scenes/examples/freecell.tscn)
-- [`scenes/examples/xiangqi.tscn`](scenes/examples/xiangqi.tscn)
+- [`scenes/showcases/freecell/showcase.tscn`](scenes/showcases/freecell/showcase.tscn)
+- [`scenes/showcases/xiangqi/showcase.tscn`](scenes/showcases/xiangqi/showcase.tscn)
 
 ## Documentation
 

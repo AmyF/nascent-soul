@@ -1,7 +1,7 @@
 extends RefCounted
 
-const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card.gd")
-const FreeCellRulesScript = preload("res://scenes/examples/freecell/freecell_rules.gd")
+const FreeCellCardScript = preload("res://scenes/showcases/freecell/freecell_card.gd")
+const FreeCellRulesScript = preload("res://scenes/showcases/freecell/freecell_rules.gd")
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
 var _zone_info: Dictionary = {}

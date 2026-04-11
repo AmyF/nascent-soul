@@ -1,8 +1,8 @@
 extends Control
 class_name ZoneTestHarness
 
-const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
-const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
+const ExampleItemSupport = preload("res://scenes/showcases/shared/example_item_support.gd")
+const ExampleZoneSupport = preload("res://scenes/showcases/shared/example_zone_support.gd")
 const ZoneRuntimeHooksScript = preload("res://addons/nascentsoul/runtime/zone_runtime_hooks.gd")
 
 var _checks_run: int = 0

@@ -1,14 +1,14 @@
 extends Control
 
-const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
+const ExampleZoneSupport = preload("res://scenes/showcases/shared/example_zone_support.gd")
 const ZoneRuntimeHooksScript = preload("res://addons/nascentsoul/runtime/zone_runtime_hooks.gd")
-const FreeCellCardFactoryScript = preload("res://scenes/examples/freecell/freecell_card_factory.gd")
-const FreeCellCardScript = preload("res://scenes/examples/freecell/freecell_card.gd")
-const FreeCellHistoryScript = preload("res://scenes/examples/freecell/freecell_history.gd")
-const FreeCellMoveRulesScript = preload("res://scenes/examples/freecell/freecell_move_rules.gd")
-const FreeCellRulesScript = preload("res://scenes/examples/freecell/freecell_rules.gd")
-const FreeCellStateModelScript = preload("res://scenes/examples/freecell/freecell_state_model.gd")
-const FreeCellZoneRegistryScript = preload("res://scenes/examples/freecell/freecell_zone_registry.gd")
+const FreeCellCardFactoryScript = preload("res://scenes/showcases/freecell/freecell_card_factory.gd")
+const FreeCellCardScript = preload("res://scenes/showcases/freecell/freecell_card.gd")
+const FreeCellHistoryScript = preload("res://scenes/showcases/freecell/freecell_history.gd")
+const FreeCellMoveRulesScript = preload("res://scenes/showcases/freecell/freecell_move_rules.gd")
+const FreeCellRulesScript = preload("res://scenes/showcases/freecell/freecell_rules.gd")
+const FreeCellStateModelScript = preload("res://scenes/showcases/freecell/freecell_state_model.gd")
+const FreeCellZoneRegistryScript = preload("res://scenes/showcases/freecell/freecell_zone_registry.gd")
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
 const GAME_MENU_NEW := 1

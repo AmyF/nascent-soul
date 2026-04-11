@@ -103,5 +103,5 @@ Then swap policies or styles as needed.
 
 ## Good Files To Inspect
 
-- [`scenes/examples/xiangqi.tscn`](../scenes/examples/xiangqi.tscn)
-- [`scenes/examples/xiangqi/xiangqi_move_rules.gd`](../scenes/examples/xiangqi/xiangqi_move_rules.gd)
+- [`scenes/showcases/xiangqi/showcase.tscn`](../scenes/showcases/xiangqi/showcase.tscn)
+- [`scenes/showcases/xiangqi/xiangqi_move_rules.gd`](../scenes/showcases/xiangqi/xiangqi_move_rules.gd)

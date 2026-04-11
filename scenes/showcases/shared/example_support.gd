@@ -1,8 +1,8 @@
 class_name ExampleSupport extends RefCounted
 
 # Legacy facade. Prefer ExampleZoneSupport or ExampleItemSupport for new code.
-const ExampleItemSupport = preload("res://scenes/examples/shared/example_item_support.gd")
-const ExampleZoneSupport = preload("res://scenes/examples/shared/example_zone_support.gd")
+const ExampleItemSupport = preload("res://scenes/showcases/shared/example_item_support.gd")
+const ExampleZoneSupport = preload("res://scenes/showcases/shared/example_zone_support.gd")
 
 static func make_zone(host: Control, zone_name: String, layout_policy: ZoneLayoutPolicy, display_style: ZoneDisplayStyle = null, transfer_policy: ZoneTransferPolicy = null, sort_policy: ZoneSortPolicy = null, interaction: ZoneInteraction = null, drag_visual_factory: ZoneDragVisualFactory = null, config: ZoneConfig = null) -> Zone:
 	return ExampleZoneSupport.make_zone(host, zone_name, layout_policy, display_style, transfer_policy, sort_policy, interaction, drag_visual_factory, config)

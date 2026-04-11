@@ -96,5 +96,5 @@ The Xiangqi showcase is a good example of explicit targeting driving legal move 
 
 - [`addons/nascentsoul/model/zone_transfer_command.gd`](../addons/nascentsoul/model/zone_transfer_command.gd)
 - [`addons/nascentsoul/model/zone_targeting_command.gd`](../addons/nascentsoul/model/zone_targeting_command.gd)
-- [`scenes/examples/freecell.gd`](../scenes/examples/freecell.gd)
-- [`scenes/examples/xiangqi.gd`](../scenes/examples/xiangqi.gd)
+- [`scenes/showcases/freecell/showcase.gd`](../scenes/showcases/freecell/showcase.gd)
+- [`scenes/showcases/xiangqi/showcase.gd`](../scenes/showcases/xiangqi/showcase.gd)

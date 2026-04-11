@@ -1,6 +1,6 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
-const XIANGQI_SCENE = preload("res://scenes/examples/xiangqi.tscn")
+const XIANGQI_SCENE = preload("res://scenes/showcases/xiangqi/showcase.tscn")
 
 func _init() -> void:
 	_suite_name = "xiangqi-showcase"

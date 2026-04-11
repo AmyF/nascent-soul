@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/examples/xiangqi.gd" id="1_scene"]
-[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scenes/showcases/xiangqi/showcase.gd" id="1_scene"]
+[ext_resource type="Theme" path="res://scenes/showcases/shared/demo_theme.tres" id="2_theme"]
 
 [sub_resource type="StyleBoxFlat" id="XiangqiBoardPanel"]
 bg_color = Color(0.15, 0.10, 0.07, 1)

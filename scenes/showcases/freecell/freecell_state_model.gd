@@ -1,6 +1,6 @@
 extends RefCounted
 
-const FreeCellRulesScript = preload("res://scenes/examples/freecell/freecell_rules.gd")
+const FreeCellRulesScript = preload("res://scenes/showcases/freecell/freecell_rules.gd")
 
 const TABLEAU_COUNT := 8
 const FREE_CELL_COUNT := 4

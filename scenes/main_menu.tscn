@@ -1,9 +1,9 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scenes/main_menu.gd" id="1_scene"]
-[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
-[ext_resource type="PackedScene" path="res://scenes/examples/freecell.tscn" id="4_freecell"]
-[ext_resource type="PackedScene" path="res://scenes/examples/xiangqi.tscn" id="5_xiangqi"]
+[ext_resource type="Theme" path="res://scenes/showcases/shared/demo_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://scenes/showcases/freecell/showcase.tscn" id="4_freecell"]
+[ext_resource type="PackedScene" path="res://scenes/showcases/xiangqi/showcase.tscn" id="5_xiangqi"]
 
 [sub_resource type="StyleBoxFlat" id="MainMenuSidebarPanel"]
 bg_color = Color(0.14, 0.20, 0.29, 1)

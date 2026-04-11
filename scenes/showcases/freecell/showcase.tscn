@@ -1,17 +1,17 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/examples/freecell.gd" id="1_scene"]
-[ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scenes/showcases/freecell/showcase.gd" id="1_scene"]
+[ext_resource type="Theme" path="res://scenes/showcases/shared/demo_theme.tres" id="2_theme"]
 [ext_resource type="Script" path="res://addons/nascentsoul/core/card_zone.gd" id="3_card_zone"]
 [ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_config.gd" id="4_zone_config"]
 [ext_resource type="Script" path="res://addons/nascentsoul/resources/zone_interaction.gd" id="5_zone_interaction"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/spaces/zone_linear_space_model.gd" id="6_linear_space"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/sorts/zone_manual_sort.gd" id="7_manual_sort"]
 [ext_resource type="Script" path="res://addons/nascentsoul/impl/factories/zone_configurable_drag_visual_factory.gd" id="8_drag_factory"]
-[ext_resource type="Script" path="res://scenes/examples/freecell/freecell_card_display.gd" id="9_freecell_display"]
-[ext_resource type="Script" path="res://scenes/examples/freecell/freecell_slot_layout.gd" id="10_freecell_slot_layout"]
-[ext_resource type="Script" path="res://scenes/examples/freecell/freecell_tableau_layout.gd" id="11_freecell_tableau_layout"]
-[ext_resource type="Script" path="res://scenes/examples/freecell/freecell_zone_policy.gd" id="12_freecell_zone_policy"]
+[ext_resource type="Script" path="res://scenes/showcases/freecell/freecell_card_display.gd" id="9_freecell_display"]
+[ext_resource type="Script" path="res://scenes/showcases/freecell/freecell_slot_layout.gd" id="10_freecell_slot_layout"]
+[ext_resource type="Script" path="res://scenes/showcases/freecell/freecell_tableau_layout.gd" id="11_freecell_tableau_layout"]
+[ext_resource type="Script" path="res://scenes/showcases/freecell/freecell_zone_policy.gd" id="12_freecell_zone_policy"]
 
 [sub_resource type="StyleBoxFlat" id="FreeCellWindowFrame"]
 bg_color = Color(0.0, 0.50, 0.0, 1)

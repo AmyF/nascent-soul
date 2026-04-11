@@ -1,7 +1,7 @@
 extends RefCounted
 
-const FreeCellCardFactoryScript = preload("res://scenes/examples/freecell/freecell_card_factory.gd")
-const FreeCellStateModelScript = preload("res://scenes/examples/freecell/freecell_state_model.gd")
+const FreeCellCardFactoryScript = preload("res://scenes/showcases/freecell/freecell_card_factory.gd")
+const FreeCellStateModelScript = preload("res://scenes/showcases/freecell/freecell_state_model.gd")
 
 var _history_limit: int = 256
 var _history_states: Array[Dictionary] = []

@@ -4,15 +4,15 @@ The FreeCell showcase is a full playable solitaire example built on top of card 
 
 Primary files:
 
-- [`scenes/examples/freecell.tscn`](../scenes/examples/freecell.tscn)
-- [`scenes/examples/freecell.gd`](../scenes/examples/freecell.gd)
-- [`scenes/examples/freecell/freecell_zone_registry.gd`](../scenes/examples/freecell/freecell_zone_registry.gd)
-- [`scenes/examples/freecell/freecell_state_model.gd`](../scenes/examples/freecell/freecell_state_model.gd)
-- [`scenes/examples/freecell/freecell_move_rules.gd`](../scenes/examples/freecell/freecell_move_rules.gd)
-- [`scenes/examples/freecell/freecell_history.gd`](../scenes/examples/freecell/freecell_history.gd)
-- [`scenes/examples/freecell/freecell_card.gd`](../scenes/examples/freecell/freecell_card.gd)
-- [`scenes/examples/freecell/freecell_tableau_layout.gd`](../scenes/examples/freecell/freecell_tableau_layout.gd)
-- [`scenes/examples/freecell/freecell_zone_policy.gd`](../scenes/examples/freecell/freecell_zone_policy.gd)
+- [`scenes/showcases/freecell/showcase.tscn`](../scenes/showcases/freecell/showcase.tscn)
+- [`scenes/showcases/freecell/showcase.gd`](../scenes/showcases/freecell/showcase.gd)
+- [`scenes/showcases/freecell/freecell_zone_registry.gd`](../scenes/showcases/freecell/freecell_zone_registry.gd)
+- [`scenes/showcases/freecell/freecell_state_model.gd`](../scenes/showcases/freecell/freecell_state_model.gd)
+- [`scenes/showcases/freecell/freecell_move_rules.gd`](../scenes/showcases/freecell/freecell_move_rules.gd)
+- [`scenes/showcases/freecell/freecell_history.gd`](../scenes/showcases/freecell/freecell_history.gd)
+- [`scenes/showcases/freecell/freecell_card.gd`](../scenes/showcases/freecell/freecell_card.gd)
+- [`scenes/showcases/freecell/freecell_tableau_layout.gd`](../scenes/showcases/freecell/freecell_tableau_layout.gd)
+- [`scenes/showcases/freecell/freecell_zone_policy.gd`](../scenes/showcases/freecell/freecell_zone_policy.gd)
 
 ## What It Demonstrates
 

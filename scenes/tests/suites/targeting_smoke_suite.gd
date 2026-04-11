@@ -1,6 +1,6 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
-const TargetingSupport = preload("res://scenes/examples/shared/targeting_support.gd")
+const TargetingSupport = preload("res://scenes/showcases/shared/targeting_support.gd")
 const ZoneTargetRuleTablePolicyScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule_table_policy.gd")
 const ZoneTargetRuleScript = preload("res://addons/nascentsoul/impl/targeting/zone_target_rule.gd")
 const ZoneTargetingOverlayHostScript = preload("res://addons/nascentsoul/runtime/zone_targeting_overlay_host.gd")
