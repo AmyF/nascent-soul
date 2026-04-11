@@ -1,7 +1,5 @@
 extends "res://scenes/tests/shared/test_harness.gd"
 
-const RECIPE_SCENE = preload("res://scenes/examples/zone_recipes.tscn")
-
 func _init() -> void:
 	_suite_name = "layout-visual-contract"
 
@@ -9,8 +7,6 @@ func _run_suite() -> void:
 	await _test_default_layouts_stay_inside_panels()
 	await _reset_root()
 	await _test_pile_preview_stays_inside_panel()
-	await _reset_root()
-	await _test_recipe_scene_loads()
 
 func _test_default_layouts_stay_inside_panels() -> void:
 	var hand_panel = _make_panel("HandPanel", Vector2(24, 24), Vector2(720, 260))
@@ -81,12 +77,3 @@ func _test_pile_preview_stays_inside_panel() -> void:
 		_check(_rect_inside(pile_panel.get_global_rect(), ghost.get_global_rect()), "pile preview ghost should stay inside the pile panel bounds")
 	source_zone.cancel_drag(session)
 	await _settle_frames(2)
-
-func _test_recipe_scene_loads() -> void:
-	var recipe_scene = RECIPE_SCENE.instantiate()
-	add_child(recipe_scene)
-	await _settle_frames(2)
-	_check(recipe_scene.get_node_or_null("RootMargin/RootVBox/RecipesGrid/DeckColumn/DeckZone") is Zone, "recipe scene should include a ready-to-use deck zone")
-	_check(recipe_scene.get_node_or_null("RootMargin/RootVBox/RecipesGrid/HandColumn/HandZone") is Zone, "recipe scene should include a ready-to-use hand zone")
-	_check(recipe_scene.get_node_or_null("RootMargin/RootVBox/RecipesGrid/BoardColumn/BoardZone") is Zone, "recipe scene should include a ready-to-use board zone")
-	_check(recipe_scene.get_node_or_null("RootMargin/RootVBox/RecipesGrid/DiscardColumn/DiscardZone") is Zone, "recipe scene should include a ready-to-use discard zone")

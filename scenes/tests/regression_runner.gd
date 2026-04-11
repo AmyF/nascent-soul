@@ -5,9 +5,7 @@ const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd"
 const SUITE_SCENES := [
 	preload("res://scenes/tests/suites/battlefield_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/core_state_suite.tscn"),
-	preload("res://scenes/tests/suites/demo_scene_contract_suite.tscn"),
 	preload("res://scenes/tests/suites/demo_smoke_suite.tscn"),
-	preload("res://scenes/tests/suites/demo_examples_suite.tscn"),
 	preload("res://scenes/tests/suites/freecell_showcase_suite.tscn"),
 	preload("res://scenes/tests/suites/interaction_smoke_suite.tscn"),
 	preload("res://scenes/tests/suites/layout_visual_contract_suite.tscn"),

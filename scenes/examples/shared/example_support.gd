@@ -219,11 +219,22 @@ static func make_card(title: String, cost: int, tags, face_up: bool = true, high
 	card.set_meta("example_primary_tag", normalized_tags[0] if not normalized_tags.is_empty() else "card")
 	return card
 
-static func add_cards_from_specs(zone: Zone, specs: Array[ExampleCardSpec], face_up: bool = true, highlighted: bool = false) -> void:
+static func add_cards_from_specs(zone: Zone, specs: Array, face_up: bool = true, highlighted: bool = false) -> void:
 	for spec in specs:
 		if spec == null:
 			continue
-		zone.add_item(make_card(spec.title, spec.cost, spec.tags, face_up, highlighted))
+		var title := ""
+		var cost := 0
+		var tags = []
+		if spec is Dictionary:
+			title = str(spec.get("title", ""))
+			cost = int(spec.get("cost", 0))
+			tags = spec.get("tags", [])
+		else:
+			title = str(spec.get("title"))
+			cost = int(spec.get("cost"))
+			tags = spec.get("tags")
+		zone.add_item(make_card(title, cost, tags, face_up, highlighted))
 
 static func make_piece(title: String, team: String, attack: int, defense: int) -> ZonePiece:
 	var data := PieceData.new()

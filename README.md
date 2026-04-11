@@ -115,34 +115,12 @@ battlefield.begin_targeting(
 
 ## Showcases
 
-The launcher scene is [`scenes/main_menu.tscn`](scenes/main_menu.tscn). It is the public first screen and exposes direct entries for all 10 examples:
-
-- `Transfer`
-- `Layouts`
-- `Rules`
-- `Recipes`
-- `Square`
-- `Hex`
-- `Modes`
-- `Targeting`
-- `FreeCell`
-- `Xiangqi`
-
-[`scenes/demo.tscn`](scenes/demo.tscn) remains as a compatibility shell when you open it directly. It keeps only the eight editor-facing demos together:
-
-- `Transfer`
-- `Layouts`
-- `Rules`
-- `Recipes`
-- `Square`
-- `Hex`
-- `Modes`
-- `Targeting`
-
-The two full playable showcases still live separately:
+The launcher scene is [`scenes/main_menu.tscn`](scenes/main_menu.tscn). It is the public first screen and now exposes only the two playable showcases:
 
 - `FreeCell`: a complete single-player FreeCell implementation built from `CardZone`, transfer policies, and an example-side tableau layout.
 - `Xiangqi`: a complete local two-player Xiangqi implementation built on `BattlefieldZone`, square placement targets, and zone targeting.
+
+[`scenes/demo.tscn`](scenes/demo.tscn) remains as a compatibility shell when you open it directly. It mirrors the same two showcase scenes for direct-open workflows.
 
 The showcase scenes live at:
 
@@ -184,27 +162,18 @@ If you want to study the addon internals after that, use this maintainer path:
 4. `addons/nascentsoul/runtime/zone_runtime_port.gd`
 5. one runtime workflow at a time (`transfer`, `input`, `targeting`, or `render`)
 
-Recommended example order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
+Recommended public showcase order from [`scenes/main_menu.tscn`](scenes/main_menu.tscn):
 
-1. `Transfer`
-2. `Layouts`
-3. `Rules`
-4. `Recipes`
-5. `Square`
-6. `Hex`
-7. `Modes`
-8. `Targeting`
-9. `FreeCell`
-10. `Xiangqi`
+1. `FreeCell`
+2. `Xiangqi`
 
 ## Validation
 
 Validated on Godot 4.6.1:
 
-- Headless regression runner passes with `1697` checks.
-- Headless regression runner passes with `1714` checks.
+- Headless regression runner passes with `576` checks.
 - Headless editor load succeeds with the plugin enabled.
-- Demo smoke coverage confirms the main-menu launcher, the compatibility shell, and both showcase scenes.
+- Launcher smoke coverage confirms the two-entry main menu, the compatibility shell, and both showcase scenes.
 
 Run the full suite with:
 

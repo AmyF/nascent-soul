@@ -103,7 +103,5 @@ Then swap policies or styles as needed.
 
 ## Good Files To Inspect
 
-- [`scenes/examples/battlefield_square_lab.tscn`](../scenes/examples/battlefield_square_lab.tscn)
-- [`scenes/examples/battlefield_hex_lab.tscn`](../scenes/examples/battlefield_hex_lab.tscn)
-- [`scenes/examples/battlefield_transfer_modes.tscn`](../scenes/examples/battlefield_transfer_modes.tscn)
 - [`scenes/examples/xiangqi.tscn`](../scenes/examples/xiangqi.tscn)
+- [`scenes/examples/xiangqi/xiangqi_move_rules.gd`](../scenes/examples/xiangqi/xiangqi_move_rules.gd)

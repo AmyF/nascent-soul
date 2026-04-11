@@ -2,26 +2,9 @@ extends Control
 
 const ExampleSupport = preload("res://scenes/examples/shared/example_support.gd")
 
-@export var demo_scene: PackedScene
-@export var transfer_scene: PackedScene
-@export var layouts_scene: PackedScene
-@export var rules_scene: PackedScene
-@export var recipes_scene: PackedScene
-@export var square_scene: PackedScene
-@export var hex_scene: PackedScene
-@export var modes_scene: PackedScene
-@export var targeting_scene: PackedScene
 @export var freecell_scene: PackedScene
 @export var xiangqi_scene: PackedScene
 
-@onready var transfer_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/TransferButton
-@onready var layouts_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/LayoutsButton
-@onready var rules_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/RulesButton
-@onready var recipes_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/RecipesButton
-@onready var square_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/SquareButton
-@onready var hex_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/HexButton
-@onready var modes_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/ModesButton
-@onready var targeting_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/TargetingButton
 @onready var freecell_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/FreeCellButton
 @onready var xiangqi_button: Button = $RootMargin/RootHBox/Sidebar/SidebarVBox/XiangqiButton
 @onready var content_title_label: Label = $RootMargin/RootHBox/ContentColumn/ContentTitleLabel
@@ -33,14 +16,6 @@ var _scene_by_key: Dictionary = {}
 
 func _ready() -> void:
 	_scene_by_key = {
-		&"transfer": transfer_scene,
-		&"layouts": layouts_scene,
-		&"rules": rules_scene,
-		&"recipes": recipes_scene,
-		&"square": square_scene,
-		&"hex": hex_scene,
-		&"modes": modes_scene,
-		&"targeting": targeting_scene,
 		&"freecell": freecell_scene,
 		&"xiangqi": xiangqi_scene
 	}
@@ -84,14 +59,6 @@ func _cleanup_before_quit() -> void:
 
 func _launcher_buttons() -> Array[Button]:
 	return [
-		transfer_button,
-		layouts_button,
-		rules_button,
-		recipes_button,
-		square_button,
-		hex_button,
-		modes_button,
-		targeting_button,
 		freecell_button,
 		xiangqi_button
 	]

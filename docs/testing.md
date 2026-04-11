@@ -14,9 +14,9 @@ godot --headless --path . scenes/tests/regression_runner.tscn
 
 Validated on Godot 4.6.1:
 
-- full regression runner passes with `1714` checks
+- full regression runner passes with `576` checks
 - headless editor load succeeds with the plugin enabled
-- demo regression coverage now splits into scene contracts, launcher flow, and example-story suites
+- launcher regression coverage now focuses on the two public showcase entry points
 
 ## What The Suite Covers
 
@@ -26,9 +26,7 @@ Validated on Godot 4.6.1:
 - layout visual contracts
 - targeting flows and targeting visuals
 - performance smoke checks
-- demo scene contracts and serialized authoring checks
-- launcher and compatibility-shell navigation coverage
-- demo example behavior stories
+- two-entry launcher and showcase-shell navigation coverage
 - FreeCell showcase rules and helper contracts
 - Xiangqi showcase rules
 
@@ -50,15 +48,13 @@ The new showcase-specific suites live at:
 
 They are intended to protect the examples as first-class reference implementations, not as disposable demos.
 
-## Demo Story Suites
+## Launcher Suite
 
-The demo-facing suites now split by concern:
+The launcher-facing suite now lives at:
 
-- [`scenes/tests/suites/demo_scene_contract_suite.gd`](../scenes/tests/suites/demo_scene_contract_suite.gd) checks serialized authoring, naming, and static scene contracts
-- [`scenes/tests/suites/demo_smoke_suite.gd`](../scenes/tests/suites/demo_smoke_suite.gd) checks launcher and compatibility-shell navigation
-- [`scenes/tests/suites/demo_examples_suite.gd`](../scenes/tests/suites/demo_examples_suite.gd) checks example behavior stories and showcase loading
+- [`scenes/tests/suites/demo_smoke_suite.gd`](../scenes/tests/suites/demo_smoke_suite.gd)
 
-That split keeps the regression runner output closer to the way a learner reads the project.
+It checks the two-entry main menu plus the compatibility shell that swaps between `FreeCell` and `Xiangqi`.
 
 ## Useful Commands
 
@@ -74,7 +70,7 @@ Open the project in the editor and run the public launcher:
 godot --path .
 ```
 
-Use [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) as the first screen. [`scenes/demo.tscn`](../scenes/demo.tscn) is now only a compatibility shell for directly opening the eight editor-facing demos together.
+Use [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) as the first screen. [`scenes/demo.tscn`](../scenes/demo.tscn) is now only a compatibility shell for directly opening `FreeCell` and `Xiangqi` together.
 
 ## Updating The Baseline
 

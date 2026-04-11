@@ -6,7 +6,6 @@ const ZoneGroupSortScript = preload("res://addons/nascentsoul/impl/sorts/zone_gr
 const ZoneRuntimePortScript = preload("res://addons/nascentsoul/runtime/zone_runtime_port.gd")
 const HAND_CONFIG = preload("res://addons/nascentsoul/presets/hand_zone_config.tres")
 const BOARD_CONFIG = preload("res://addons/nascentsoul/presets/board_zone_config.tres")
-const TRANSFER_PLAYGROUND_SCENE = preload("res://scenes/examples/transfer_playground.tscn")
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
 class RejectDragStartPolicy extends ZoneTransferPolicy:
@@ -82,7 +81,7 @@ func _run_suite() -> void:
 	await _reset_root()
 	await _test_transfer_handoff_cleanup()
 	await _reset_root()
-	await _test_transfer_playground_hand_to_board_drag()
+	await _test_public_drag_finalize_transfers_between_zones()
 	await _reset_root()
 	await _test_rejected_hover_hides_preview_but_still_rejects_drop()
 	await _reset_root()
@@ -440,20 +439,26 @@ func _test_transfer_handoff_cleanup() -> void:
 	target_zone.clear_display_state()
 	_check(target_zone._runtime_get_transfer_handoff_count() == 0, "clear_display_state should clear pending handoff data")
 
-func _test_transfer_playground_hand_to_board_drag() -> void:
-	var scene = TRANSFER_PLAYGROUND_SCENE.instantiate()
-	add_child(scene)
+func _test_public_drag_finalize_transfers_between_zones() -> void:
+	var hand_panel = _make_panel("DragFixtureHandPanel", Vector2(24, 24), Vector2(620, 260))
+	var board_panel = _make_panel("DragFixtureBoardPanel", Vector2(24, 320), Vector2(620, 260))
+	var hand_zone = ExampleSupport.make_zone(hand_panel, "DragFixtureHandZone", ZoneHBoxLayout.new(), null, null, null, null, null, HAND_CONFIG)
+	var board_zone = ExampleSupport.make_zone(board_panel, "DragFixtureBoardZone", ZoneHBoxLayout.new(), null, null, null, null, null, BOARD_CONFIG)
+	var alpha = ExampleSupport.make_card("Alpha", 1, ["skill"], true)
+	var beta = ExampleSupport.make_card("Beta", 2, ["attack"], true)
+	var guard = ExampleSupport.make_card("Guard", 1, ["skill"], true)
+	hand_zone.add_item(alpha)
+	hand_zone.add_item(beta)
+	board_zone.add_item(guard)
 	await _settle_frames(3)
-	var hand_zone = scene.get_node("RootMargin/RootVBox/HandZone") as Zone
-	var board_zone = scene.get_node("RootMargin/RootVBox/TopRow/BoardColumn/BoardZone") as Zone
-	_check(hand_zone != null and board_zone != null, "transfer playground should expose hand and board zones")
+	_check(hand_zone != null and board_zone != null, "drag finalize fixture should expose hand and board zones")
 	if hand_zone == null or board_zone == null:
 		return
-	var hand_item = hand_zone.get_items()[0]
+	var hand_item = alpha
 	var initial_board_count = board_zone.get_item_count()
 	hand_zone.start_drag([hand_item])
 	var session = hand_zone.get_drag_session()
-	_check(session != null, "transfer playground drag should create an active session")
+	_check(session != null, "public drag finalize should create an active session")
 	if session == null:
 		return
 	session.hover_zone = board_zone
@@ -463,11 +468,11 @@ func _test_transfer_playground_hand_to_board_drag() -> void:
 	if DisplayServer.get_name() != "headless":
 		await get_tree().create_timer(0.25).timeout
 		await _settle_frames(1)
-	_check(board_zone.get_item_count() == initial_board_count + 1, "transfer playground drag should increase board item count")
-	_check(hand_zone.get_item_count() == 4, "transfer playground drag should remove one item from hand")
-	_check(board_zone.has_item(hand_item), "transfer playground drag should move the dragged item into board")
-	_check(hand_item.visible, "transfer playground drag should leave the moved item visible")
-	_check(_rect_inside(board_zone.get_global_rect().grow(24.0), hand_item.get_global_rect(), 24.0), "transfer playground moved card should render inside the board zone")
+	_check(board_zone.get_item_count() == initial_board_count + 1, "public drag finalize should increase board item count")
+	_check(hand_zone.get_item_count() == 1, "public drag finalize should remove one item from the source zone")
+	_check(board_zone.has_item(hand_item), "public drag finalize should move the dragged item into the target zone")
+	_check(hand_item.visible, "public drag finalize should leave the moved item visible")
+	_check(_rect_inside(board_zone.get_global_rect().grow(24.0), hand_item.get_global_rect(), 24.0), "public drag finalize should render the moved card inside the target zone")
 
 func _test_rejected_hover_hides_preview_but_still_rejects_drop() -> void:
 	var target_panel = _make_panel("RejectHoverTargetPanel", Vector2.ZERO, Vector2(620, 260))

@@ -1,15 +1,9 @@
 [gd_scene format=3 uid="uid://lx5kwklh25li"]
 
 [ext_resource type="Script" uid="uid://ckym6xo6gjtu" path="res://scenes/demo.gd" id="1_demo"]
-[ext_resource type="PackedScene" path="res://scenes/examples/transfer_playground.tscn" id="2_transfer"]
-[ext_resource type="PackedScene" path="res://scenes/examples/layout_gallery.tscn" id="3_layouts"]
-[ext_resource type="PackedScene" path="res://scenes/examples/policy_lab.tscn" id="4_rules"]
-[ext_resource type="PackedScene" path="res://scenes/examples/zone_recipes.tscn" id="5_recipes"]
 [ext_resource type="Theme" path="res://scenes/examples/shared/demo_theme.tres" id="6_theme"]
-[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_square_lab.tscn" id="7_square"]
-[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_hex_lab.tscn" id="8_hex"]
-[ext_resource type="PackedScene" path="res://scenes/examples/battlefield_transfer_modes.tscn" id="9_modes"]
-[ext_resource type="PackedScene" path="res://scenes/examples/targeting_lab.tscn" id="10_targeting"]
+[ext_resource type="PackedScene" path="res://scenes/examples/freecell.tscn" id="7_freecell"]
+[ext_resource type="PackedScene" path="res://scenes/examples/xiangqi.tscn" id="8_xiangqi"]
 
 [sub_resource type="StyleBoxFlat" id="DemoSidebarPanel"]
 bg_color = Color(0.14, 0.20, 0.29, 1)
@@ -52,14 +46,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_demo")
 theme = ExtResource("6_theme")
-transfer_scene = ExtResource("2_transfer")
-layouts_scene = ExtResource("3_layouts")
-rules_scene = ExtResource("4_rules")
-recipes_scene = ExtResource("5_recipes")
-square_scene = ExtResource("7_square")
-hex_scene = ExtResource("8_hex")
-modes_scene = ExtResource("9_modes")
-targeting_scene = ExtResource("10_targeting")
+freecell_scene = ExtResource("7_freecell")
+xiangqi_scene = ExtResource("8_xiangqi")
 
 [node name="RootMargin" type="MarginContainer" parent="." unique_id=364584155]
 layout_mode = 1
@@ -87,77 +75,29 @@ theme_override_constants/separation = 12
 [node name="TitleLabel" type="Label" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
 theme_type_variation = &"DemoHubTitle"
-text = "Editor Demo Shell"
+text = "Showcase Shell"
 
 [node name="SummaryLabel" type="Label" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "这是兼容保留的 8 个编辑器示例壳层；完整公开入口在 Main Menu。直接打开本场景时，仍可从左侧快速切换这些示例。"
+text = "这是兼容保留的 Showcase 壳层；公开入口仍然在 Main Menu。直接打开本场景时，只在 FreeCell 与 Xiangqi 间切换。"
 
-[node name="TransferButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+[node name="FreeCellButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
 theme_type_variation = &"DemoPrimaryActionButton"
-text = "Transfer"
-metadata/demo_scene_key = "transfer"
-metadata/demo_title = "Transfer"
-metadata/demo_summary = "Inspect linear transfers between deck, hand, board, and discard inside this direct-open shell."
+text = "FreeCell"
+metadata/demo_scene_key = "freecell"
+metadata/demo_title = "FreeCell"
+metadata/demo_summary = "Launch the classic Windows XP style FreeCell implementation."
 
-[node name="LayoutsButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
+[node name="XiangqiButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
 theme_type_variation = &"DemoPrimaryActionButton"
-text = "Layouts"
-metadata/demo_scene_key = "layouts"
-metadata/demo_title = "Layouts"
-metadata/demo_summary = "Compare row, hand, grouped list, and pile layouts inside this direct-open shell."
-
-[node name="RulesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoPrimaryActionButton"
-text = "Rules"
-metadata/demo_scene_key = "rules"
-metadata/demo_title = "Rules"
-metadata/demo_summary = "Explore transfer restrictions, source checks, and capacity limits in the policy-focused demo."
-
-[node name="RecipesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoPrimaryActionButton"
-text = "Recipes"
-metadata/demo_scene_key = "recipes"
-metadata/demo_title = "Recipes"
-metadata/demo_summary = "Review the starter four-column recipe and its serialized zone setup inside this direct-open shell."
-
-[node name="SquareButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoPrimaryActionButton"
-text = "Square"
-metadata/demo_scene_key = "square"
-metadata/demo_title = "Square"
-metadata/demo_summary = "Inspect square-grid battlefield placement and return flows inside this direct-open shell."
-
-[node name="HexButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoPrimaryActionButton"
-text = "Hex"
-metadata/demo_scene_key = "hex"
-metadata/demo_title = "Hex"
-metadata/demo_summary = "Inspect hex-grid battlefield placement and return flows inside this direct-open shell."
-
-[node name="ModesButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoPrimaryActionButton"
-text = "Modes"
-metadata/demo_scene_key = "modes"
-metadata/demo_title = "Modes"
-metadata/demo_summary = "Compare direct placement and spawn-piece transfer modes inside this direct-open shell."
-
-[node name="TargetingButton" type="Button" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
-layout_mode = 2
-theme_type_variation = &"DemoPrimaryActionButton"
-text = "Targeting"
-metadata/demo_scene_key = "targeting"
-metadata/demo_title = "Targeting"
-metadata/demo_summary = "Preview targeting presets and style overrides inside this direct-open shell."
+text = "Xiangqi"
+metadata/demo_scene_key = "xiangqi"
+metadata/demo_title = "Xiangqi"
+metadata/demo_summary = "Launch the standalone Xiangqi board."
 
 [node name="SidebarFiller" type="Control" parent="RootMargin/RootHBox/Sidebar/SidebarVBox"]
 layout_mode = 2
@@ -167,7 +107,7 @@ size_flags_vertical = 3
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "This compatibility shell keeps the eight editor demos together when opened directly; use main_menu.tscn for the full 10-entry launcher."
+text = "This compatibility shell mirrors the two public showcases; use main_menu.tscn for the public launcher."
 
 [node name="ContentColumn" type="VBoxContainer" parent="RootMargin/RootHBox"]
 layout_mode = 2
@@ -178,13 +118,13 @@ theme_override_constants/separation = 10
 [node name="ContentTitleLabel" type="Label" parent="RootMargin/RootHBox/ContentColumn"]
 layout_mode = 2
 theme_type_variation = &"DemoBlueHeading"
-text = "Editor Demos"
+text = "Showcases"
 
 [node name="ContentSummaryLabel" type="Label" parent="RootMargin/RootHBox/ContentColumn"]
 layout_mode = 2
 autowrap_mode = 3
 theme_type_variation = &"DemoDetailLabel"
-text = "Choose one of the eight editor demos from the left, or open main_menu.tscn for the full launcher."
+text = "FreeCell opens by default here; switch to Xiangqi from the left."
 
 [node name="ContentPanel" type="PanelContainer" parent="RootMargin/RootHBox/ContentColumn"]
 layout_mode = 2

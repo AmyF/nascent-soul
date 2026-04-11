@@ -115,4 +115,4 @@ Each action creates a zone node, assigns a preset config, and drops it into the 
 - Read [Transfers and Targeting](transfers-and-targeting.md) for cross-zone actions and targeting flows.
 - Read [Extending Policies](extending-policies.md) and [Extending Layouts](extending-layouts.md) once the stock presets are no longer enough.
 - Read [Game Implementation Checklist](game-implementation-checklist.md) when you are turning a prototype into a real game scene.
-- Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and walk the 10 first-screen entries in order: `Transfer`, `Layouts`, `Rules`, `Recipes`, `Square`, `Hex`, `Modes`, `Targeting`, `FreeCell`, `Xiangqi`. Open [`scenes/demo.tscn`](../scenes/demo.tscn) only if you specifically want the compatibility shell that keeps the eight editor-facing demos together when launched directly.
+- Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and start with the two public showcases: `FreeCell`, then `Xiangqi`. Open [`scenes/demo.tscn`](../scenes/demo.tscn) only if you specifically want the compatibility shell that keeps those same two showcases together when launched directly.
