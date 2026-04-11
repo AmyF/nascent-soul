@@ -40,7 +40,7 @@ The lane bodies are scrollable, but the public lesson stays small:
 
 ## Why It Comes First
 
-`FreeCell` and `Xiangqi` are full showcase projects. They are great references, but they are not the smallest first read.
+[Showcase: FreeCell](showcase-freecell.md) and [Showcase: Xiangqi](showcase-xiangqi.md) are full showcase projects. They are great references, but they are not the smallest first read.
 
 Workflow Board is the first public stop because it makes these questions easy to answer:
 
@@ -49,7 +49,7 @@ Workflow Board is the first public stop because it makes these questions easy to
 - how small can a custom `ZoneTransferPolicy` be?
 - what stays in the controller, and what stays in the scene or policy?
 
-Start here from [`scenes/main_menu.tscn`](../scenes/main_menu.tscn), then move on to `FreeCell`, then `Xiangqi`.
+Start here from [`scenes/main_menu.tscn`](../scenes/main_menu.tscn), then move on to [Showcase: FreeCell](showcase-freecell.md), then [Showcase: Xiangqi](showcase-xiangqi.md).
 
 ## Controller Boundary
 
@@ -89,6 +89,13 @@ The example supplies:
 - starter-friendly UI copy
 
 That is the intended boundary.
+
+## What To Read Next
+
+- read [Showcase: FreeCell](showcase-freecell.md) when you want the fuller card-game reference
+- read [Showcase: Xiangqi](showcase-xiangqi.md) when you want the battlefield-side reference
+- pair this showcase with [Card Zones](card-zones.md) for the lane-focused API surface
+- use [Testing](testing.md) to see how the starter onboarding path is protected
 
 ## Regression Coverage
 

@@ -84,6 +84,13 @@ The example supplies:
 
 That is the intended boundary.
 
+## Read This With
+
+- start with [Showcase: Workflow Board](showcase-workflow-board.md) if you have not read the smallest scene-authored example yet
+- pair this showcase with [Card Zones](card-zones.md) for the lane-focused public surface
+- use [Extending Policies](extending-policies.md) and [Extending Layouts](extending-layouts.md) to map the custom rule and tableau-layout seams
+- use [Testing](testing.md) to find the regression suites that protect the reference implementation
+
 ## Regression Coverage
 
 FreeCell is covered by multiple focused suites:

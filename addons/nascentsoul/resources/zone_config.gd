@@ -41,6 +41,7 @@ static func _make_linear_defaults() -> ZoneConfig:
 	resolved.targeting_policy = ZoneTargetAllowAllPolicy.new()
 	return resolved
 
+## Returns a ready-to-use card lane config with linear space, hand layout, and default visuals.
 static func make_card_defaults() -> ZoneConfig:
 	var resolved := _make_linear_defaults()
 	var layout := ZoneHandLayout.new()
@@ -50,6 +51,7 @@ static func make_card_defaults() -> ZoneConfig:
 	resolved.layout_policy = layout
 	return resolved
 
+## Returns the default generic zone config used when a Zone has no explicit config.
 static func make_zone_defaults() -> ZoneConfig:
 	var resolved := _make_linear_defaults()
 	var layout := ZoneHBoxLayout.new()
@@ -59,6 +61,7 @@ static func make_zone_defaults() -> ZoneConfig:
 	resolved.layout_policy = layout
 	return resolved
 
+## Returns a battlefield-oriented config with grid space and occupancy-based transfer rules.
 static func make_battlefield_defaults(space_model_override: ZoneSpaceModel = null) -> ZoneConfig:
 	var resolved := ZoneConfig.new()
 	resolved.space_model = space_model_override if space_model_override != null else ZoneSquareGridSpaceModel.new()
@@ -71,11 +74,13 @@ static func make_battlefield_defaults(space_model_override: ZoneSpaceModel = nul
 	resolved.targeting_policy = ZoneTargetAllowAllPolicy.new()
 	return resolved
 
+## Duplicates this config shell and copies its configured collaborators by reference.
 func duplicate_config() -> ZoneConfig:
 	var duplicated = get_script().new()
 	duplicated.copy_from(self)
 	return duplicated
 
+## Copies supported config fields from other. Set only_missing to preserve values already present here.
 func copy_from(other: ZoneConfig, only_missing: bool = false) -> ZoneConfig:
 	if other == null:
 		return self
@@ -85,16 +90,19 @@ func copy_from(other: ZoneConfig, only_missing: bool = false) -> ZoneConfig:
 		set(field_name, other.get(field_name))
 	return self
 
+## Returns a duplicated config whose missing fields are filled from fallback.
 func filled_from(fallback: ZoneConfig) -> ZoneConfig:
 	var duplicated = duplicate_config()
 	duplicated.copy_from(fallback, true)
 	return duplicated
 
+## Returns a duplicated config with supported overrides applied to the copy.
 func with_overrides(overrides: Dictionary) -> ZoneConfig:
 	var duplicated = duplicate_config()
 	duplicated.apply_overrides(overrides)
 	return duplicated
 
+## Applies supported field overrides in place and reports unsupported keys with push_error().
 func apply_overrides(overrides: Dictionary) -> ZoneConfig:
 	for raw_key in overrides.keys():
 		var field_name := str(raw_key)

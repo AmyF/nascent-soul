@@ -145,9 +145,12 @@ Do **not** use metadata as a hidden transport for broad scene mutation.
 
 ## Which References Should You Read?
 
-- read **Workflow Board** for the smallest example-side transfer policy
-- read **FreeCell** for a richer card-lane transfer policy
-- read **Xiangqi** for targeting-heavy rule flow
+- read [Decision Framework](decision-framework.md) if you are still choosing which seam owns the change
+- read [Transfers and Targeting](transfers-and-targeting.md) to keep movement and choice responsibilities separated
+- read [Showcase: Workflow Board](showcase-workflow-board.md) for the smallest example-side transfer policy
+- read [Showcase: FreeCell](showcase-freecell.md) for a richer card-lane transfer policy
+- read [Showcase: Xiangqi](showcase-xiangqi.md) for targeting-heavy rule flow
+- read [Testing](testing.md) when you are ready to lock new rule behavior down
 
 ## Good Files To Inspect
 

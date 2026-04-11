@@ -36,11 +36,13 @@ func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	_drag_session_cleanup = ZoneDragSessionCleanupScript.new(self)
 
 # Lifecycle and zone-facing API.
+## Connects the input and render services used by transfer execution callbacks.
 func bind_services(p_input_service: ZoneInputService, p_render_service: ZoneRenderService) -> void:
 	input_service = p_input_service
 	render_service = p_render_service
 	_execution.bind_services(input_service, render_service)
 
+## Releases transfer collaborators and clears any drag session state owned by this service.
 func cleanup() -> void:
 	if _drag_session_cleanup != null:
 		_drag_session_cleanup.cleanup()
@@ -64,6 +66,7 @@ func cleanup() -> void:
 	zone = null
 	context = null
 
+## Advances drag hover feedback, container ordering, and cleanup each frame for this zone.
 func process(_delta: float) -> void:
 	if zone.get_items_root() == null:
 		return
@@ -86,12 +89,15 @@ func process(_delta: float) -> void:
 		return
 	_update_hover_preview(session)
 
+## Reapplies render output for the current transfer and preview state.
 func refresh() -> void:
 	render_service.refresh()
 
+## Reconciles logical item state from the scene tree items root. Returns true when selection state changed.
 func rebuild_items_from_root() -> bool:
 	return store.rebuild_items_from_root(context, zone.get_items_root())
 
+## Resolves placement_target for items, or falls back to the space model's default add target.
 func resolve_transfer_target(items: Array[ZoneItemControl], placement_target: ZonePlacementTarget) -> ZonePlacementTarget:
 	var space_model = context.get_space_model()
 	if space_model == null:
@@ -101,9 +107,11 @@ func resolve_transfer_target(items: Array[ZoneItemControl], placement_target: Zo
 	var reference_item = items[0] if not items.is_empty() else null
 	return space_model.resolve_add_target(context, reference_item, null)
 
+## Adds item at the end of the logical order unless placement_target overrides it.
 func add_item(item: ZoneItemControl, placement_target: ZonePlacementTarget = null) -> bool:
 	return insert_item(item, store.items.size(), placement_target)
 
+## Inserts or reorders item at index or placement_target and emits add/layout side effects on success.
 func insert_item(item: ZoneItemControl, index: int, placement_target: ZonePlacementTarget = null) -> bool:
 	var items_root = zone.get_items_root()
 	if not is_instance_valid(item) or items_root == null:
@@ -131,6 +139,7 @@ func insert_item(item: ZoneItemControl, index: int, placement_target: ZonePlacem
 func remove_item(item: ZoneItemControl) -> bool:
 	return _execution.remove_item(item)
 
+## Routes a programmatic transfer command through insert, reorder, or cross-zone execution paths.
 func perform_transfer(command: ZoneTransferCommand) -> bool:
 	return _command_router.perform_transfer(command) if _command_router != null else false
 
@@ -144,14 +153,17 @@ func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 	input_service.select_item(item, additive)
 
 # Drag session lifecycle.
+## Starts a drag from items, using anchor_item when the transfer policy needs a primary item.
 func start_drag(items: Array[ZoneItemControl], anchor_item: ZoneItemControl = null) -> void:
 	if _drag_start_flow != null:
 		_drag_start_flow.start_drag(items, null, anchor_item)
 
+## Starts a drag anchored to an explicit pointer position, typically from input services.
 func start_drag_at(items: Array[ZoneItemControl], pointer_global_position: Vector2, anchor_item: ZoneItemControl = null) -> void:
 	if _drag_start_flow != null:
 		_drag_start_flow.start_drag(items, pointer_global_position, anchor_item)
 
+## Completes the active drag by dropping on the current hover zone or cancelling when no valid target remains.
 func finalize_drag_session(session: ZoneDragSession = null) -> void:
 	var active_session = session
 	if active_session == null:
@@ -168,6 +180,7 @@ func finalize_drag_session(session: ZoneDragSession = null) -> void:
 	else:
 		cancel_drag(active_session)
 
+## Resolves the current drop decision and executes reorder or cross-zone transfer side effects for session.
 func perform_drop(session: ZoneDragSession) -> bool:
 	session.prune_invalid_items()
 	if session.items.is_empty():
@@ -194,6 +207,7 @@ func perform_drop(session: ZoneDragSession) -> bool:
 		_cleanup_drag_session(session, true, true)
 	return success
 
+## Cancels the active drag session and restores visuals for all involved items.
 func cancel_drag(session: ZoneDragSession = null) -> void:
 	var active_session = session
 	if active_session == null:
@@ -208,6 +222,7 @@ func get_display_state(style: Resource) -> Dictionary:
 	return render_service.get_display_state(style)
 
 # Execution helpers shared with transfer collaborators.
+## Captures per-item transfer state used for handoff and rollback during cross-zone moves.
 func build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
 	return context.build_transfer_snapshots(moving_items, drop_position, anchor_item) if context != null else {}
 
@@ -315,13 +330,16 @@ func _get_drop_global_position(session: ZoneDragSession) -> Vector2:
 		return session.anchor_item.global_position
 	return Vector2.ZERO
 
+## Builds the policy request object used to evaluate a drop against the active transfer policy.
 func make_transfer_request(target_zone: Zone, source_zone: Node, items: Array[ZoneItemControl], placement_target: ZonePlacementTarget, global_position: Vector2) -> ZoneTransferRequest:
 	return _decision_resolver.make_transfer_request(target_zone, source_zone, items, placement_target, global_position) if _decision_resolver != null else null
 
+## Returns the normalized transfer decision for request, defaulting to allow when no resolver is available.
 func resolve_drop_decision(request: ZoneTransferRequest) -> ZoneTransferDecision:
 	if _decision_resolver == null:
 		return ZoneTransferDecision.new(true, "", request.placement_target)
 	return _decision_resolver.resolve_drop_decision(request)
 
+## Updates preview_target, hover feedback, and signals for session at the given pointer position.
 func update_hover_preview_session(target_zone: Zone, session: ZoneDragSession, visible_items: Array[ZoneItemControl], global_position: Vector2, local_position: Vector2) -> ZoneTransferDecision:
 	return _decision_resolver.update_hover_preview_session(target_zone, session, visible_items, global_position, local_position) if _decision_resolver != null else null

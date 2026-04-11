@@ -31,6 +31,13 @@ Typical examples:
 
 If your game has both, use both. NascentSoul is designed for mixed card-and-board flows.
 
+If part of the scene is only UI state with no zone behavior, keep it as regular Godot controls.
+
+Do not force everything into one zone type.
+
+The first question is not "How do I make one giant zone do everything?"
+It is "Which parts are ordered, which parts are spatial, and which parts are just UI?"
+
 ## Step 2: Should The Scene Explain Itself?
 
 ### Choose Inspector-first when:
@@ -129,6 +136,8 @@ Put code in the **game or showcase layer** when it gives the rules meaning:
 - deck setup
 - scoring
 - win / lose state
+- sequencing after a transfer or target resolves
+- save/load or replay logic
 - showcase-specific UI copy
 - history / undo models
 - seeded scenario setup
@@ -136,13 +145,26 @@ Put code in the **game or showcase layer** when it gives the rules meaning:
 The addon should answer **how zones behave**.  
 Your game code should answer **what the game means**.
 
+### When The Controller Starts Growing
+
+Keep the controller as the game-specific meaning layer, then peel helpers off in this order:
+
+1. keep **scene wiring** in the `.tscn` and a thin controller
+2. move **zone lookup / board lookup** into a registry helper
+3. move **serialized state shape** into a state-model helper
+4. move **move legality / rule evaluation** into a rules helper
+5. move **undo / restore stacks** into a history helper
+
+[Showcase: Workflow Board](showcase-workflow-board.md) demonstrates the thin starter version of that split.
+[Showcase: FreeCell](showcase-freecell.md) and [Showcase: Xiangqi](showcase-xiangqi.md) demonstrate the fuller helper-oriented version.
+
 ## Step 6: Which Reference Should You Read?
 
 Start with the smallest example that matches your question:
 
-1. **`Workflow Board`** — smallest useful scene-authored example with one tiny custom transfer rule
-2. **`FreeCell`** — full card-game example with rules, history, and scene-authored lanes
-3. **`Xiangqi`** — full battlefield example with explicit placement targets, targeting, and turn-based rule orchestration
+1. [Showcase: Workflow Board](showcase-workflow-board.md) — smallest useful scene-authored example with one tiny custom transfer rule
+2. [Showcase: FreeCell](showcase-freecell.md) — full card-game example with rules, history, and scene-authored lanes
+3. [Showcase: Xiangqi](showcase-xiangqi.md) — full battlefield example with explicit placement targets, targeting, and turn-based rule orchestration
 
 Then jump to the focused guide that matches the seam:
 

@@ -4,6 +4,7 @@ var items: Array[ZoneItemControl] = []
 var item_targets: Dictionary = {}
 var selection_state: ZoneSelectionState = ZoneSelectionState.new()
 
+## Clears tracked items and selection state for runtime teardown.
 func cleanup() -> void:
 	clear_runtime_items()
 	selection_state = null
@@ -17,6 +18,7 @@ func get_item_count() -> int:
 func has_item(item) -> bool:
 	return find_item_index(item) != -1
 
+## Returns item's cached placement target or derives one from current logical order when no explicit target exists.
 func get_item_target(context: ZoneContext, item: ZoneItemControl) -> ZonePlacementTarget:
 	if not is_instance_valid(item):
 		return ZonePlacementTarget.invalid()
@@ -70,6 +72,8 @@ func targets_match(a: ZonePlacementTarget, b: ZonePlacementTarget) -> bool:
 		return false
 	return a.matches(b)
 
+## Reconciles tracked items against items_root after editor edits, restore flows, or rollback.
+## Returns true when selection membership changed.
 func rebuild_items_from_root(context: ZoneContext, items_root: Control) -> bool:
 	if items_root == null:
 		clear_runtime_items()
@@ -101,6 +105,7 @@ func rebuild_items_from_root(context: ZoneContext, items_root: Control) -> bool:
 		selection_changed = true
 	return selection_changed
 
+## Inserts item into logical order and records target without adding it to the scene tree.
 func insert_item_reference(item: ZoneItemControl, index: int, target: ZonePlacementTarget) -> void:
 	if not is_instance_valid(item):
 		return
@@ -113,6 +118,7 @@ func insert_item_reference(item: ZoneItemControl, index: int, target: ZonePlacem
 func remove_item_reference(item) -> void:
 	erase_item_reference(item)
 
+## Removes item from logical order and cached targets, pruning invalid references when item is no longer valid.
 func erase_item_reference(item) -> void:
 	if is_instance_valid(item):
 		for index in range(items.size() - 1, -1, -1):
@@ -139,6 +145,7 @@ func find_item_index(item) -> int:
 			return index
 	return -1
 
+## Clears all tracked items, placement targets, and selection state.
 func clear_runtime_items() -> void:
 	items.clear()
 	item_targets.clear()

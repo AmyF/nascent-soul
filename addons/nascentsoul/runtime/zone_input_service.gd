@@ -26,15 +26,18 @@ func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	_pointer_flow = ZoneInputPointerFlowScript.new(self, context)
 
 # Lifecycle and binding.
+## Connects transfer and targeting services so pointer handlers can start drags or targeting flows.
 func bind_runtime_services(p_transfer_service: ZoneTransferService, p_targeting_service: ZoneTargetingService) -> void:
 	transfer_service = p_transfer_service
 	targeting_service = p_targeting_service
 
+## Ensures timers exist and binds zone plus item input signals for the current items root.
 func bind() -> void:
 	ensure_long_press_timer()
 	if _binding_registry != null:
 		_binding_registry.bind()
 
+## Reconciles per-item input bindings after the items root changes.
 func sync_item_bindings() -> void:
 	if _binding_registry != null:
 		_binding_registry.sync_item_bindings()
@@ -43,6 +46,7 @@ func ensure_long_press_timer() -> void:
 	if _pointer_flow != null:
 		_pointer_flow.ensure_long_press_timer()
 
+## Disconnects input bindings and drops references to runtime collaborators.
 func cleanup() -> void:
 	if _binding_registry != null:
 		_binding_registry.cleanup()
@@ -75,6 +79,7 @@ func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 	_selection_controller.select_item(item, additive)
 
 # Input event handling.
+## Routes item GUI input to button or motion handlers when interaction rules are available.
 func on_item_gui_input(event: InputEvent, item: ZoneItemControl) -> void:
 	if context.get_interaction() == null:
 		return
@@ -83,6 +88,7 @@ func on_item_gui_input(event: InputEvent, item: ZoneItemControl) -> void:
 	elif event is InputEventMouseMotion:
 		handle_mouse_motion(event as InputEventMouseMotion, item)
 
+## Routes background zone input, such as deselection or gesture state, through the pointer flow.
 func on_zone_gui_input(event: InputEvent) -> void:
 	if _pointer_flow != null:
 		_pointer_flow.handle_zone_gui_input(event)
@@ -104,6 +110,7 @@ func handle_mouse_motion(event: InputEventMouseMotion, item: ZoneItemControl) ->
 func apply_click_selection(item: ZoneItemControl, event: InputEventMouseButton) -> void:
 	_selection_controller.apply_click_selection(item, event)
 
+## Applies keyboard navigation and selection rules. Returns true when the event was consumed.
 func handle_keyboard_navigation(event: InputEvent, interaction: ZoneInteraction) -> bool:
 	return _selection_controller.handle_keyboard_navigation(event, interaction)
 

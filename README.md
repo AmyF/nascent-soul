@@ -114,11 +114,11 @@ Use [`scenes/main_menu.tscn`](scenes/main_menu.tscn) as the public first screen.
 
 Walk the examples in this order:
 
-1. **`Workflow Board`**  
+1. [Workflow Board](docs/showcase-workflow-board.md)
    Smallest useful starter. Three scene-authored lanes, two local `ZoneConfig` resources, and one tiny example-side WIP rule.
-2. **`FreeCell`**  
+2. [FreeCell](docs/showcase-freecell.md)
    Full card-game reference implementation built on `CardZone`, example-side rules, history, and scene-authored lanes.
-3. **`Xiangqi`**  
+3. [Xiangqi](docs/showcase-xiangqi.md)
    Full board-game reference implementation built on `BattlefieldZone`, explicit placement targets, targeting, and move-rule orchestration.
 
 [`scenes/demo.tscn`](scenes/demo.tscn) still exists as a compatibility shell for directly opening the two full game showcases together, but it is **not** the recommended starting point.
@@ -146,7 +146,6 @@ Walk the examples in this order:
 - [Showcase: Workflow Board](docs/showcase-workflow-board.md)
 - [Showcase: FreeCell](docs/showcase-freecell.md)
 - [Showcase: Xiangqi](docs/showcase-xiangqi.md)
-- [Game Implementation Checklist](docs/game-implementation-checklist.md)
 
 ### Maintain the library
 
@@ -162,8 +161,8 @@ Walk the examples in this order:
 3. [Card Zones](docs/card-zones.md) and/or [Battlefields](docs/battlefields.md)
 4. [Transfers and Targeting](docs/transfers-and-targeting.md)
 5. [Extending Policies](docs/extending-policies.md) and [Extending Layouts](docs/extending-layouts.md)
-6. `Workflow Board` -> `FreeCell` -> `Xiangqi`
-7. [Game Implementation Checklist](docs/game-implementation-checklist.md)
+6. [Workflow Board](docs/showcase-workflow-board.md) -> [FreeCell](docs/showcase-freecell.md) -> [Xiangqi](docs/showcase-xiangqi.md)
+7. [Testing](docs/testing.md) when you are ready to lock new behavior down
 
 ### If you want to maintain the addon
 
@@ -184,7 +183,7 @@ Validated on Godot 4.6.1:
 
 - headless regression runner passes with **648 checks**
 - headless editor load succeeds with the plugin enabled
-- the public launcher path is `Workflow Board` -> `FreeCell` -> `Xiangqi`
+- the public launcher path is [Workflow Board](docs/showcase-workflow-board.md) -> [FreeCell](docs/showcase-freecell.md) -> [Xiangqi](docs/showcase-xiangqi.md)
 
 Useful commands:
 

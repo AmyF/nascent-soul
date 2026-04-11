@@ -64,6 +64,7 @@ var _targeting_service: ZoneTargetingService = null
 		_config = next_config
 		_handle_configuration_changed()
 
+## Initializes internal roots, runtime services, and bindings when the zone enters the scene tree.
 func _ready() -> void:
 	focus_mode = Control.FOCUS_ALL
 	if mouse_filter == Control.MOUSE_FILTER_IGNORE:
@@ -82,6 +83,7 @@ func _ready() -> void:
 	if not resized.is_connected(resized_callable):
 		resized.connect(resized_callable)
 
+## Tears down drag and targeting sessions involving this zone before runtime services are released.
 func _exit_tree() -> void:
 	var drag_coordinator = ZoneRuntimePortScript.resolve_drag_coordinator(self, false)
 	if drag_coordinator != null and drag_coordinator.get_session() != null:
@@ -120,6 +122,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	return ZoneConfigurationWarningsScript.build(self, _context, Callable(self, "_is_expected_direct_child"))
 
 # Public gameplay API.
+## Reapplies layout and visuals from the current config, items, and preview state.
 func refresh() -> void:
 	_ensure_internal_nodes()
 	_ensure_services()
@@ -214,30 +217,37 @@ func has_item(item: ZoneItemControl) -> bool:
 	_ensure_services()
 	return _context.has_item(item)
 
+## Adds item to this zone at placement_target or the next open target. Returns false when the add cannot be resolved.
 func add_item(item: ZoneItemControl, placement_target: ZonePlacementTarget = null) -> bool:
 	_ensure_services()
 	return _transfer_service.add_item(item, _coerce_placement_target(placement_target))
 
+## Removes item from this zone and clears its runtime bookkeeping. Returns false when the item is not present.
 func remove_item(item: ZoneItemControl) -> bool:
 	_ensure_services()
 	return _transfer_service.remove_item(item)
 
+## Executes a programmatic insert, reorder, or cross-zone transfer command.
 func perform_transfer(command: ZoneTransferCommand) -> bool:
 	_ensure_services()
 	return _transfer_service.perform_transfer(command)
 
+## Clears the current selection for this zone.
 func clear_selection() -> void:
 	_ensure_services()
 	_input_service.clear_selection()
 
+## Selects item and preserves the existing selection when additive is true.
 func select_item(item: ZoneItemControl, additive: bool = false) -> void:
 	_ensure_services()
 	_input_service.select_item(item, additive)
 
+## Starts a drag session for items, using anchor_item when the transfer policy needs a primary item.
 func start_drag(items: Array[ZoneItemControl], anchor_item: ZoneItemControl = null) -> void:
 	_ensure_services()
 	_transfer_service.start_drag(items, anchor_item)
 
+## Starts a targeting session for command and defaults an empty source_zone to this zone.
 func begin_targeting(command: ZoneTargetingCommand) -> bool:
 	_ensure_services()
 	if command == null:
@@ -246,22 +256,27 @@ func begin_targeting(command: ZoneTargetingCommand) -> bool:
 		command.source_zone = self
 	return _targeting_service.begin_targeting(command)
 
+## Cancels the active targeting session owned by this zone, if any.
 func cancel_targeting() -> void:
 	_ensure_services()
 	_targeting_service.cancel_targeting()
 
+## Cancels the active drag session or the provided session when this zone owns it.
 func cancel_drag(session: ZoneDragSession = null) -> void:
 	_ensure_services()
 	_transfer_service.cancel_drag(session)
 
+## Resolves and executes a drop for session when this zone is the current hover target.
 func perform_drop(session: ZoneDragSession) -> bool:
 	_ensure_services()
 	return _transfer_service.perform_drop(session)
 
+## Returns the mutable per-style display cache dictionary used by this zone's display style.
 func get_display_state(style: Resource) -> Dictionary:
 	_ensure_services()
 	return _render_service.get_display_state(style)
 
+## Clears cached display state and staged transfer visuals so the next refresh rebuilds them.
 func clear_display_state() -> void:
 	_ensure_services()
 	_render_service.clear_display_state()
@@ -269,6 +284,7 @@ func clear_display_state() -> void:
 func is_targeting() -> bool:
 	return get_targeting_session() != null
 
+## Returns the active drag session when this zone is the source or current hover zone.
 func get_drag_session() -> ZoneDragSession:
 	var coordinator = ZoneRuntimePortScript.resolve_drag_coordinator(self, false)
 	if coordinator == null:
@@ -280,6 +296,7 @@ func get_drag_session() -> ZoneDragSession:
 		return session
 	return null
 
+## Returns the active targeting session only when this zone owns the source item.
 func get_targeting_session() -> ZoneTargetingSession:
 	var coordinator = ZoneRuntimePortScript.resolve_targeting_coordinator(self, false)
 	if coordinator == null:
@@ -293,6 +310,7 @@ func get_item_at_global_position(global_position: Vector2) -> ZoneItemControl:
 	_ensure_services()
 	return _context.get_item_at_global_position(global_position)
 
+## Returns the first valid placement target for item according to the active space model.
 func get_first_open_target(item: Control) -> ZonePlacementTarget:
 	_ensure_services()
 	var space_model = _context.get_space_model()
@@ -300,6 +318,7 @@ func get_first_open_target(item: Control) -> ZonePlacementTarget:
 		return ZonePlacementTarget.invalid()
 	return space_model.get_first_open_target(_context, item)
 
+## Returns the global anchor position used for previews or overlays for target.
 func resolve_target_anchor(target: ZonePlacementTarget) -> Vector2:
 	_ensure_services()
 	return _context.resolve_target_anchor(target)

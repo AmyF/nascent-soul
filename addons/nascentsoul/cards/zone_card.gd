@@ -58,6 +58,7 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	_kill_flip_tween()
 
+## Flips the card immediately or through a short tween and leaves face_up in the requested state.
 func flip(to_face_up: bool = not face_up, animated: bool = true) -> void:
 	_ensure_nodes()
 	if not animated:
@@ -77,6 +78,7 @@ func _kill_flip_tween() -> void:
 func _apply_flip_state(to_face_up: bool) -> void:
 	face_up = to_face_up
 
+## Builds the placeholder that remains in the source zone while this card is dragged.
 func create_zone_drag_ghost(_context: ZoneContext) -> Control:
 	var ghost := Panel.new()
 	ghost.custom_minimum_size = _resolved_card_size()
@@ -95,6 +97,7 @@ func create_zone_drag_ghost(_context: ZoneContext) -> Control:
 	ghost.add_theme_stylebox_override("panel", style)
 	return ghost
 
+## Builds the cursor-following proxy used for this card during drag interactions.
 func create_zone_drag_proxy(_context: ZoneContext) -> Control:
 	var proxy = duplicate(0)
 	if proxy is Control:
@@ -108,15 +111,19 @@ func create_zone_drag_proxy(_context: ZoneContext) -> Control:
 	fallback.size = _resolved_card_size()
 	return fallback
 
+## Backwards-compatible helper that delegates to create_zone_drag_ghost().
 func create_zone_ghost() -> Control:
 	return create_zone_drag_ghost(null)
 
+## Backwards-compatible helper that delegates to create_zone_drag_proxy().
 func create_drag_proxy() -> Control:
 	return create_zone_drag_proxy(null)
 
+## Spawns the default transferred representation for this card via its configured spawn factory.
 func create_zone_piece() -> Control:
 	return create_zone_spawned_item(null, ZoneTransferDecision.new(), ZonePlacementTarget.invalid())
 
+## Applies hover, selection, and targeting visuals only when the rendered state changes.
 func apply_zone_visual_state(state: ZoneItemVisualState) -> void:
 	var next_state = state if state != null else ZoneItemVisualState.new()
 	var changed = did_zone_visual_state_change(next_state)

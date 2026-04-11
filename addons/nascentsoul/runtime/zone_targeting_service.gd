@@ -20,6 +20,7 @@ func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	_resolution = ZoneTargetResolutionScript.new(self, context)
 	_feedback = ZoneTargetFeedbackScript.new(self)
 
+## Clears targeting feedback and releases resolution helpers for this zone.
 func cleanup() -> void:
 	if _feedback != null:
 		_feedback.cleanup()
@@ -31,6 +32,7 @@ func cleanup() -> void:
 	zone = null
 	context = null
 
+## Starts an explicit targeting session for command, filling in a missing pointer position from the viewport when needed.
 func begin_targeting(command: ZoneTargetingCommand) -> bool:
 	if command == null or not is_instance_valid(command.source_item):
 		return false
@@ -42,6 +44,7 @@ func begin_targeting(command: ZoneTargetingCommand) -> bool:
 			resolved_command.pointer_global_position = resolved_command.source_item.global_position
 	return start_targeting_internal(resolved_command)
 
+## Starts drag-driven targeting for item when it can resolve a drag intent.
 func try_start_drag_targeting(item: ZoneItemControl, global_position: Vector2) -> bool:
 	var command = ZoneTargetingCommand.drag_for_item(zone, item, null, global_position)
 	command.intent = resolve_targeting_intent(command, &"drag")
@@ -49,6 +52,7 @@ func try_start_drag_targeting(item: ZoneItemControl, global_position: Vector2) -
 		return false
 	return start_targeting_internal(command)
 
+## Cancels the active targeting session owned by this zone, if any.
 func cancel_targeting() -> void:
 	var coordinator = get_targeting_coordinator(false)
 	if coordinator == null:
@@ -58,6 +62,7 @@ func cancel_targeting() -> void:
 		return
 	cancel_targeting_session(session, true)
 
+## Recomputes candidate and decision feedback for session at global_position and refreshes overlays.
 func update_targeting_session(session: ZoneTargetingSession, global_position: Vector2) -> void:
 	if session == null or session.source_zone != zone or not is_instance_valid(session.source_item):
 		return
@@ -69,6 +74,7 @@ func update_targeting_session(session: ZoneTargetingSession, global_position: Ve
 	if coordinator != null and coordinator.get_session() == session:
 		coordinator.refresh_overlay()
 
+## Resolves session when its latest decision is allowed; otherwise cancels it.
 func finalize_targeting_session(session: ZoneTargetingSession) -> void:
 	if session == null or session.source_zone != zone:
 		return
@@ -82,6 +88,7 @@ func finalize_targeting_session(session: ZoneTargetingSession) -> void:
 		return
 	cancel_targeting_session(session, true)
 
+## Clears session feedback and optionally emits targeting_cancelled before removing the session.
 func cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) -> void:
 	if session == null or session.source_zone != zone:
 		return
@@ -93,6 +100,7 @@ func cancel_targeting_session(session: ZoneTargetingSession, emit_signal: bool) 
 	if coordinator != null:
 		coordinator.clear_session()
 
+## Validates command ownership, resolves intent, and creates the runtime targeting session.
 func start_targeting_internal(command: ZoneTargetingCommand) -> bool:
 	if command == null or not context.has_item(command.source_item):
 		return false
@@ -115,6 +123,7 @@ func start_targeting_internal(command: ZoneTargetingCommand) -> bool:
 		runtime_port.emit_targeting_started(command.source_item, zone, resolved_intent)
 	return true
 
+## Asks the source item for the targeting intent to use for this command and entry mode.
 func resolve_targeting_intent(command: ZoneTargetingCommand, entry_mode: StringName) -> ZoneTargetingIntent:
 	if command == null or not is_instance_valid(command.source_item):
 		return null

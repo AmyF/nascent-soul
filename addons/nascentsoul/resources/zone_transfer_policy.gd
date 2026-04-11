@@ -5,6 +5,7 @@ class_name ZoneTransferPolicy extends Resource
 
 const ZoneDragStartDecisionScript = preload("res://addons/nascentsoul/model/zone_drag_start_decision.gd")
 
+## Returns whether anchor_item can start a drag and which selected items should move with it.
 func evaluate_drag_start(context: ZoneContext, anchor_item: ZoneItemControl, selected_items: Array[ZoneItemControl]):
 	if context == null or not is_instance_valid(anchor_item) or not context.has_item(anchor_item):
 		return ZoneDragStartDecisionScript.new(false, "This item can no longer start a drag.", [])
@@ -18,6 +19,7 @@ func evaluate_drag_start(context: ZoneContext, anchor_item: ZoneItemControl, sel
 		ordered_items.append(anchor_item)
 	return ZoneDragStartDecisionScript.new(true, "", ordered_items)
 
+## Returns the transfer decision for request and may replace the resolved_target that will be enforced.
 func evaluate_transfer(_context: ZoneContext, request: ZoneTransferRequest) -> ZoneTransferDecision:
 	var target = request.placement_target.duplicate_target() if request.placement_target != null else ZonePlacementTarget.invalid()
 	return ZoneTransferDecision.new(true, "", target)

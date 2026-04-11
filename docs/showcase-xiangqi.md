@@ -38,7 +38,7 @@ The battlefield zone remains the interaction surface.
 
 ## Reference Decomposition Pattern
 
-Xiangqi now follows the same helper-oriented pattern as FreeCell:
+Xiangqi now follows the same helper-oriented pattern as [Showcase: FreeCell](showcase-freecell.md):
 
 1. **scene wiring and turn/status orchestration** stay in `showcase.gd`
 2. **piece lookup and board-facing scene helpers** live in `board/xiangqi_board_registry.gd`
@@ -92,6 +92,13 @@ The example supplies:
 - board-side status and capture UI
 
 That is the intended boundary.
+
+## Read This With
+
+- start with [Showcase: Workflow Board](showcase-workflow-board.md) if you want the smallest scene-authored reference first
+- compare it with [Showcase: FreeCell](showcase-freecell.md) to see the same helper-oriented split in a card-game showcase
+- pair this showcase with [Battlefields](battlefields.md) and [Transfers and Targeting](transfers-and-targeting.md) for the public surface it exercises
+- use [Testing](testing.md) to find the suites that lock the board rules down
 
 ## Regression Coverage
 

@@ -37,6 +37,7 @@ func _ready() -> void:
 	_ensure_nodes()
 	_refresh_visuals()
 
+## Copies gameplay-facing data from source_item into this piece during card-to-piece transfers.
 func configure_from_transfer_source(source_item: ZoneItemControl, _context: ZoneContext, _target: ZonePlacementTarget) -> void:
 	if source_item is ZoneCard:
 		var source_card = source_item as ZoneCard
@@ -52,10 +53,12 @@ func configure_from_transfer_source(source_item: ZoneItemControl, _context: Zone
 			next_data.title = source_card.name
 		data = next_data
 
+## Compatibility wrapper that forwards ZoneItemControl sources to configure_from_transfer_source().
 func apply_transfer_source(source_item: Control, _source_zone: Zone, _target_zone: Zone, _target: ZonePlacementTarget) -> void:
 	if source_item is ZoneItemControl:
 		configure_from_transfer_source(source_item as ZoneItemControl, null, _target)
 
+## Applies hover, selection, and targeting visuals only when the rendered state changes.
 func apply_zone_visual_state(state: ZoneItemVisualState) -> void:
 	var next_state = state if state != null else ZoneItemVisualState.new()
 	var changed = did_zone_visual_state_change(next_state)

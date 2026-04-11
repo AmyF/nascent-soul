@@ -114,11 +114,17 @@ You can:
 
 ## Which Showcase Teaches What?
 
-- **Workflow Board** teaches transfer with a tiny example-side policy
-- **FreeCell** teaches transfer-heavy game rules on card lanes
-- **Xiangqi** teaches explicit target choice and board-resolution feedback
+- [Showcase: Workflow Board](showcase-workflow-board.md) teaches transfer with a tiny example-side policy
+- [Showcase: FreeCell](showcase-freecell.md) teaches transfer-heavy game rules on card lanes
+- [Showcase: Xiangqi](showcase-xiangqi.md) teaches explicit target choice and board-resolution feedback
 
-If you are unsure whether an action should be transfer or targeting, Xiangqi is the clearest reference for the targeting side of the split.
+If you are unsure whether an action should be transfer or targeting, [Showcase: Xiangqi](showcase-xiangqi.md) is the clearest reference for the targeting side of the split.
+
+## What To Read Next
+
+- read [Decision Framework](decision-framework.md) if you are still deciding which workflow owns the action
+- read [Extending Policies](extending-policies.md) when the built-in legality or targeting rules are close but not enough
+- read [Testing](testing.md) when you want regression coverage for the flow you just changed
 
 ## Good Files To Inspect
 

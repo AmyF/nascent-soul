@@ -16,6 +16,7 @@ var selection_state:
 func _init(p_zone, p_store = null, p_config = null, p_display_state_cache = null, p_transfer_staging = null) -> void:
 	attach(p_zone, p_store, p_config, p_display_state_cache, p_transfer_staging)
 
+## Rebinds this context to the current zone, store, config, and caches without taking ownership of them.
 func attach(p_zone, p_store, p_config, p_display_state_cache = null, p_transfer_staging = null) -> void:
 	# The context is a non-owning lens over the current zone/config/runtime state.
 	# Bootstrap reattaches the same context instance so services keep one stable
@@ -33,6 +34,7 @@ func cleanup() -> void:
 	display_state_cache = null
 	transfer_staging = null
 
+## Swaps the live config reference used by service lookups without rebuilding the context object.
 func update_config(next_config) -> void:
 	config = next_config
 
@@ -108,18 +110,21 @@ func resolve_item_size(item: ZoneItemControl) -> Vector2:
 		return item.custom_minimum_size
 	return Vector2(100, 150)
 
+## Resolves the local render position for target using the active space model.
 func resolve_target_position(target: ZonePlacementTarget, container_size: Vector2, item_size: Vector2) -> Vector2:
 	var space_model = get_space_model()
 	if space_model == null:
 		return Vector2.ZERO
 	return space_model.resolve_item_position(self, target, container_size, item_size)
 
+## Resolves the logical size for target using the active space model.
 func resolve_target_size(target: ZonePlacementTarget) -> Vector2:
 	var space_model = get_space_model()
 	if space_model == null:
 		return Vector2.ZERO
 	return space_model.resolve_target_size(self, target)
 
+## Resolves the global anchor for target, falling back to the zone center when no space model exists.
 func resolve_target_anchor(target: ZonePlacementTarget) -> Vector2:
 	var space_model = get_space_model()
 	if space_model == null:
@@ -137,9 +142,11 @@ func prune_display_state() -> void:
 	if display_state_cache != null:
 		display_state_cache.prune()
 
+## Consumes and removes any staged transfer snapshot for item.
 func consume_transfer_handoff(item: ZoneItemControl) -> Dictionary:
 	return transfer_staging.consume_transfer_handoff(item) if transfer_staging != null else {}
 
+## Stores a staged transfer snapshot for item so another zone can restore it after transfer.
 func set_transfer_handoff(item: ZoneItemControl, snapshot: Dictionary) -> void:
 	if transfer_staging != null:
 		transfer_staging.set_transfer_handoff(item, snapshot)
@@ -158,8 +165,10 @@ func has_transfer_handoff(item: ZoneItemControl) -> bool:
 func get_transfer_handoff_count() -> int:
 	return transfer_staging.get_transfer_handoff_count() if transfer_staging != null else 0
 
+## Builds serialized per-item transfer snapshots for handoff and rollback flows.
 func build_transfer_snapshots(moving_items: Array[ZoneItemControl], drop_position = null, anchor_item: ZoneItemControl = null) -> Dictionary:
 	return transfer_staging.build_transfer_snapshots(moving_items, drop_position, anchor_item) if transfer_staging != null else {}
 
+## Returns a representative global drop position for a code-driven transfer when no pointer event exists.
 func resolve_programmatic_transfer_global_position(moving_items: Array[ZoneItemControl]):
 	return transfer_staging.resolve_programmatic_transfer_global_position(moving_items) if transfer_staging != null else null

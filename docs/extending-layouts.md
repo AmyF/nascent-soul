@@ -125,9 +125,13 @@ func apply(context: ZoneContext, placements: Array[ZonePlacement]) -> void
 
 ## Which Example Matches Which Need?
 
-- use **Workflow Board** when you want to understand a straightforward vertical lane
-- use **FreeCell** when you want to study a richer custom card layout
-- use **Xiangqi** when you want to study explicit-cell board rendering and targeting anchors
+- read [Decision Framework](decision-framework.md) if you are still deciding whether the change belongs in layout, space, or display
+- read [Card Zones](card-zones.md) for lane-focused setups
+- read [Battlefields](battlefields.md) for grid-focused setups
+- use [Showcase: Workflow Board](showcase-workflow-board.md) when you want to understand a straightforward vertical lane
+- use [Showcase: FreeCell](showcase-freecell.md) when you want to study a richer custom card layout
+- use [Showcase: Xiangqi](showcase-xiangqi.md) when you want to study explicit-cell board rendering and targeting anchors
+- pair the change with [Testing](testing.md) once the visual contract matters to public behavior
 
 ## Good Files To Inspect
 

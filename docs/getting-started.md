@@ -33,7 +33,7 @@ The plugin adds three editor actions:
 
 ## Fastest Way To See The Addon Working
 
-Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and launch **Workflow Board** first.
+Open [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) and launch [Showcase: Workflow Board](showcase-workflow-board.md) first.
 
 That starter scene shows the smallest useful public setup in this repository:
 
@@ -43,6 +43,19 @@ That starter scene shows the smallest useful public setup in this repository:
 - a thin controller that only seeds data and updates visible status copy
 
 If you want to understand the addon from a real scene before writing code, inspect that showcase first and then come back here.
+
+## Map A Real Scene In Three Buckets
+
+When you move from a tiny demo to a real scene, sort the surface into:
+
+- ordered lanes -> `CardZone`
+- explicit boards -> `BattlefieldZone`
+- pure UI state with no zone behavior -> regular Godot controls
+
+Do not force everything into one zone type.
+
+The right first question is not "How do I make one giant zone do everything?"
+The right first question is "Which parts are ordered, which parts are spatial, and which parts are just UI?"
 
 ## Your First Card Zone
 
@@ -95,6 +108,22 @@ The important difference is the target:
 
 - card lanes usually use `ZonePlacementTarget.linear(...)`
 - battlefields use square or hex coordinates such as `ZonePlacementTarget.square(...)` or `ZonePlacementTarget.hex(...)`
+
+## Keep Real Game State In Item Data
+
+Store gameplay facts in your item data or metadata, for example:
+
+- card title
+- suit or faction
+- cost
+- side / owner
+- movement tags
+- ability-specific flags
+
+Do not hide the meaning of the game inside runtime-only helpers.
+
+The runtime should manage interaction and placement.
+Your item data should still explain what the pieces mean.
 
 ## Two Configuration Styles
 
@@ -158,4 +187,5 @@ Choose the next document based on your question:
 - read [Transfers and Targeting](transfers-and-targeting.md) if you are deciding between movement and choice
 - read [Showcase: Workflow Board](showcase-workflow-board.md) if you want the smallest real scene to inspect
 - read [Showcase: FreeCell](showcase-freecell.md) or [Showcase: Xiangqi](showcase-xiangqi.md) once you want full reference implementations
+- read [Testing](testing.md) when you are ready to add regression coverage for public behavior
 - read [Architecture](../ARCHITECTURE.md) only after the public surface already feels familiar

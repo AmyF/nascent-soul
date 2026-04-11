@@ -220,20 +220,21 @@ Examples should provide:
 - turn flow
 - UI copy and showcase affordances
 
-That is why `Workflow Board`, `FreeCell`, and `Xiangqi` are reference consumers of the addon rather than part of the addon runtime contract itself.
+That is why [Showcase: Workflow Board](docs/showcase-workflow-board.md), [Showcase: FreeCell](docs/showcase-freecell.md), and [Showcase: Xiangqi](docs/showcase-xiangqi.md) are reference consumers of the addon rather than part of the addon runtime contract itself.
 
 ## Reading Order
 
 ### For addon users
 
-1. `README.md`
-2. `docs/getting-started.md`
-3. `docs/decision-framework.md`
-4. relevant surface guides (`card-zones`, `battlefields`, `transfers-and-targeting`)
+1. [README](README.md)
+2. [Getting Started](docs/getting-started.md)
+3. [Decision Framework](docs/decision-framework.md)
+4. relevant surface guides: [Card Zones](docs/card-zones.md), [Battlefields](docs/battlefields.md), [Transfers and Targeting](docs/transfers-and-targeting.md)
 5. showcase docs in public order:
-   - `Workflow Board`
-   - `FreeCell`
-   - `Xiangqi`
+   - [Showcase: Workflow Board](docs/showcase-workflow-board.md)
+   - [Showcase: FreeCell](docs/showcase-freecell.md)
+   - [Showcase: Xiangqi](docs/showcase-xiangqi.md)
+6. [Testing](docs/testing.md) once you want the validation surface beside the runtime files
 
 ### For maintainers
 

@@ -16,7 +16,7 @@ Validated on Godot 4.6.1:
 
 - full regression runner passes with **648 checks**
 - headless editor load succeeds with the plugin enabled
-- the public launcher path is `Workflow Board` -> `FreeCell` -> `Xiangqi`
+- the public launcher path is [Showcase: Workflow Board](showcase-workflow-board.md) -> [Showcase: FreeCell](showcase-freecell.md) -> [Showcase: Xiangqi](showcase-xiangqi.md)
 
 Run the editor-load check with:
 
@@ -118,7 +118,20 @@ godot --path .
 
 Use [`scenes/main_menu.tscn`](../scenes/main_menu.tscn) as the first screen.
 
-[`scenes/demo.tscn`](../scenes/demo.tscn) remains only a compatibility shell for directly opening `FreeCell` and `Xiangqi` together.
+[`scenes/demo.tscn`](../scenes/demo.tscn) remains only a compatibility shell for directly opening [Showcase: FreeCell](showcase-freecell.md) and [Showcase: Xiangqi](showcase-xiangqi.md) together.
+
+## Before You Call A Scene Done
+
+1. add or update a regression suite for the new public behavior
+2. run the headless regression runner
+3. run the headless editor load
+
+If one suite starts getting too large, split it by story:
+
+- scene contracts / serialized authoring checks
+- launcher and navigation flows
+- showcase behavior stories
+- showcase-specific rule suites
 
 ## Updating The Baseline
 
@@ -129,3 +142,9 @@ If you add new public behavior or a new showcase:
 3. refresh the documented baseline after rerunning validation
 
 The library, the examples, and the docs are expected to stay in lockstep.
+
+## Related Guides
+
+- update [README](../README.md) when the top-level documentation map or learning path changes
+- update [Architecture](../ARCHITECTURE.md) when maintainer-facing boundaries or reading order changes
+- update [Showcase: Workflow Board](showcase-workflow-board.md), [Showcase: FreeCell](showcase-freecell.md), and [Showcase: Xiangqi](showcase-xiangqi.md) when example behavior or launcher order changes

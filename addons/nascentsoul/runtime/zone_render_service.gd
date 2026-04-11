@@ -16,6 +16,7 @@ func _init(p_context: ZoneContext, p_runtime_port) -> void:
 	runtime_port = p_runtime_port
 	_preview_feedback = ZoneDragPreviewFeedbackScript.new(self, context)
 
+## Rebuilds placements and applies the configured display style, including any active drag ghost preview.
 func refresh() -> void:
 	var layout_policy = context.get_layout_policy()
 	var display_style = context.get_display_style()
@@ -36,12 +37,14 @@ func refresh() -> void:
 func clear_preview() -> void:
 	_preview_feedback.clear_preview()
 
+## Clears style cache and staged transfer handoffs so future renders rebuild from live item state.
 func clear_display_state() -> void:
 	if context == null:
 		return
 	context.clear_display_state()
 	context.clear_transfer_handoffs()
 
+## Clears previews, display cache, and runtime references owned by the render service.
 func cleanup() -> void:
 	if _preview_feedback != null:
 		_preview_feedback.cleanup()
@@ -70,6 +73,7 @@ func resolve_item_size(item: ZoneItemControl) -> Vector2:
 		return item.custom_minimum_size
 	return Vector2(100, 150)
 
+## Returns the visible ordered items that should participate in layout for the current drag session.
 func get_layout_items(session: ZoneDragSession) -> Array[ZoneItemControl]:
 	var layout_items: Array[ZoneItemControl] = []
 	var ordered_items = context.get_items_ordered()
@@ -91,6 +95,7 @@ func create_cursor_proxy(source_items: Array[ZoneItemControl], anchor_item: Zone
 func get_preview_ghost() -> Control:
 	return _preview_feedback.ghost_instance if _preview_feedback != null else null
 
+## Reorders items_root children to match logical item order while preserving preview ghost placement.
 func sync_container_order() -> void:
 	if zone == null or context == null:
 		return
@@ -109,6 +114,7 @@ func sync_container_order() -> void:
 			items_root.move_child(item, target_index)
 		control_index += 1
 
+## Returns whether the scene-tree order has drifted from the logical item order.
 func container_order_needs_sync() -> bool:
 	if zone == null or context == null:
 		return false
@@ -131,9 +137,11 @@ func container_order_needs_sync() -> bool:
 func clear_preview_for_session(session: ZoneDragSession) -> void:
 	_preview_feedback.clear_preview_for_session(session)
 
+## Applies hover preview visuals and emits preview or hover-state signals. Returns true when visuals changed.
 func apply_hover_feedback(items: Array[ZoneItemControl], decision: ZoneTransferDecision, preview_target, preview_source: ZoneItemControl) -> bool:
 	return _preview_feedback.apply_hover_feedback(items, decision, preview_target, preview_source)
 
+## Clears active hover preview visuals for items. Returns true when anything changed.
 func clear_hover_feedback(items: Array[ZoneItemControl]) -> bool:
 	return _preview_feedback.clear_hover_feedback(items)
 
